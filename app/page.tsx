@@ -139,7 +139,7 @@ export default function HomePage() {
     <div className="relative h-screen overflow-hidden">
       {/* Background Video */}
       <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
-        <source src="/placeholder-video.mp4" type="video/mp4" />
+        <source src="/2544523-hd_1920_1080_24fps.mp4" type="video/mp4" />
       </video>
 
       {/* Dark Overlay */}
@@ -208,7 +208,7 @@ export default function HomePage() {
         )}
 
         {/* Section Indicators */}
-        <div className="absolute right-8 top-1/2 transform -translate-y-1/2 space-y-3">
+        <div className="absolute right-8 top-1/2 transform -translate-y-1/2 flex flex-col space-y-3">
           {sections.map((_, index) => (
             <button
               key={index}
