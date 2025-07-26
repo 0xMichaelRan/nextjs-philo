@@ -84,7 +84,7 @@ const translations = {
     "payment.encryptedTransaction": "交易信息已加密",
 
     // Movie Selection
-    "movieSelection.title": "选择您要分析的电影",
+    "movieSelection.title": "选个电影吧",
     "movieSelection.subtitle": "从热门电影中选择，或搜索您感兴趣的作品",
     "movieSelection.searchPlaceholder": "搜索电影（中文或英文）...",
     "movieSelection.noResults": "未找到相关电影",
@@ -323,7 +323,7 @@ const translations = {
     "payment.encryptedTransaction": "Transaction encrypted",
 
     // Movie Selection
-    "movieSelection.title": "Select a Movie to Analyze",
+    "movieSelection.title": "Pick a Movie",
     "movieSelection.subtitle": "Choose from popular movies or search for your favorite films",
     "movieSelection.searchPlaceholder": "Search movies (English or Chinese)...",
     "movieSelection.noResults": "No movies found",

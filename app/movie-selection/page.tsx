@@ -164,14 +164,14 @@ export default function MovieSelectionPage() {
   }
 
   return (
-    <AppLayout title={t("movieSelection.title")}>
+    <AppLayout>
       <div className="container mx-auto px-6 py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h2 className={`text-3xl md:text-4xl font-bold ${getTextClasses()} mb-4`}>{t("movieSelection.title")}</h2>
-          <p className={`text-lg ${theme === "light" ? "text-gray-600" : "text-gray-300"} mb-6`}>
+          {/* <p className={`text-lg ${theme === "light" ? "text-gray-600" : "text-gray-300"} mb-6`}>
             {t("movieSelection.subtitle")}
-          </p>
+          </p> */}
         </div>
 
         {/* Search Bar */}
