@@ -1,0 +1,531 @@
+"use client"
+
+import type React from "react"
+import { createContext, useContext, useEffect, useState } from "react"
+
+type Language = "zh" | "en"
+
+interface LanguageContextType {
+  language: Language
+  setLanguage: (language: Language) => void
+  toggleLanguage: () => void
+  t: (key: string) => string
+}
+
+const translations = {
+  zh: {
+    // Navigation
+    "nav.home": "首页",
+    "nav.movieSelection": "选择电影",
+    "nav.myVideos": "我的视频",
+    "nav.profile": "个人中心",
+    "nav.vip": "VIP会员",
+    "nav.upgrade": "升级",
+    "nav.darkMode": "深色模式",
+    "nav.lightMode": "浅色模式",
+    "nav.usageStats": "使用统计",
+    "nav.dailyRemaining": "今日剩余",
+    "nav.totalGenerated": "累计生成",
+    "nav.memberStatus": "会员状态",
+    "nav.freeUser": "免费用户",
+    "nav.upgradeVip": "升级VIP",
+    "nav.unlimitedGeneration": "无限生成",
+    "nav.hdQuality": "高清画质",
+    "nav.upgradeNow": "立即升级",
+    "nav.login": "登录",
+    "nav.logout": "退出登录",
+
+    // Auth
+    "auth.welcome": "欢迎使用电影哲学家",
+    "auth.subtitle": "登录后即可生成您的专属电影分析视频",
+    "auth.phoneLogin": "手机登录",
+    "auth.phoneNumber": "手机号码",
+    "auth.phonePlaceholder": "请输入11位手机号",
+    "auth.sendCode": "发送验证码",
+    "auth.resendCode": "重发验证码",
+    "auth.verificationCode": "验证码",
+    "auth.codePlaceholder": "请输入6位验证码",
+    "auth.login": "登录",
+    "auth.loggingIn": "登录中...",
+    "auth.skipLogin": "跳过登录，继续体验",
+    "auth.termsAgreement": "登录即表示您同意我们的",
+    "auth.termsOfService": "服务条款",
+    "auth.and": "和",
+    "auth.privacyPolicy": "隐私政策",
+    "auth.sendingCode": "发送中...",
+    "auth.codeSent": "验证码已发送",
+    "auth.invalidPhone": "请输入正确的手机号",
+    "auth.invalidCode": "请输入正确的验证码",
+    "auth.loginFailed": "登录失败，请重试",
+
+    // Payment
+    "payment.title": "选择支付方式",
+    "payment.selectPlan": "选择套餐",
+    "payment.monthlyVip": "月度VIP",
+    "payment.yearlyVip": "年度VIP",
+    "payment.originalPrice": "原价",
+    "payment.currentPrice": "现价",
+    "payment.save": "省",
+    "payment.paymentMethod": "支付方式",
+    "payment.alipay": "支付宝",
+    "payment.wechatPay": "微信支付",
+    "payment.orderSummary": "订单摘要",
+    "payment.plan": "套餐",
+    "payment.duration": "时长",
+    "payment.month": "月",
+    "payment.year": "年",
+    "payment.total": "总计",
+    "payment.payNow": "立即支付",
+    "payment.processing": "处理中...",
+    "payment.success": "支付成功",
+    "payment.failed": "支付失败",
+    "payment.loginRequired": "请先登录",
+    "payment.securePayment": "安全支付",
+    "payment.encryptedTransaction": "交易信息已加密",
+
+    // Movie Selection
+    "movieSelection.title": "选择您要分析的电影",
+    "movieSelection.subtitle": "从热门电影中选择，或搜索您感兴趣的作品",
+    "movieSelection.searchPlaceholder": "搜索电影（中文或英文）...",
+    "movieSelection.noResults": "未找到相关电影",
+    "movieSelection.recentSearches": "最近搜索",
+    "movieSelection.recommendedKeywords": "推荐搜索",
+
+    // Analysis Options
+    "analysisOptions.title": "分析选项",
+    "analysisOptions.subtitle": "请选择您的分析偏好",
+    "analysisOptions.character": "分析角色",
+    "analysisOptions.tone": "叙述语调",
+    "analysisOptions.style": "分析风格",
+    "analysisOptions.length": "视频长度",
+    "analysisOptions.required": "必选",
+    "analysisOptions.philosopher": "哲学家",
+    "analysisOptions.religious": "宗教学者",
+    "analysisOptions.teacher": "大学教师",
+    "analysisOptions.critic": "影评人",
+    "analysisOptions.academic": "学术严谨",
+    "analysisOptions.casual": "轻松幽默",
+    "analysisOptions.philosophical": "哲学思辨",
+    "analysisOptions.emotional": "情感共鸣",
+    "analysisOptions.narrative": "叙述式",
+    "analysisOptions.thematic": "主题式",
+    "analysisOptions.characterStyle": "人物式",
+    "analysisOptions.technical": "技法式",
+    "analysisOptions.short": "简短版",
+    "analysisOptions.medium": "标准版",
+    "analysisOptions.long": "深度版",
+    "analysisOptions.luckyChoice": "手气不错",
+    "analysisOptions.selectVoice": "选择配音",
+
+    // Voice Selection
+    "voiceSelection.title": "选择配音",
+    "voiceSelection.subtitle": "选择您喜欢的配音风格",
+    "voiceSelection.tryAudio": "试听样本",
+    "voiceSelection.stopAudio": "停止试听",
+    "voiceSelection.select": "选择",
+    "voiceSelection.selected": "已选择",
+    "voiceSelection.customVoice": "自定义声音",
+    "voiceSelection.generateScript": "生成分析脚本",
+
+    // Custom Voice
+    "customVoice.title": "自定义声音",
+    "customVoice.subtitle": "录制您的专属声音",
+    "customVoice.vipRequired": "需要VIP会员",
+    "customVoice.upgradePrompt": "升级VIP解锁自定义声音功能",
+    "customVoice.recordingName": "录音名称",
+    "customVoice.namePlaceholder": "为您的声音起个名字...",
+    "customVoice.startRecording": "开始录制",
+    "customVoice.stopRecording": "停止录制",
+    "customVoice.playRecording": "播放录音",
+    "customVoice.reRecord": "重新录制",
+    "customVoice.saveVoice": "保存声音",
+    "customVoice.deleteVoice": "删除声音",
+    "customVoice.recordingTip": "请朗读以下文本，录制时长建议30-60秒",
+    "customVoice.sampleText":
+      "在这个充满可能性的世界里，每一部电影都是一扇通往不同人生的窗户。通过深入的分析和思考，我们能够发现隐藏在镜头背后的深层含义，感受导演想要传达的情感和思想。",
+    "customVoice.recordingInProgress": "录制中...",
+    "customVoice.recordingComplete": "录制完成",
+
+    // Script Review
+    "scriptReview.title": "脚本预览",
+    "scriptReview.subtitle": "AI生成的分析脚本",
+    "scriptReview.generating": "正在生成分析脚本...",
+    "scriptReview.analyzing": "分析电影内容...",
+    "scriptReview.framework": "生成分析框架...",
+    "scriptReview.writing": "撰写详细内容...",
+    "scriptReview.optimizing": "优化语言表达...",
+    "scriptReview.finalCheck": "最终检查...",
+    "scriptReview.complete": "完成！",
+    "scriptReview.videoPreview": "视频预览",
+    "scriptReview.totalDuration": "总时长",
+    "scriptReview.wordCount": "字数",
+    "scriptReview.movie": "电影",
+    "scriptReview.regenerate": "重新生成",
+    "scriptReview.generateVideo": "生成视频",
+    "scriptReview.regenerating": "正在重新生成脚本...",
+    "scriptReview.aiNote": "每次AI生成的脚本都不相同，为您带来独特的分析视角",
+    "scriptReview.loadingContent": "正在加载脚本内容...",
+
+    // Video Generation
+    "videoGeneration.title": "视频生成中心",
+    "videoGeneration.createNew": "创建新的分析视频",
+    "videoGeneration.dailyLimitReached": "今日生成次数已用完",
+    "videoGeneration.upgradeForUnlimited": "升级VIP享受无限制生成",
+    "videoGeneration.myVideos": "我的视频",
+    "videoGeneration.noVideos": "还没有生成任何视频",
+    "videoGeneration.createFirst": "开始创建您的第一个视频",
+    "videoGeneration.completed": "已完成",
+    "videoGeneration.queued": "排队中",
+    "videoGeneration.play": "播放",
+    "videoGeneration.download": "下载",
+    "videoGeneration.freeUser": "免费用户",
+    "videoGeneration.vipUser": "VIP用户",
+    "videoGeneration.profileCenter": "个人中心",
+    "videoGeneration.upgradeVip": "升级VIP",
+
+    // Job Pending
+    "jobPending.title": "任务处理中",
+    "jobPending.pendingJobs": "待处理任务",
+    "jobPending.waitingTime": "等待时间",
+    "jobPending.estimatedTime": "预计完成时间",
+    "jobPending.myVideos": "我的视频",
+    "jobPending.showAllVideos": "显示所有视频",
+    "jobPending.hideVideos": "收起视频",
+    "jobPending.processing": "处理中",
+    "jobPending.inQueue": "排队中",
+    "jobPending.completed": "已完成",
+
+    // VIP
+    "vip.title": "VIP会员",
+    "vip.upgradeTitle": "升级VIP会员",
+    "vip.subtitle": "解锁全部功能，享受无限制的AI电影分析视频生成",
+    "vip.monthlyBilling": "按月付费",
+    "vip.yearlyBilling": "按年付费",
+    "vip.save": "省",
+    "vip.free": "免费版",
+    "vip.monthly": "月度VIP",
+    "vip.yearly": "年度VIP",
+    "vip.mostPopular": "最受欢迎",
+    "vip.currentPlan": "当前方案",
+    "vip.subscribe": "立即订阅",
+    "vip.featureComparison": "详细功能对比",
+
+    // Profile
+    "profile.title": "个人中心",
+    "profile.personalInfo": "个人信息",
+    "profile.edit": "编辑",
+    "profile.cancel": "取消",
+    "profile.save": "保存",
+    "profile.username": "用户名",
+    "profile.password": "密码",
+    "profile.phone": "手机号",
+    "profile.joinDate": "加入时间",
+    "profile.totalGenerated": "累计生成",
+    "profile.videos": "个视频",
+    "profile.basics": "基本信息",
+    "profile.preferences": "偏好设置",
+    "profile.billing": "账单记录",
+    "profile.notifications": "通知设置",
+    "profile.changeAvatar": "更换头像",
+    "profile.uploadPhoto": "上传照片",
+
+    // Notifications
+    "notifications.title": "通知中心",
+    "notifications.videoNotifications": "视频通知",
+    "notifications.newsletter": "产品资讯",
+    "notifications.promotional": "推广内容",
+    "notifications.emailNotifications": "邮件通知",
+    "notifications.receiveVideoUpdates": "接收视频生成完成通知",
+    "notifications.receiveNewsletter": "接收产品更新和资讯",
+    "notifications.receivePromotional": "接收优惠活动和推广信息",
+
+    // Common
+    "common.loading": "加载中...",
+    "common.save": "保存",
+    "common.cancel": "取消",
+    "common.confirm": "确认",
+    "common.delete": "删除",
+    "common.edit": "编辑",
+    "common.back": "返回",
+    "common.next": "下一步",
+    "common.previous": "上一步",
+    "common.close": "关闭",
+    "common.submit": "提交",
+  },
+  en: {
+    // Navigation
+    "nav.home": "Home",
+    "nav.movieSelection": "Select Movie",
+    "nav.myVideos": "My Videos",
+    "nav.profile": "Profile",
+    "nav.vip": "VIP",
+    "nav.upgrade": "Upgrade",
+    "nav.darkMode": "Dark Mode",
+    "nav.lightMode": "Light Mode",
+    "nav.usageStats": "Usage Stats",
+    "nav.dailyRemaining": "Daily Remaining",
+    "nav.totalGenerated": "Total Generated",
+    "nav.memberStatus": "Member Status",
+    "nav.freeUser": "Free User",
+    "nav.upgradeVip": "Upgrade VIP",
+    "nav.unlimitedGeneration": "Unlimited Generation",
+    "nav.hdQuality": "HD Quality",
+    "nav.upgradeNow": "Upgrade Now",
+    "nav.login": "Login",
+    "nav.logout": "Logout",
+
+    // Auth
+    "auth.welcome": "Welcome to Movie Philosopher",
+    "auth.subtitle": "Login to generate your personalized movie analysis videos",
+    "auth.phoneLogin": "Phone Login",
+    "auth.phoneNumber": "Phone Number",
+    "auth.phonePlaceholder": "Enter your phone number",
+    "auth.sendCode": "Send Code",
+    "auth.resendCode": "Resend Code",
+    "auth.verificationCode": "Verification Code",
+    "auth.codePlaceholder": "Enter 6-digit code",
+    "auth.login": "Login",
+    "auth.loggingIn": "Logging in...",
+    "auth.skipLogin": "Skip login and continue",
+    "auth.termsAgreement": "By logging in, you agree to our",
+    "auth.termsOfService": "Terms of Service",
+    "auth.and": "and",
+    "auth.privacyPolicy": "Privacy Policy",
+    "auth.sendingCode": "Sending...",
+    "auth.codeSent": "Code sent",
+    "auth.invalidPhone": "Please enter a valid phone number",
+    "auth.invalidCode": "Please enter a valid verification code",
+    "auth.loginFailed": "Login failed, please try again",
+
+    // Payment
+    "payment.title": "Select Payment Method",
+    "payment.selectPlan": "Select Plan",
+    "payment.monthlyVip": "Monthly VIP",
+    "payment.yearlyVip": "Yearly VIP",
+    "payment.originalPrice": "Original Price",
+    "payment.currentPrice": "Current Price",
+    "payment.save": "Save",
+    "payment.paymentMethod": "Payment Method",
+    "payment.alipay": "Alipay",
+    "payment.wechatPay": "WeChat Pay",
+    "payment.orderSummary": "Order Summary",
+    "payment.plan": "Plan",
+    "payment.duration": "Duration",
+    "payment.month": "month",
+    "payment.year": "year",
+    "payment.total": "Total",
+    "payment.payNow": "Pay Now",
+    "payment.processing": "Processing...",
+    "payment.success": "Payment Successful",
+    "payment.failed": "Payment Failed",
+    "payment.loginRequired": "Please login first",
+    "payment.securePayment": "Secure Payment",
+    "payment.encryptedTransaction": "Transaction encrypted",
+
+    // Movie Selection
+    "movieSelection.title": "Select a Movie to Analyze",
+    "movieSelection.subtitle": "Choose from popular movies or search for your favorite films",
+    "movieSelection.searchPlaceholder": "Search movies (English or Chinese)...",
+    "movieSelection.noResults": "No movies found",
+    "movieSelection.recentSearches": "Recent Searches",
+    "movieSelection.recommendedKeywords": "Recommended",
+
+    // Analysis Options
+    "analysisOptions.title": "Analysis Options",
+    "analysisOptions.subtitle": "Please select your analysis preferences",
+    "analysisOptions.character": "Analysis Character",
+    "analysisOptions.tone": "Narrative Tone",
+    "analysisOptions.style": "Analysis Style",
+    "analysisOptions.length": "Video Length",
+    "analysisOptions.required": "Required",
+    "analysisOptions.philosopher": "Philosopher",
+    "analysisOptions.religious": "Religious Scholar",
+    "analysisOptions.teacher": "College Teacher",
+    "analysisOptions.critic": "Film Critic",
+    "analysisOptions.academic": "Academic",
+    "analysisOptions.casual": "Casual",
+    "analysisOptions.philosophical": "Philosophical",
+    "analysisOptions.emotional": "Emotional",
+    "analysisOptions.narrative": "Narrative",
+    "analysisOptions.thematic": "Thematic",
+    "analysisOptions.characterStyle": "Character-based",
+    "analysisOptions.technical": "Technical",
+    "analysisOptions.short": "Short (3-5 min)",
+    "analysisOptions.medium": "Standard (8-12 min)",
+    "analysisOptions.long": "Deep (15-20 min)",
+    "analysisOptions.luckyChoice": "I'm Feeling Lucky",
+    "analysisOptions.selectVoice": "Select Voice",
+
+    // Voice Selection
+    "voiceSelection.title": "Select Voice",
+    "voiceSelection.subtitle": "Choose your preferred voice style",
+    "voiceSelection.tryAudio": "Try Sample",
+    "voiceSelection.stopAudio": "Stop Sample",
+    "voiceSelection.select": "Select",
+    "voiceSelection.selected": "Selected",
+    "voiceSelection.customVoice": "Custom Voice",
+    "voiceSelection.generateScript": "Generate Script",
+
+    // Custom Voice
+    "customVoice.title": "Custom Voice",
+    "customVoice.subtitle": "Record Your Personal Voice",
+    "customVoice.vipRequired": "VIP Required",
+    "customVoice.upgradePrompt": "Upgrade to VIP to unlock custom voice feature",
+    "customVoice.recordingName": "Recording Name",
+    "customVoice.namePlaceholder": "Give your voice a name...",
+    "customVoice.startRecording": "Start Recording",
+    "customVoice.stopRecording": "Stop Recording",
+    "customVoice.playRecording": "Play Recording",
+    "customVoice.reRecord": "Re-record",
+    "customVoice.saveVoice": "Save Voice",
+    "customVoice.deleteVoice": "Delete Voice",
+    "customVoice.recordingTip": "Please read the following text, recommended recording duration: 30-60 seconds",
+    "customVoice.sampleText":
+      "In this world full of possibilities, every movie is a window to different lives. Through deep analysis and reflection, we can discover the hidden meanings behind the lens and feel the emotions and thoughts the director wants to convey.",
+    "customVoice.recordingInProgress": "Recording...",
+    "customVoice.recordingComplete": "Recording Complete",
+
+    // Script Review
+    "scriptReview.title": "Script Preview",
+    "scriptReview.subtitle": "AI-generated analysis script",
+    "scriptReview.generating": "Generating analysis script...",
+    "scriptReview.analyzing": "Analyzing movie content...",
+    "scriptReview.framework": "Creating analysis framework...",
+    "scriptReview.writing": "Writing detailed content...",
+    "scriptReview.optimizing": "Optimizing language expression...",
+    "scriptReview.finalCheck": "Final check...",
+    "scriptReview.complete": "Complete!",
+    "scriptReview.videoPreview": "Video Preview",
+    "scriptReview.totalDuration": "Total Duration",
+    "scriptReview.wordCount": "Word Count",
+    "scriptReview.movie": "Movie",
+    "scriptReview.regenerate": "Regenerate",
+    "scriptReview.generateVideo": "Generate Video",
+    "scriptReview.regenerating": "Regenerating script...",
+    "scriptReview.aiNote": "Each AI-generated script is unique, providing you with different analytical perspectives",
+    "scriptReview.loadingContent": "Loading script content...",
+
+    // Video Generation
+    "videoGeneration.title": "Video Generation Center",
+    "videoGeneration.createNew": "Create New Analysis Video",
+    "videoGeneration.dailyLimitReached": "Daily generation limit reached",
+    "videoGeneration.upgradeForUnlimited": "Upgrade to VIP for unlimited generation",
+    "videoGeneration.myVideos": "My Videos",
+    "videoGeneration.noVideos": "No videos generated yet",
+    "videoGeneration.createFirst": "Create your first video",
+    "videoGeneration.completed": "Completed",
+    "videoGeneration.queued": "Queued",
+    "videoGeneration.play": "Play",
+    "videoGeneration.download": "Download",
+    "videoGeneration.freeUser": "Free User",
+    "videoGeneration.vipUser": "VIP User",
+    "videoGeneration.profileCenter": "Profile Center",
+    "videoGeneration.upgradeVip": "Upgrade VIP",
+
+    // Job Pending
+    "jobPending.title": "Processing Jobs",
+    "jobPending.pendingJobs": "Pending Jobs",
+    "jobPending.waitingTime": "Waiting Time",
+    "jobPending.estimatedTime": "Estimated Completion",
+    "jobPending.myVideos": "My Videos",
+    "jobPending.showAllVideos": "Show All Videos",
+    "jobPending.hideVideos": "Hide Videos",
+    "jobPending.processing": "Processing",
+    "jobPending.inQueue": "In Queue",
+    "jobPending.completed": "Completed",
+
+    // VIP
+    "vip.title": "VIP Membership",
+    "vip.upgradeTitle": "Upgrade to VIP",
+    "vip.subtitle": "Unlock all features and enjoy unlimited AI movie analysis video generation",
+    "vip.monthlyBilling": "Monthly",
+    "vip.yearlyBilling": "Yearly",
+    "vip.save": "Save",
+    "vip.free": "Free",
+    "vip.monthly": "Monthly VIP",
+    "vip.yearly": "Yearly VIP",
+    "vip.mostPopular": "Most Popular",
+    "vip.currentPlan": "Current Plan",
+    "vip.subscribe": "Subscribe Now",
+    "vip.featureComparison": "Feature Comparison",
+
+    // Profile
+    "profile.title": "Profile",
+    "profile.personalInfo": "Personal Information",
+    "profile.edit": "Edit",
+    "profile.cancel": "Cancel",
+    "profile.save": "Save",
+    "profile.username": "Username",
+    "profile.password": "Password",
+    "profile.phone": "Phone",
+    "profile.joinDate": "Join Date",
+    "profile.totalGenerated": "Total Generated",
+    "profile.videos": " videos",
+    "profile.basics": "Basics",
+    "profile.preferences": "Preferences",
+    "profile.billing": "Billing",
+    "profile.notifications": "Notifications",
+    "profile.changeAvatar": "Change Avatar",
+    "profile.uploadPhoto": "Upload Photo",
+
+    // Notifications
+    "notifications.title": "Notifications",
+    "notifications.videoNotifications": "Video Notifications",
+    "notifications.newsletter": "Newsletter",
+    "notifications.promotional": "Promotional",
+    "notifications.emailNotifications": "Email Notifications",
+    "notifications.receiveVideoUpdates": "Receive video completion notifications",
+    "notifications.receiveNewsletter": "Receive product updates and news",
+    "notifications.receivePromotional": "Receive promotional offers and updates",
+
+    // Common
+    "common.loading": "Loading...",
+    "common.save": "Save",
+    "common.cancel": "Cancel",
+    "common.confirm": "Confirm",
+    "common.delete": "Delete",
+    "common.edit": "Edit",
+    "common.back": "Back",
+    "common.next": "Next",
+    "common.previous": "Previous",
+    "common.close": "Close",
+    "common.submit": "Submit",
+  },
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState<Language>("zh")
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language") as Language
+    if (savedLanguage && (savedLanguage === "zh" || savedLanguage === "en")) {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem("language", language)
+  }, [language])
+
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === "zh" ? "en" : "zh"))
+  }
+
+  const t = (key: string): string => {
+    return translations[language][key] || key
+  }
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>{children}</LanguageContext.Provider>
+  )
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext)
+  if (context === undefined) {
+    throw new Error("useLanguage must be used within a LanguageProvider")
+  }
+  return context
+}
