@@ -17,12 +17,6 @@ export default function PaymentSuccessPage() {
   const { language, t } = useLanguage()
   const { user } = useAuth()
 
-  useEffect(() => {
-    // Redirect if not logged in or not VIP
-    if (!user || !user.isVip) {
-      router.push("/vip")
-    }
-  }, [user, router])
 
   const getThemeClasses = () => {
     if (theme === "light") {
