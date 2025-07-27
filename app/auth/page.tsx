@@ -96,12 +96,12 @@ export default function AuthPage() {
 
   const handleLogin = async () => {
     if (!validateEmail(email)) {
-      setError("Please enter a valid email address")
+      setError(t("auth.pleaseEnterValidEmail"))
       return
     }
 
     if (!validatePassword(password)) {
-      setError("Password must be at least 6 characters")
+      setError(t("auth.passwordMinLength"))
       return
     }
 
@@ -114,16 +114,16 @@ export default function AuthPage() {
       const success = await login(email, password)
 
       if (success) {
-        setSuccess("Login successful!")
+        setSuccess(t("auth.loginSuccess"))
         // Add a small delay to ensure state is updated
         setTimeout(() => {
           router.push(redirectPath)
         }, 100)
       } else {
-        setError("Login failed. Please check your credentials.")
+        setError(t("auth.loginFailed"))
       }
     } catch (error) {
-      setError("Network error. Please try again.")
+      setError(t("auth.networkError"))
     } finally {
       setIsLoading(false)
     }
@@ -131,17 +131,17 @@ export default function AuthPage() {
 
   const handleRegister = async () => {
     if (!name.trim()) {
-      setError("Please enter your name")
+      setError(t("auth.pleaseEnterName"))
       return
     }
 
     if (!validateEmail(email)) {
-      setError("Please enter a valid email address")
+      setError(t("auth.pleaseEnterValidEmail"))
       return
     }
 
     if (!validatePassword(password)) {
-      setError("Password must be at least 6 characters")
+      setError(t("auth.passwordMinLength"))
       return
     }
 
@@ -184,10 +184,10 @@ export default function AuthPage() {
         setSuccess("")
         setError("")
       } else {
-        setError(data.detail || "Registration failed")
+        setError(data.detail || t("auth.registrationFailed"))
       }
     } catch (error) {
-      setError("Network error. Please try again.")
+      setError(t("auth.networkError"))
     } finally {
       setIsLoading(false)
     }
@@ -195,12 +195,12 @@ export default function AuthPage() {
 
   const handleForgotPassword = async () => {
     if (!resetEmail.trim()) {
-      setError("Please enter your email address")
+      setError(t("auth.pleaseEnterEmail"))
       return
     }
 
     if (!validateEmail(resetEmail)) {
-      setError("Please enter a valid email address")
+      setError(t("auth.pleaseEnterValidEmail"))
       return
     }
 
@@ -232,7 +232,7 @@ export default function AuthPage() {
         setError(data.detail || t("auth.resetEmailFailed"))
       }
     } catch (error) {
-      setError("Network error. Please try again.")
+      setError(t("auth.networkError"))
     } finally {
       setIsLoading(false)
     }
@@ -281,28 +281,28 @@ export default function AuthPage() {
 
             {/* Welcome Message */}
             <div className="text-center mb-8">
-              <h2 className={`text-2xl font-bold ${getTextColorClass()} mb-2`}>Welcome to Movie Philosopher</h2>
-              <p className={getSecondaryTextColorClass()}>Sign in to your account or create a new one</p>
+              <h2 className={`text-2xl font-bold ${getTextColorClass()} mb-2`}>{t("auth.welcomeTitle")}</h2>
+              <p className={getSecondaryTextColorClass()}>{t("auth.welcomeSubtitle")}</p>
             </div>
 
             <Card className={getCardBackgroundClass()}>
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="login">Login</TabsTrigger>
-                    <TabsTrigger value="register">Register</TabsTrigger>
+                    <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
+                    <TabsTrigger value="register">{t("auth.register")}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="login" className="space-y-4">
                     {/* Email Input */}
                     <div className="space-y-2">
                       <Label htmlFor="email" className={getTextColorClass()}>
-                        Email
+                        {t("auth.email")}
                       </Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t("auth.enterEmail")}
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value)
@@ -317,13 +317,13 @@ export default function AuthPage() {
                     {/* Password Input */}
                     <div className="space-y-2">
                       <Label htmlFor="password" className={getTextColorClass()}>
-                        Password
+                        {t("auth.password")}
                       </Label>
                       <div className="relative">
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
+                          placeholder={t("auth.enterPassword")}
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value)
@@ -357,7 +357,7 @@ export default function AuthPage() {
                       size="lg"
                     >
                       <Mail className="w-4 h-4 mr-2" />
-                      {isLoading ? "Logging in..." : "Login"}
+                      {isLoading ? t("auth.loggingIn") : t("auth.login")}
                     </Button>
                   </TabsContent>
 
@@ -365,12 +365,12 @@ export default function AuthPage() {
                     {/* Name Input */}
                     <div className="space-y-2">
                       <Label htmlFor="name" className={getTextColorClass()}>
-                        Full Name
+                        {t("auth.fullName")}
                       </Label>
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Enter your full name"
+                        placeholder={t("auth.enterFullName")}
                         value={name}
                         onChange={(e) => {
                           setName(e.target.value)
@@ -385,12 +385,12 @@ export default function AuthPage() {
                     {/* Email Input */}
                     <div className="space-y-2">
                       <Label htmlFor="reg-email" className={getTextColorClass()}>
-                        Email
+                        {t("auth.email")}
                       </Label>
                       <Input
                         id="reg-email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t("auth.enterEmail")}
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value)
@@ -405,13 +405,13 @@ export default function AuthPage() {
                     {/* Password Input */}
                     <div className="space-y-2">
                       <Label htmlFor="reg-password" className={getTextColorClass()}>
-                        Password
+                        {t("auth.password")}
                       </Label>
                       <div className="relative">
                         <Input
                           id="reg-password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Create a password (min 6 characters)"
+                          placeholder={t("auth.createPassword")}
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value)
@@ -445,7 +445,7 @@ export default function AuthPage() {
                       size="lg"
                     >
                       <Mail className="w-4 h-4 mr-2" />
-                      {isLoading ? "Creating account..." : "Create Account"}
+                      {isLoading ? t("auth.creatingAccount") : t("auth.createAccount")}
                     </Button>
                   </TabsContent>
                 </Tabs>
@@ -464,7 +464,7 @@ export default function AuthPage() {
                       variant="ghost"
                       className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
                     >
-                      Continue as Guest
+                      {t("auth.continueAsGuest")}
                     </Button>
                     <Button
                       onClick={() => setShowForgotPassword(true)}
@@ -479,13 +479,13 @@ export default function AuthPage() {
                 {/* Terms */}
                 <div className="mt-6 text-center">
                   <p className="text-xs text-gray-400">
-                    By continuing, you agree to our{" "}
+                    {t("auth.termsText")}{" "}
                     <Link href="/terms" className="text-purple-400 hover:underline">
-                      Terms of Service
+                      {t("auth.termsOfService")}
                     </Link>
-                    {" "}and{" "}
+                    {" "}{t("auth.and")}{" "}
                     <Link href="/privacy" className="text-purple-400 hover:underline">
-                      Privacy Policy
+                      {t("auth.privacyPolicy")}
                     </Link>
                   </p>
                 </div>

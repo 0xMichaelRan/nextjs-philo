@@ -16,8 +16,12 @@ import { usePageTitle } from "@/hooks/use-page-title"
 interface Notification {
   id: number
   user_id: string
-  title: string
-  message: string
+  title: string // Backward compatibility
+  message: string // Backward compatibility
+  title_zh?: string
+  title_en?: string
+  message_zh?: string
+  message_en?: string
   type: string
   is_read: boolean
   created_at: string
@@ -189,7 +193,7 @@ export default function NotificationsPage() {
     }
   }
 
-  const unreadNews = mockNews.filter((n) => !n.read).length
+  // Product news don't have read/unread status
 
   return (
     <div className={themeClasses.background}>
@@ -274,7 +278,10 @@ export default function NotificationsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-2">
                               <h3 className={`${themeClasses.text} font-semibold`}>
-                                {notification.title}
+                                {language === "zh"
+                                  ? (notification.title_zh || notification.title)
+                                  : (notification.title_en || notification.title)
+                                }
                               </h3>
                               <div className="flex items-center space-x-2">
                                 {!notification.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
@@ -285,7 +292,10 @@ export default function NotificationsPage() {
                             </div>
 
                             <p className={`${themeClasses.secondaryText} leading-relaxed`}>
-                              {notification.message}
+                              {language === "zh"
+                                ? (notification.message_zh || notification.message)
+                                : (notification.message_en || notification.message)
+                              }
                             </p>
                           </div>
                         </div>
