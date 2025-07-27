@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -25,6 +25,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const { language, setLanguage, t } = useLanguage()
   const { user, logout } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
 
   // Ensure cards are visible on page load
   useEffect(() => {
@@ -317,6 +318,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                   onClick={() => {
                     logout()
                     setIsNavOpen(false)
+                    router.push("/")
                   }}
                   className={`w-full justify-start h-10 ${
                     theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10"

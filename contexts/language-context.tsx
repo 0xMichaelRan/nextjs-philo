@@ -33,7 +33,7 @@ const translations = {
     "nav.hdQuality": "高清画质",
     "nav.upgradeNow": "立即升级",
     "nav.login": "登录",
-    "nav.logout": "退出登录",
+    "nav.logout": "登出",
 
     // Auth
     "auth.welcome": "欢迎使用电影哲学家",
