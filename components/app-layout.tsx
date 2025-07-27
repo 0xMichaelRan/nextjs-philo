@@ -68,7 +68,6 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const navItems = [
     { href: "/movie-selection", icon: Search, label: t("nav.movieSelection") },
     { href: "/video-generation", icon: Film, label: t("nav.myVideos") },
-    { href: "/profile", icon: User, label: t("nav.profile") },
   ]
 
   const toggleLanguage = () => {

@@ -3,5 +3,5 @@
 This is frontend repo, run with:
 
 ```
-npm run dev
+cd /Users/mac/git/nextjs-philo && npm run dev
 ```
