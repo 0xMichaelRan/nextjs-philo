@@ -167,6 +167,13 @@ export default function ProfilePage() {
     }
   }
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' && !isLoading) {
+      event.preventDefault()
+      handleSaveProfile()
+    }
+  }
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file || !user) return
@@ -174,52 +181,65 @@ export default function ProfilePage() {
     try {
       setIsLoading(true)
 
-      // For now, we'll simulate avatar upload by storing it locally
-      // In a real implementation, you would upload to a file storage service
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        try {
-          const avatarData = e.target?.result as string
-
-          // Update local user state immediately for better UX
-          updateUser({
-            avatar: avatarData,
-          })
-
-          // Show success toast
-          toast({
-            title: language === "zh" ? "头像更新成功" : "Avatar Updated",
-            description: language === "zh"
-              ? "您的头像已成功更新"
-              : "Your avatar has been updated successfully",
-            variant: "default",
-          })
-
-          // Note: In a real implementation, you would also call the backend API
-          // to save the avatar URL after uploading to a storage service
-        } catch (error) {
-          console.error("Error updating avatar:", error)
-          toast({
-            title: language === "zh" ? "头像更新失败" : "Avatar Update Failed",
-            description: language === "zh"
-              ? "更新头像时出错"
-              : "Error updating avatar",
-            variant: "destructive",
-          })
-        } finally {
-          setIsLoading(false)
-        }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: language === "zh" ? "文件类型错误" : "Invalid File Type",
+          description: language === "zh" ? "请选择图片文件" : "Please select an image file",
+          variant: "destructive",
+        })
+        return
       }
-      reader.readAsDataURL(file)
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: language === "zh" ? "文件过大" : "File Too Large",
+          description: language === "zh" ? "文件大小不能超过5MB" : "File size must be less than 5MB",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('avatar_file', file)
+
+      // Call backend API to upload avatar
+      const response = await fetch(apiConfig.auth.uploadAvatar(), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: formData,
+      })
+
+      if (response.ok) {
+        // Refresh user profile to get latest data with new avatar
+        await fetchUserProfile()
+
+        // Show success toast
+        toast({
+          title: language === "zh" ? "头像更新成功" : "Avatar Updated",
+          description: language === "zh"
+            ? "您的头像已成功更新"
+            : "Your avatar has been updated successfully",
+          variant: "default",
+        })
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || "Avatar update failed")
+      }
     } catch (error) {
-      console.error("Error processing avatar file:", error)
+      console.error("Error updating avatar:", error)
       toast({
-        title: language === "zh" ? "文件处理失败" : "File Processing Failed",
-        description: language === "zh"
-          ? "处理头像文件时出错"
-          : "Error processing avatar file",
+        title: language === "zh" ? "头像更新失败" : "Avatar Update Failed",
+        description: error instanceof Error
+          ? error.message
+          : (language === "zh" ? "更新头像时出错" : "Error updating avatar"),
         variant: "destructive",
       })
+    } finally {
       setIsLoading(false)
     }
   }
@@ -373,6 +393,7 @@ export default function ProfilePage() {
                             id="name"
                             value={editForm.name}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                            onKeyDown={handleKeyDown}
                             className={getThemeClass(
                               "bg-gray-100 border-gray-300 text-gray-900",
                               "bg-white/5 border-white/20 text-white",
@@ -389,6 +410,7 @@ export default function ProfilePage() {
                             placeholder="输入新密码（可选）"
                             value={editForm.password}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, password: e.target.value }))}
+                            onKeyDown={handleKeyDown}
                             className={getThemeClass(
                               "bg-gray-100 border-gray-300 text-gray-900",
                               "bg-white/5 border-white/20 text-white",

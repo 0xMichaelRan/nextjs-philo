@@ -29,6 +29,7 @@ class ApiConfig {
     logout: () => `${this.baseUrl}/auth/logout`,
     user: () => `${this.baseUrl}/auth/user`,
     updateUser: () => `${this.baseUrl}/auth/user`,
+    uploadAvatar: () => `${this.baseUrl}/auth/avatar`,
     paymentHistory: () => `${this.baseUrl}/auth/payment-history`,
   }
 
