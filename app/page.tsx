@@ -189,7 +189,7 @@ export default function HomePage() {
                           size="lg"
                           className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-12 py-4 text-xl font-semibold rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
                         >
-                          {language === "zh" ? "选择电影开始创作" : "Select Movie to Start"}
+                          {language === "zh" ? "选个电影" : "Pick a Movie"}
                         </Button>
                       </Link>
                     </div>

@@ -160,7 +160,6 @@ export default function ScriptReviewPage() {
         backgroundAttachment: "fixed",
       }}
     >
-      <div className="absolute inset-0 bg-black/60" />
       <AppLayout title={t("scriptReview.title")}>
         <div className="container mx-auto px-6 py-8 pb-24 relative z-10">
           {/* Movie Info */}
