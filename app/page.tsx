@@ -148,7 +148,7 @@ export default function HomePage() {
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col">
         {/* Header */}
-        <header className="p-6">
+        <header className="relative z-50 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Play className="w-8 h-8 text-orange-400" />
@@ -157,7 +157,7 @@ export default function HomePage() {
               </span>
             </div>
             <Link href="/auth">
-              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 relative z-10">
                 {language === "zh" ? "登录" : "Login"}
               </Button>
             </Link>

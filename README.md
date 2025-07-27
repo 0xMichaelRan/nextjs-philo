@@ -1,4 +1,4 @@
-# Movie Philosopher
+# Philosopher frontend
 
 This is frontend repo, run with:
 
