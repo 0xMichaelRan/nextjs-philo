@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { useLanguage } from "@/contexts/language-context"
 
 const analysisOptions = {
   character: [
@@ -35,6 +38,14 @@ const analysisOptions = {
     { id: "short", label: "简短版", duration: "3-5分钟" },
     { id: "medium", label: "标准版", duration: "8-12分钟" },
     { id: "long", label: "深度版", duration: "15-20分钟" },
+  ],
+  focus: [
+    { id: "plot", label: "情节结构" },
+    { id: "characters", label: "人物塑造" },
+    { id: "themes", label: "主题思想" },
+    { id: "cinematography", label: "摄影技法" },
+    { id: "symbolism", label: "象征意义" },
+    { id: "cultural", label: "文化背景" },
   ],
 }
 
@@ -75,6 +86,8 @@ export default function AnalysisOptionsPage() {
     tone: "",
     style: "",
     length: "",
+    focus: "",
+    customRequest: "",
   })
   const [selectedExplanations, setSelectedExplanations] = useState<{ [key: string]: string }>({})
 
@@ -141,7 +154,11 @@ export default function AnalysisOptionsPage() {
     }, 1000)
   }
 
-  const isAllSelected = Object.values(selectedOptions).every((option) => option !== "")
+  const isAllSelected = Object.values(selectedOptions).every((option, index) => {
+    // Custom request is optional, so exclude it from required validation
+    if (index === 5) return true // customRequest is at index 5
+    return option !== ""
+  })
 
   const handleNext = () => {
     const params = new URLSearchParams()
@@ -373,6 +390,68 @@ export default function AnalysisOptionsPage() {
                 </p>
               </div>
             )}
+
+            {/* Focus Area */}
+            <Card className={getCardClasses()}>
+              <CardHeader>
+                <CardTitle className={`${getTextClasses()} flex items-center`}>
+                  重点关注
+                  <Badge variant="secondary" className="ml-2">
+                    必选
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedOptions.focus} onValueChange={(value) => handleOptionChange("focus", value)}>
+                  <SelectTrigger
+                    className={`w-full ${theme === "light" ? "bg-white/80 border-gray-200/50" : "bg-white/10 border-white/20"}`}
+                  >
+                    <SelectValue placeholder="选择分析重点..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {analysisOptions.focus.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedOptions.focus && (
+                  <div className="mt-4 p-4 bg-purple-900/50 rounded-lg border border-purple-500/30">
+                    <p className={`${theme === "light" ? "text-gray-700" : "text-gray-300"} text-sm leading-relaxed`}>
+                      已选择重点关注：{analysisOptions.focus.find((f) => f.id === selectedOptions.focus)?.label}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Custom Request */}
+            <Card className={getCardClasses()}>
+              <CardHeader>
+                <CardTitle className={`${getTextClasses()} flex items-center`}>
+                  自定义要求
+                  <Badge variant="outline" className="ml-2">
+                    可选
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="请描述您希望在分析中特别关注的内容或角度..."
+                  value={selectedOptions.customRequest}
+                  onChange={(e) => handleOptionChange("customRequest", e.target.value)}
+                  className={`min-h-[100px] ${theme === "light" ? "bg-white/80 border-gray-200/50" : "bg-white/10 border-white/20"}`}
+                />
+                {selectedOptions.customRequest && (
+                  <div className="mt-4 p-4 bg-orange-900/50 rounded-lg border border-orange-500/30">
+                    <p className={`${theme === "light" ? "text-gray-700" : "text-gray-300"} text-sm leading-relaxed`}>
+                      您的自定义要求将被纳入分析考虑
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Bottom Buttons */}
