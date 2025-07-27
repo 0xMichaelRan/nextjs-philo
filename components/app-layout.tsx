@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Film, User, Play, Search, Menu, X, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,6 +23,12 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { user, logout } = useAuth()
+
+  // Ensure cards are visible on page load
+  useEffect(() => {
+    setHideUserStats(false)
+    setHideUpgradeCTA(false)
+  }, [])
 
   const getThemeClasses = () => {
     if (theme === "light") {
