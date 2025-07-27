@@ -73,6 +73,7 @@ class ApiConfig {
   // Payment endpoints
   public payments = {
     create: () => `${this.baseUrl}/payments/create`,
+    checkout: () => `${this.baseUrl}/payments/checkout`,
     verify: () => `${this.baseUrl}/payments/verify`,
     history: () => `${this.baseUrl}/payments/history`,
   }

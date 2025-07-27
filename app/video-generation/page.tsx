@@ -140,6 +140,7 @@ export default function VideoGenerationPage() {
             </div> 
             */}
 
+            {!userInfo.isVip && (
               <p className={`text-sm ${theme === "light" ? "text-gray-500" : "text-gray-400"} mt-2`}>
                 <Link
                   href="/vip"
@@ -148,6 +149,7 @@ export default function VideoGenerationPage() {
                   升级VIP享受无限制生成
                 </Link>
               </p>
+              )}
             </div>
           )}
 

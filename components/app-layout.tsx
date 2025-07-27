@@ -185,7 +185,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
             )}
 
             {/* Upgrade CTA */}
-            {!hideUpgradeCTA && (
+            {!user?.is_vip && !hideUpgradeCTA && (
               <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30 mt-4 relative">
                 <Button
                   variant="ghost"

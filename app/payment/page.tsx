@@ -2,18 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { ArrowLeft, Shield, Check, CreditCard } from "lucide-react"
+import { ArrowLeft, Shield, Check, CreditCard, User, Calendar, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { apiConfig } from "@/lib/api-config"
 
 const planPrices = {
   vip: {
@@ -82,6 +85,9 @@ export default function PaymentPage() {
   const [selectedPayment, setSelectedPayment] = useState("alipay")
   const [isProcessing, setIsProcessing] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
+  const [promoCode, setPromoCode] = useState("")
+  const [promoApplied, setPromoApplied] = useState(false)
+  const [showPromoInput, setShowPromoInput] = useState(false)
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -99,6 +105,12 @@ export default function PaymentPage() {
       setSelectedPlan(plan)
     }
   }, [searchParams, user, router])
+
+  // Reset promo code when plan or billing cycle changes
+  useEffect(() => {
+    setPromoApplied(false)
+    setPromoCode("")
+  }, [selectedPlan, billingCycle])
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -124,6 +136,58 @@ export default function PaymentPage() {
   const savings = currentPlanPricing.originalPrice - currentPlanPricing.price
   const yearlyDiscount = billingCycle === "yearly" ? 25 : 0
 
+  // Calculate VIP period
+  const getVipPeriod = () => {
+    const startDate = new Date()
+    const endDate = new Date()
+
+    if (billingCycle === "yearly") {
+      endDate.setFullYear(endDate.getFullYear() + 1)
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1)
+    }
+
+    return {
+      start: startDate.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US"),
+      end: endDate.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")
+    }
+  }
+
+  // Calculate final price with promo code
+  const getFinalPrice = () => {
+    if (promoApplied && promoCode.toUpperCase() === "KIMI" && selectedPlan === "vip" && billingCycle === "monthly") {
+      return 0
+    }
+    return currentPlanPricing.price
+  }
+
+  // Handle promo code application
+  const handlePromoCode = () => {
+    if (promoCode.toUpperCase() === "KIMI" && selectedPlan === "vip" && billingCycle === "monthly") {
+      setPromoApplied(true)
+    } else {
+      setPromoApplied(false)
+      // Show error message for invalid promo code
+    }
+  }
+
+  const vipPeriod = getVipPeriod()
+  const finalPrice = getFinalPrice()
+
+  // Get avatar gradient based on name
+  const getAvatarGradient = (name: string) => {
+    const gradients = [
+      "from-purple-500 to-pink-500",
+      "from-blue-500 to-cyan-500",
+      "from-green-500 to-teal-500",
+      "from-yellow-500 to-orange-500",
+      "from-red-500 to-pink-500",
+      "from-indigo-500 to-purple-500"
+    ]
+    const index = name.charCodeAt(0) % gradients.length
+    return gradients[index]
+  }
+
   const handlePayment = async () => {
     if (!user) {
       router.push("/auth?redirect=payment")
@@ -133,38 +197,71 @@ export default function PaymentPage() {
     setIsProcessing(true)
 
     try {
-      // Simulate payment processing
-      if (selectedPayment === "alipay") {
-        // Simulate Alipay payment
-        console.log("Processing Alipay payment...")
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Prepare payment data
+      const paymentData = {
+        plan: selectedPlan,
+        billing_cycle: billingCycle,
+        payment_method: selectedPayment,
+        amount: finalPrice,
+        promo_code: promoApplied ? promoCode : null
+      }
 
-        // Mock successful payment
-        const vipExpiry = new Date()
-        vipExpiry.setMonth(vipExpiry.getMonth() + (billingCycle === "yearly" ? 12 : 1))
+      // Call backend payment API
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.payments.create(),
+        {
+          method: 'POST',
+          body: JSON.stringify(paymentData)
+        }
+      )
 
-        updateUser({
-          isVip: true,
-          vipExpiry: vipExpiry.toISOString().split("T")[0],
-        })
+      if (response.ok) {
+        const result = await response.json()
 
-        router.push("/payment/success")
-      } else if (selectedPayment === "wechat") {
-        // Show WeChat QR code
-        setShowQRCode(true)
-
-        // Simulate QR code payment completion
-        setTimeout(() => {
+        if (finalPrice === 0) {
+          // Free payment with promo code - immediate success
           const vipExpiry = new Date()
           vipExpiry.setMonth(vipExpiry.getMonth() + (billingCycle === "yearly" ? 12 : 1))
 
           updateUser({
-            isVip: true,
+            is_vip: true,
             vipExpiry: vipExpiry.toISOString().split("T")[0],
           })
 
           router.push("/payment/success")
-        }, 5000)
+        } else {
+          // Regular payment processing
+          if (selectedPayment === "alipay") {
+            console.log("Processing Alipay payment...")
+            await new Promise((resolve) => setTimeout(resolve, 2000))
+
+            const vipExpiry = new Date()
+            vipExpiry.setMonth(vipExpiry.getMonth() + (billingCycle === "yearly" ? 12 : 1))
+
+            updateUser({
+              is_vip: true,
+              vipExpiry: vipExpiry.toISOString().split("T")[0],
+            })
+
+            router.push("/payment/success")
+          } else if (selectedPayment === "wechat") {
+            setShowQRCode(true)
+
+            setTimeout(() => {
+              const vipExpiry = new Date()
+              vipExpiry.setMonth(vipExpiry.getMonth() + (billingCycle === "yearly" ? 12 : 1))
+
+              updateUser({
+                is_vip: true,
+                vipExpiry: vipExpiry.toISOString().split("T")[0],
+              })
+
+              router.push("/payment/success")
+            }, 5000)
+          }
+        }
+      } else {
+        throw new Error("Payment initiation failed")
       }
     } catch (error) {
       console.error("Payment error:", error)
@@ -245,6 +342,33 @@ export default function PaymentPage() {
                 {t("common.back")}
               </Button>
             </div>
+
+            {/* Profile Section */}
+            <Card className={`${themeClasses.card} mb-6`}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                    <AvatarFallback className={`bg-gradient-to-br ${getAvatarGradient(user.name)} text-white text-lg`}>
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className={`${themeClasses.text} text-xl font-semibold`}>{user.name}</h3>
+                    <p className={`${themeClasses.secondaryText} text-sm`}>{user.email}</p>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Calendar className="w-4 h-4 text-green-500" />
+                      <span className={`${themeClasses.text} text-sm`}>
+                        {language === "zh" ? "VIP期限: " : "VIP Period: "}
+                        <span className="font-medium text-green-500">
+                          {vipPeriod.start} - {vipPeriod.end}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Plan Selection */}
@@ -383,6 +507,49 @@ export default function PaymentPage() {
                   </CardContent>
                 </Card>
 
+                {/* Promo Code Section */}
+                <Card className={`${themeClasses.card} mb-6`}>
+                  <CardHeader>
+                    <CardTitle className={`${themeClasses.text} text-lg flex items-center`}>
+                      <Tag className="w-5 h-5 mr-2" />
+                      {language === "zh" ? "优惠码" : "Promo Code"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!showPromoInput ? (
+                      <Button
+                        onClick={() => setShowPromoInput(true)}
+                        variant="outline"
+                        className={`${themeClasses.text} border-dashed`}
+                      >
+                        {language === "zh" ? "点击输入优惠码" : "Click to enter promo code"}
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex space-x-2">
+                          <Input
+                            placeholder={language === "zh" ? "输入优惠码" : "Enter promo code"}
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                            className={themeClasses.text}
+                          />
+                          <Button onClick={handlePromoCode} variant="outline">
+                            {language === "zh" ? "应用" : "Apply"}
+                          </Button>
+                        </div>
+                        {promoApplied && (
+                          <div className="flex items-center space-x-2 text-green-500">
+                            <Check className="w-4 h-4" />
+                            <span className="text-sm">
+                              {language === "zh" ? "优惠码已应用！免费获得VIP会员" : "Promo code applied! Free VIP membership"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Order Summary */}
                 <Card className={`${themeClasses.card} mb-6`}>
                   <CardHeader>
@@ -421,10 +588,25 @@ export default function PaymentPage() {
                         <span>-¥{savings}</span>
                       </div>
                     )}
+                    {promoApplied && (
+                      <div className="flex justify-between text-green-500">
+                        <span>
+                          {language === "zh" ? "优惠码折扣" : "Promo Code Discount"} (KIMI):
+                        </span>
+                        <span>-¥{currentPlanPricing.price}</span>
+                      </div>
+                    )}
                     <Separator />
                     <div className="flex justify-between">
                       <span className={`${themeClasses.text} font-semibold text-lg`}>{t("payment.total")}:</span>
-                      <span className={`${themeClasses.text} font-bold text-xl`}>¥{currentPlanPricing.price}</span>
+                      <span className={`${themeClasses.text} font-bold text-xl ${finalPrice === 0 ? 'text-green-500' : ''}`}>
+                        ¥{finalPrice}
+                        {finalPrice === 0 && (
+                          <span className="ml-2 text-sm font-normal">
+                            ({language === "zh" ? "免费" : "FREE"})
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -445,7 +627,12 @@ export default function PaymentPage() {
                   size="lg"
                 >
                   <CreditCard className="w-5 h-5 mr-2" />
-                  {isProcessing ? t("payment.processing") : `${t("payment.payNow")} ¥${currentPlanPricing.price}`}
+                  {isProcessing
+                    ? t("payment.processing")
+                    : finalPrice === 0
+                      ? (language === "zh" ? "免费获取VIP" : "Get VIP for Free")
+                      : `${t("payment.payNow")} ¥${finalPrice}`
+                  }
                 </Button>
               </div>
             </div>
