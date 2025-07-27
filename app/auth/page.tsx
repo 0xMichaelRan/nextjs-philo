@@ -13,6 +13,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AuthPage() {
   const searchParams = useSearchParams()
@@ -29,11 +30,19 @@ export default function AuthPage() {
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
-  const { login, register, user } = useAuth()
+  const { login, user } = useAuth()
+  const { toast } = useToast()
 
-  // Set redirect path based on URL params or referrer
+  // Set redirect path and active tab based on URL params or referrer
   useEffect(() => {
     const redirect = searchParams.get("redirect")
+    const tab = searchParams.get("tab")
+
+    // Set active tab based on URL parameter
+    if (tab === "register" || tab === "login") {
+      setActiveTab(tab)
+    }
+
     if (redirect) {
       setRedirectPath(`/${redirect}`)
     } else {
@@ -149,11 +158,23 @@ export default function AuthPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setSuccess("Registration successful! Please login with your credentials.")
+        // Show toast notification
+        toast({
+          title: t("auth.registerSuccess"),
+          description: "",
+          variant: "success",
+        })
+
+        // Switch to login tab
         setActiveTab("login")
+
         // Clear form
         setName("")
         setPassword("")
+
+        // Clear any existing messages
+        setSuccess("")
+        setError("")
       } else {
         setError(data.detail || "Registration failed")
       }
