@@ -316,57 +316,69 @@ export default function NotificationsPage() {
                 {mockNews.map((news) => (
                   <Card
                     key={news.id}
-                    className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer border-l-4 border-l-purple-500 bg-gradient-to-r ${
+                    className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] border-l-4 border-l-purple-500 bg-gradient-to-r ${
                       theme === "light"
                         ? "from-purple-50 to-white hover:from-purple-100"
                         : "from-purple-900/20 to-transparent hover:from-purple-800/30"
                     }`}
-                    onClick={() => window.open(news.externalLink, '_blank')}
+                    onClick={(e) => {
+                      // Only show animation, don't open link
+                      e.preventDefault()
+                      const readMoreBtn = e.currentTarget.querySelector('[data-read-more]') as HTMLElement
+                      const target = e.target as HTMLElement
+                      if (readMoreBtn && !target?.closest('[data-read-more]')) {
+                        // Add pulse animation to read more button
+                        readMoreBtn.classList.add('animate-pulse')
+                        setTimeout(() => {
+                          readMoreBtn.classList.remove('animate-pulse')
+                        }, 1000)
+                      }
+                    }}
                   >
                     <CardContent className="p-6">
                       <div className="space-y-4">
-                        {/* Header with category and date */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              theme === "light"
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-purple-800/50 text-purple-300"
-                            }`}>
-                              {language === "zh" ? news.category : news.categoryEn}
-                            </div>
-                            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                            <span className={`${themeClasses.secondaryText} text-sm`}>
-                              {news.timestamp}
-                            </span>
-                          </div>
-                          <div className={`p-2 rounded-full ${
-                            theme === "light" ? "bg-purple-100" : "bg-purple-800/30"
-                          }`}>
-                            <Newspaper className="w-5 h-5 text-purple-500" />
-                          </div>
-                        </div>
-
                         {/* Title */}
                         <h3 className={`${themeClasses.text} text-xl font-bold leading-tight`}>
                           {language === "zh" ? news.title : news.titleEn}
                         </h3>
+
+                        {/* Date below title */}
+                        <div className="flex items-center space-x-2">
+                          <span className={`${themeClasses.secondaryText} text-sm`}>
+                            {news.timestamp}
+                          </span>
+                        </div>
 
                         {/* Content */}
                         <p className={`${themeClasses.secondaryText} leading-relaxed text-sm`}>
                           {language === "zh" ? news.message : news.messageEn}
                         </p>
 
-                        {/* Read more link */}
+                        {/* Category and Read more link */}
                         <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center space-x-2 text-purple-500 hover:text-purple-600 transition-colors">
+                          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            theme === "light"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-purple-800/50 text-purple-300"
+                          }`}>
+                            {language === "zh" ? news.category : news.categoryEn}
+                          </div>
+
+                          <button
+                            data-read-more
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.open(news.externalLink, '_blank')
+                            }}
+                            className="flex items-center space-x-2 text-purple-500 hover:text-purple-600 transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20 px-3 py-2 rounded-lg"
+                          >
                             <span className="text-sm font-medium">
                               {language === "zh" ? "阅读全文" : "Read More"}
                             </span>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
-                          </div>
+                          </button>
                         </div>
                       </div>
                     </CardContent>
