@@ -1,0 +1,78 @@
+# Augment Guidelines - Frontend (Next.js)
+
+## Project Overview
+This is the frontend of an AI-powered movie analysis video generation platform built with Next.js, TypeScript, and Tailwind CSS.
+
+## Development Setup
+```bash
+cd nextjs-philo && npm run dev
+```
+Frontend runs on port 3000 with hot reload enabled.
+
+## Architecture & Patterns
+
+### Tech Stack
+- **Framework**: Next.js 14+ with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **State Management**: React Context API
+
+### Key Contexts
+- `LanguageContext` - Bilingual support (zh/en) with translations
+- `ThemeContext` - Light/dark mode switching  
+- `AuthContext` - User authentication and VIP status
+
+### File Structure
+```
+app/
+├── (pages)/           # App router pages
+├── components/        # Reusable components
+├── contexts/          # React contexts
+├── lib/              # Utilities
+└── globals.css       # Global styles
+```
+
+### Component Patterns
+1. **Theme-aware components**: Use `useTheme()` hook and conditional classes
+2. **Bilingual support**: Use `useLanguage()` hook and `t()` function
+3. **shadcn/ui**: Prefer shadcn components over custom UI elements
+4. **Responsive design**: Mobile-first approach with Tailwind
+
+### Key Features to Maintain
+- **Multi-language**: All text must support Chinese and English
+- **Theme switching**: Components must work in light/dark modes
+- **VIP features**: Proper VIP/SVIP gating for premium features
+- **Audio handling**: Voice selection and custom voice recording
+- **Real-time updates**: Job status and video generation progress
+
+### Development Guidelines
+1. Always test both language modes (zh/en)
+2. Verify theme switching works correctly
+3. Ensure VIP features are properly gated
+4. Use TypeScript strictly - no `any` types
+5. Follow existing naming conventions for translations keys
+6. Test responsive design on mobile devices
+
+### API Integration
+- Backend API runs on `localhost:8000`
+- Use proper error handling for API calls
+- Implement loading states for async operations
+- Handle authentication tokens properly
+
+### Common Patterns
+```typescript
+// Theme usage
+const { theme } = useTheme()
+const themeClasses = theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'
+
+// Language usage  
+const { language, t } = useLanguage()
+const text = language === 'zh' ? '中文文本' : 'English text'
+// Or use translation keys
+const text = t('nav.home')
+
+// VIP checking
+const { user } = useAuth()
+const isVip = user?.isVip
+```

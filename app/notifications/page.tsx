@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell, Video, CreditCard, Newspaper } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,40 +8,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
 
-const mockNotifications = [
-  {
-    id: 1,
-    type: "video_completed",
-    title: "视频生成完成",
-    titleEn: "Video Generation Completed",
-    message: "您的电影《肖申克的救赎》分析视频已生成完成",
-    messageEn: "Your analysis video for 'The Shawshank Redemption' has been completed",
-    timestamp: "2024-01-21 15:30",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "payment_success",
-    title: "支付成功",
-    titleEn: "Payment Successful",
-    message: "您的VIP年度会员支付已成功，会员权益已激活",
-    messageEn: "Your VIP annual membership payment was successful",
-    timestamp: "2024-01-20 14:20",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "video_processing",
-    title: "视频处理中",
-    titleEn: "Video Processing",
-    message: "您的电影《霸王别姬》分析视频正在处理中",
-    messageEn: "Your analysis video for 'Farewell My Concubine' is being processed",
-    timestamp: "2024-01-21 14:45",
-    read: true,
-  },
-]
+// Types for notifications from backend API
+interface Notification {
+  id: number
+  user_id: string
+  title: string
+  message: string
+  type: string
+  is_read: boolean
+  created_at: string
+}
 
+interface NotificationList {
+  notifications: Notification[]
+  unread_count: number
+}
+
+// Mock news data (keeping this as it's not part of the backend API yet)
 const mockNews = [
   {
     id: 1,
@@ -74,8 +59,80 @@ const mockNews = [
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState("notifications")
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { theme } = useTheme()
   const { language } = useLanguage()
+  const { user } = useAuth()
+
+  // Fetch notifications from backend API
+  const fetchNotifications = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const token = localStorage.getItem("access_token")
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/notifications`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data: NotificationList = await response.json()
+        setNotifications(data.notifications)
+        setUnreadCount(data.unread_count)
+      } else {
+        throw new Error('Failed to fetch notifications')
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error)
+      setError("Failed to load notifications")
+      // Set empty state on error
+      setNotifications([])
+      setUnreadCount(0)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Mark notification as read
+  const markAsRead = async (notificationId: number) => {
+    try {
+      const token = localStorage.getItem("access_token")
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev =>
+          prev.map(notification =>
+            notification.id === notificationId
+              ? { ...notification, is_read: true }
+              : notification
+          )
+        )
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error)
+    }
+  }
+
+  // Load notifications on component mount
+  useEffect(() => {
+    fetchNotifications()
+  }, [user])
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -104,13 +161,29 @@ export default function NotificationsPage() {
       case "video_processing":
         return <Video className="w-5 h-5 text-green-500" />
       case "payment_success":
+      case "success":
         return <CreditCard className="w-5 h-5 text-blue-500" />
       default:
         return <Bell className="w-5 h-5 text-gray-500" />
     }
   }
 
-  const unreadNotifications = mockNotifications.filter((n) => !n.read).length
+  // Format timestamp for display
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp)
+      return date.toLocaleString(language === "zh" ? "zh-CN" : "en-US", {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return timestamp
+    }
+  }
+
   const unreadNews = mockNews.filter((n) => !n.read).length
 
   return (
@@ -137,9 +210,9 @@ export default function NotificationsPage() {
             <TabsList className={`grid w-full grid-cols-2 mb-8 ${theme === "light" ? "bg-white/50" : "bg-white/10"}`}>
               <TabsTrigger value="notifications" className={`${themeClasses.text} relative`}>
                 {language === "zh" ? "系统通知" : "Notifications"}
-                {unreadNotifications > 0 && (
+                {unreadCount > 0 && (
                   <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center">
-                    {unreadNotifications}
+                    {unreadCount}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -156,42 +229,70 @@ export default function NotificationsPage() {
             {/* Notifications Tab */}
             <TabsContent value="notifications">
               <div className="space-y-4">
-                {mockNotifications.map((notification) => (
-                  <Card
-                    key={notification.id}
-                    className={`${themeClasses.card} ${
-                      !notification.read ? `ring-2 ring-gradient-to-r ${themeClasses.accent}` : ""
-                    } transition-all duration-200 hover:shadow-lg`}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <div className={`p-2 rounded-full ${theme === "light" ? "bg-gray-100" : "bg-white/10"}`}>
-                          {getIcon(notification.type)}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className={`${themeClasses.text} font-semibold`}>
-                              {language === "zh" ? notification.title : notification.titleEn}
-                            </h3>
-                            <div className="flex items-center space-x-2">
-                              {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
-                              <span className={`${themeClasses.secondaryText} text-sm whitespace-nowrap`}>
-                                {notification.timestamp}
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className={`${themeClasses.secondaryText} leading-relaxed`}>
-                            {language === "zh" ? notification.message : notification.messageEn}
-                          </p>
-                        </div>
-                      </div>
+                {isLoading ? (
+                  <Card className={`${themeClasses.card} text-center`}>
+                    <CardContent className="p-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                      <p className={`${themeClasses.secondaryText}`}>
+                        {language === "zh" ? "加载中..." : "Loading..."}
+                      </p>
                     </CardContent>
                   </Card>
-                ))}
+                ) : error ? (
+                  <Card className={`${themeClasses.card} text-center`}>
+                    <CardContent className="p-12">
+                      <Bell className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                      <h3 className={`${themeClasses.text} text-xl font-semibold mb-2`}>
+                        {language === "zh" ? "加载失败" : "Failed to load"}
+                      </h3>
+                      <p className={`${themeClasses.secondaryText} mb-4`}>
+                        {error}
+                      </p>
+                      <button
+                        onClick={fetchNotifications}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        {language === "zh" ? "重试" : "Retry"}
+                      </button>
+                    </CardContent>
+                  </Card>
+                ) : notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <Card
+                      key={notification.id}
+                      className={`${themeClasses.card} ${
+                        !notification.is_read ? `ring-2 ring-gradient-to-r ${themeClasses.accent}` : ""
+                      } transition-all duration-200 hover:shadow-lg cursor-pointer`}
+                      onClick={() => !notification.is_read && markAsRead(notification.id)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start space-x-4">
+                          <div className={`p-2 rounded-full ${theme === "light" ? "bg-gray-100" : "bg-white/10"}`}>
+                            {getIcon(notification.type)}
+                          </div>
 
-                {mockNotifications.length === 0 && (
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className={`${themeClasses.text} font-semibold`}>
+                                {notification.title}
+                              </h3>
+                              <div className="flex items-center space-x-2">
+                                {!notification.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                                <span className={`${themeClasses.secondaryText} text-sm whitespace-nowrap`}>
+                                  {formatTimestamp(notification.created_at)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <p className={`${themeClasses.secondaryText} leading-relaxed`}>
+                              {notification.message}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
                   <Card className={`${themeClasses.card} text-center`}>
                     <CardContent className="p-12">
                       <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
