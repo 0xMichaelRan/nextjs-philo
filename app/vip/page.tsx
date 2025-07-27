@@ -59,6 +59,7 @@ const plans = [
       "批量下载功能",
       "无广告体验",
       "自定义配音",
+      "API访问",
     ],
     featuresEn: [
       "Unlimited generation",
@@ -68,6 +69,7 @@ const plans = [
       "Batch download",
       "Ad-free experience",
       "Custom voice",
+      "API access",
     ],
   },
   {
@@ -86,7 +88,7 @@ const plans = [
       "24/7专属客服",
       "全部分析模板",
       "批量下载功能",
-      "API接口访问",
+      "API访问",
       "定制化服务",
     ],
     featuresEn: [

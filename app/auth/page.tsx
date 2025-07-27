@@ -14,6 +14,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
+import { apiConfig } from "@/lib/api-config"
 
 export default function AuthPage() {
   const searchParams = useSearchParams()
@@ -143,7 +144,7 @@ export default function AuthPage() {
 
     try {
       // Call your backend API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/register`, {
+      const response = await fetch(apiConfig.auth.register(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

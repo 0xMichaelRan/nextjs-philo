@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Video, CreditCard, Newspaper } from "lucide-react"
+import { Bell, Video, CreditCard, Newspaper, User } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { apiConfig } from "@/lib/api-config"
 
 // Types for notifications from backend API
 interface Notification {
@@ -34,7 +35,7 @@ const mockNews = [
     titleEn: "New SVIP Membership Tier",
     message: "我们推出了全新的SVIP会员等级，享受更多专属特权",
     messageEn: "We've launched a new SVIP membership tier with exclusive benefits",
-    timestamp: "2024-01-19 10:00",
+    timestamp: "2025-07-19 10:00",
     read: false,
   },
   {
@@ -43,7 +44,7 @@ const mockNews = [
     titleEn: "AI Analysis Engine Upgrade",
     message: "我们的AI分析引擎已升级，生成的视频质量更高",
     messageEn: "Our AI analysis engine has been upgraded for higher quality videos",
-    timestamp: "2024-01-18 16:30",
+    timestamp: "2025-06-18 16:30",
     read: true,
   },
   {
@@ -52,7 +53,7 @@ const mockNews = [
     titleEn: "Spring Festival Event Preview",
     message: "春节期间将有特别优惠活动，敬请期待",
     messageEn: "Special offers coming during Spring Festival, stay tuned",
-    timestamp: "2024-01-17 09:15",
+    timestamp: "2025-04-17 09:15",
     read: true,
   },
 ]
@@ -73,13 +74,9 @@ export default function NotificationsPage() {
       setIsLoading(true)
       setError(null)
 
-      const token = localStorage.getItem("access_token")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/notifications`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.notifications.list()
+      )
 
       if (response.ok) {
         const data: NotificationList = await response.json()
@@ -102,16 +99,12 @@ export default function NotificationsPage() {
   // Mark notification as read
   const markAsRead = async (notificationId: number) => {
     try {
-      const token = localStorage.getItem("access_token")
-      if (!token) return
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/notifications/${notificationId}/read`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.notifications.markRead(notificationId),
+        {
+          method: 'PATCH',
+        }
+      )
 
       if (response.ok) {
         // Update local state
@@ -163,6 +156,8 @@ export default function NotificationsPage() {
       case "payment_success":
       case "success":
         return <CreditCard className="w-5 h-5 text-blue-500" />
+      case "profile_update":
+        return <User className="w-5 h-5 text-purple-500" />
       default:
         return <Bell className="w-5 h-5 text-gray-500" />
     }

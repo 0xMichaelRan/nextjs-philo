@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { apiConfig } from "@/lib/api-config"
 
 interface User {
   id: number
@@ -40,12 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem("access_token")
       if (!token) return
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/user`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.auth.user()
+      )
 
       if (response.ok) {
         const userData = await response.json()
@@ -87,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`, {
+      const response = await fetch(apiConfig.auth.login(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

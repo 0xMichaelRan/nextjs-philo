@@ -19,6 +19,8 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useToast } from "@/hooks/use-toast"
+import { apiConfig } from "@/lib/api-config"
 
 const mockBillingHistory = [
   {
@@ -54,6 +56,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [showPaymentHistory, setShowPaymentHistory] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [editForm, setEditForm] = useState({
     name: "",
     password: "",
@@ -71,7 +74,8 @@ export default function ProfilePage() {
 
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, fetchUserProfile } = useAuth()
+  const { toast } = useToast()
 
   // Initialize form with user data
   useState(() => {
@@ -87,29 +91,136 @@ export default function ProfilePage() {
     return theme === "light" ? light : dark
   }
 
-  const handleSaveProfile = () => {
-    if (user) {
-      updateUser({
-        name: editForm.name,
-        // Don't update password in this demo
+  const handleSaveProfile = async () => {
+    if (!user) return
+
+    try {
+      setIsLoading(true)
+
+      // Prepare update data
+      const updateData: { name?: string; password?: string } = {}
+      if (editForm.name && editForm.name !== user.name) {
+        updateData.name = editForm.name
+      }
+      if (editForm.password && editForm.password.trim() !== "") {
+        updateData.password = editForm.password
+      }
+
+      // If no changes, just close editing mode
+      if (Object.keys(updateData).length === 0) {
+        setIsEditing(false)
+        toast({
+          title: language === "zh" ? "没有更改" : "No changes",
+          description: language === "zh" ? "没有检测到任何更改" : "No changes detected",
+          variant: "default",
+        })
+        return
+      }
+
+      // Call backend API to update profile
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.auth.updateUser(),
+        {
+          method: 'PATCH',
+          body: JSON.stringify(updateData),
+        }
+      )
+
+      if (response.ok) {
+        const updatedProfile = await response.json()
+
+        // Update local user state
+        updateUser({
+          name: updatedProfile.name,
+        })
+
+        // Refresh user profile to get latest data
+        await fetchUserProfile()
+
+        // Show success toast
+        toast({
+          title: language === "zh" ? "更新成功" : "Update Successful",
+          description: language === "zh"
+            ? "您的个人资料已成功更新"
+            : "Your profile has been updated successfully",
+          variant: "default",
+        })
+
+        // Clear password field and close editing mode
+        setEditForm(prev => ({ ...prev, password: "" }))
+        setIsEditing(false)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || "Update failed")
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      toast({
+        title: language === "zh" ? "更新失败" : "Update Failed",
+        description: error instanceof Error
+          ? error.message
+          : (language === "zh" ? "更新个人资料时出错" : "Error updating profile"),
+        variant: "destructive",
       })
-      setIsEditing(false)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      // Simulate avatar upload
+    if (!file || !user) return
+
+    try {
+      setIsLoading(true)
+
+      // For now, we'll simulate avatar upload by storing it locally
+      // In a real implementation, you would upload to a file storage service
       const reader = new FileReader()
-      reader.onload = (e) => {
-        if (user) {
+      reader.onload = async (e) => {
+        try {
+          const avatarData = e.target?.result as string
+
+          // Update local user state immediately for better UX
           updateUser({
-            avatar: e.target?.result as string,
+            avatar: avatarData,
           })
+
+          // Show success toast
+          toast({
+            title: language === "zh" ? "头像更新成功" : "Avatar Updated",
+            description: language === "zh"
+              ? "您的头像已成功更新"
+              : "Your avatar has been updated successfully",
+            variant: "default",
+          })
+
+          // Note: In a real implementation, you would also call the backend API
+          // to save the avatar URL after uploading to a storage service
+        } catch (error) {
+          console.error("Error updating avatar:", error)
+          toast({
+            title: language === "zh" ? "头像更新失败" : "Avatar Update Failed",
+            description: language === "zh"
+              ? "更新头像时出错"
+              : "Error updating avatar",
+            variant: "destructive",
+          })
+        } finally {
+          setIsLoading(false)
         }
       }
       reader.readAsDataURL(file)
+    } catch (error) {
+      console.error("Error processing avatar file:", error)
+      toast({
+        title: language === "zh" ? "文件处理失败" : "File Processing Failed",
+        description: language === "zh"
+          ? "处理头像文件时出错"
+          : "Error processing avatar file",
+        variant: "destructive",
+      })
+      setIsLoading(false)
     }
   }
 
@@ -285,10 +396,28 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="flex space-x-2">
-                          <Button onClick={handleSaveProfile} className="bg-green-600 hover:bg-green-700">
-                            {t("profile.save")}
+                          <Button
+                            onClick={handleSaveProfile}
+                            disabled={isLoading}
+                            className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                          >
+                            {isLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                {language === "zh" ? "保存中..." : "Saving..."}
+                              </>
+                            ) : (
+                              t("profile.save")
+                            )}
                           </Button>
-                          <Button onClick={() => setIsEditing(false)} variant="outline">
+                          <Button
+                            onClick={() => {
+                              setIsEditing(false)
+                              setEditForm(prev => ({ ...prev, password: "" }))
+                            }}
+                            variant="outline"
+                            disabled={isLoading}
+                          >
                             {t("profile.cancel")}
                           </Button>
                         </div>
