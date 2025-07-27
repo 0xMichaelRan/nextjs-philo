@@ -18,8 +18,8 @@ const plans = [
     nameEn: "Free",
     price: 0,
     originalPrice: 0,
-    period: "永久",
-    periodEn: "Forever",
+    period: "月",
+    periodEn: "month",
     popular: false,
     features: [
       "每日1次生成",
@@ -56,7 +56,6 @@ const plans = [
       "HD高清画质",
       "优先处理队列",
       "专属客服支持",
-      "高级分析模板",
       "批量下载功能",
       "无广告体验",
       "自定义配音",
@@ -66,7 +65,6 @@ const plans = [
       "HD quality",
       "Priority queue",
       "Dedicated support",
-      "Advanced templates",
       "Batch download",
       "Ad-free experience",
       "Custom voice",
@@ -210,13 +208,12 @@ export default function VipPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-center space-x-2">
                       <span className={`${getThemeClass("text-black", "text-white")} text-3xl font-bold`}>
-                        {plan.price === 0 ? (language === "zh" ? "免费" : "Free") : `¥${plan.price}`}
+                        {`¥${plan.price}`}
                       </span>
-                      {plan.price > 0 && (
                         <span className={getThemeClass("text-gray-500", "text-gray-400")}>
                           /{language === "zh" ? plan.period : plan.periodEn}
                         </span>
-                      )}
+                      
                     </div>
                     {plan.originalPrice > plan.price && plan.price > 0 && (
                       <div className="flex items-center justify-center space-x-2">
