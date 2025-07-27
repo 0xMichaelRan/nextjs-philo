@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/auth-context"
 export default function AuthPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [redirectPath, setRedirectPath] = useState("/video-generation")
+  const [redirectPath, setRedirectPath] = useState("/profile")
   const [activeTab, setActiveTab] = useState("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -30,6 +30,31 @@ export default function AuthPage() {
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { login, register, user } = useAuth()
+
+  // Set redirect path based on URL params or referrer
+  useEffect(() => {
+    const redirect = searchParams.get("redirect")
+    if (redirect) {
+      setRedirectPath(`/${redirect}`)
+    } else {
+      // Try to get the previous page from referrer
+      const referrer = document.referrer
+      if (referrer && referrer.includes(window.location.origin)) {
+        const referrerPath = new URL(referrer).pathname
+        // Don't redirect back to auth page
+        if (referrerPath !== "/auth") {
+          setRedirectPath(referrerPath)
+        }
+      }
+    }
+  }, [searchParams])
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push(redirectPath)
+    }
+  }, [user, router, redirectPath])
 
   useEffect(() => {
     // Redirect if already logged in
@@ -68,29 +93,17 @@ export default function AuthPage() {
     setSuccess("")
 
     try {
-      // Call your backend API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      })
+      // Use the auth context's login method
+      const success = await login(email, password)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store the token and user info
-        localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-
+      if (success) {
         setSuccess("Login successful!")
-        router.push(redirectPath)
+        // Add a small delay to ensure state is updated
+        setTimeout(() => {
+          router.push(redirectPath)
+        }, 100)
       } else {
-        setError(data.detail || "Login failed")
+        setError("Login failed. Please check your credentials.")
       }
     } catch (error) {
       setError("Network error. Please try again.")

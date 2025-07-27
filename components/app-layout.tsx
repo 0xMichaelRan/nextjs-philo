@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -23,6 +24,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { user, logout } = useAuth()
+  const pathname = usePathname()
 
   // Ensure cards are visible on page load
   useEffect(() => {
@@ -158,7 +160,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                   <div className="space-y-2 text-sm">
                     <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                       <span>{t("nav.dailyRemaining")}</span>
-                      <span className={getTextClasses()}>{user.isVip ? "∞" : "0/1"}</span>
+                      <span className={getTextClasses()}>{user.is_vip ? "∞" : "0/1"}</span>
                     </div>
                     <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                       <span>{t("nav.totalGenerated")}</span>
@@ -168,12 +170,12 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                       <span>{t("nav.memberStatus")}</span>
                       <Badge
                         className={`text-xs ${
-                          user.isVip
+                          user.is_vip
                             ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
                             : "bg-gray-500 text-white"
                         }`}
                       >
-                        {user.isVip ? "VIP" : t("nav.freeUser")}
+                        {user.is_vip ? "VIP" : t("nav.freeUser")}
                       </Badge>
                     </div>
                   </div>
@@ -182,7 +184,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
             )}
 
             {/* Upgrade CTA - Only show for non-VIP users and not hidden */}
-            {user && !user.isVip && !hideUpgradeCTA && (
+            {user && !user.is_vip && !hideUpgradeCTA && (
               <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30 mt-4 relative">
                 <Button
                   variant="ghost"
@@ -221,22 +223,34 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                 <Link href="/profile" onClick={() => setIsNavOpen(false)}>
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start h-12 ${
+                    className={`w-full justify-start h-16 ${
                       theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10"
                     }`}
                   >
-                    <User className="w-5 h-5 mr-3" />
+                    {/* Profile Photo */}
+                    <div className="w-10 h-10 mr-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-sm">{user.name.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-medium truncate">{user.name}</p>
-                      <p className={`text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{user.phone}</p>
+                      <p className={`text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} truncate`}>
+                        {user.email}
+                      </p>
                     </div>
-                    {user.isVip && <Badge className="bg-yellow-500 text-black text-xs">VIP</Badge>}
+                    {user.is_vip && <Badge className="bg-yellow-500 text-black text-xs">VIP</Badge>}
                   </Button>
                 </Link>
               </div>
             ) : (
               <div className="mb-4">
-                <Link href="/auth" onClick={() => setIsNavOpen(false)}>
+                <Link
+                  href={`/auth?redirect=${encodeURIComponent(pathname.slice(1) || 'profile')}`}
+                  onClick={() => setIsNavOpen(false)}
+                >
                   <Button
                     variant="ghost"
                     className={`w-full justify-start h-12 ${

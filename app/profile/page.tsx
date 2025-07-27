@@ -113,9 +113,9 @@ export default function ProfilePage() {
     }
   }
 
-  const nextPaymentDate = user?.isVip ? "2024-12-20" : null
-  const nextPaymentAmount = user?.isVip ? 261 : null
-  const paymentMethod = user?.isVip ? "支付宝" : null
+  const nextPaymentDate = user?.is_vip ? "2024-12-20" : null
+  const nextPaymentAmount = user?.is_vip ? 261 : null
+  const paymentMethod = user?.is_vip ? "支付宝" : null
 
   // Generate gradient colors for avatar placeholder
   const getAvatarGradient = (name: string) => {
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                           <h3 className={`${getThemeClass("text-gray-900", "text-white")} text-xl font-semibold`}>
                             {user.name}
                           </h3>
-                          {user.isVip && (
+                          {user.is_vip && (
                             <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500">
                               <Crown className="w-3 h-3 mr-1" />
                               VIP
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                           )}
                         </div>
                         <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
-                          {t("profile.joinDate")}: {user.createdAt.split("T")[0]}
+                          {t("profile.joinDate")}: {user.created_at.split("T")[0]}
                         </p>
                         <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
                           {t("profile.totalGenerated")}: 15{t("profile.videos")}
@@ -297,11 +297,11 @@ export default function ProfilePage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label className={getThemeClass("text-gray-600", "text-gray-400")}>
-                            {t("profile.phone")}
+                            Email
                           </Label>
-                          <p className={getThemeClass("text-gray-900", "text-white")}>{user.phone}</p>
+                          <p className={getThemeClass("text-gray-900", "text-white")}>{user.email}</p>
                           <p className={`${getThemeClass("text-gray-500", "text-gray-400")} text-xs mt-1`}>
-                            手机号不可修改
+                            Email address cannot be changed
                           </p>
                         </div>
                       </div>
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                 </Card>
 
                 {/* VIP Status */}
-                {!user.isVip && (
+                {!user.is_vip && (
                   <Card className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30">
                     <CardContent className="p-6 text-center">
                       <Crown className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
@@ -412,7 +412,7 @@ export default function ProfilePage() {
             <TabsContent value="billing">
               <div className="space-y-6">
                 {/* Current Subscription */}
-                {user.isVip && (
+                {user.is_vip && (
                   <Card
                     className={`${getThemeClass("bg-gray-50", "bg-white/10")} ${getThemeClass("border-gray-200", "border-white/20")}`}
                   >
@@ -427,7 +427,7 @@ export default function ProfilePage() {
                         <div>
                           <p className={`${getThemeClass("text-gray-900", "text-white")} font-semibold`}>VIP会员</p>
                           <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
-                            {language === "zh" ? "有效期至" : "Valid until"}: {user.vipExpiry}
+                            {language === "zh" ? "有效期至" : "Valid until"}: {user.subscription_status || "Active"}
                           </p>
                         </div>
                         <Badge className="bg-green-500 text-white">{language === "zh" ? "活跃" : "Active"}</Badge>
@@ -554,7 +554,7 @@ export default function ProfilePage() {
                 </Card>
 
                 {/* VIP Promotion */}
-                {!user.isVip && (
+                {!user.is_vip && (
                   <Card className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30">
                     <CardContent className="p-6 text-center">
                       <Crown className="w-12 h-12 text-yellow-500 mx-auto mb-4" />

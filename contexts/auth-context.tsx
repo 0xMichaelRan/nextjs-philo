@@ -1,25 +1,26 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 
 interface User {
-  id: string
-  phone: string
+  id: number
+  email: string
   name: string
-  isVip: boolean
-  vipExpiry?: string
+  is_vip: boolean
+  subscription_status?: string
+  preferences?: any
+  created_at: string
   avatar?: string
-  createdAt: string
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
-  login: (phone: string, code: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<boolean>
   logout: () => void
-  sendVerificationCode: (phone: string) => Promise<boolean>
   updateUser: (userData: Partial<User>) => void
+  fetchUserProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,62 +29,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const logout = useCallback(() => {
+    setUser(null)
+    localStorage.removeItem("user")
+    localStorage.removeItem("access_token")
+  }, [])
+
+  const fetchUserProfile = useCallback(async (): Promise<void> => {
+    try {
+      const token = localStorage.getItem("access_token")
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+        localStorage.setItem("user", JSON.stringify(userData))
+      } else {
+        // Token might be expired
+        logout()
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error)
+      throw error
+    }
+  }, [logout])
+
   useEffect(() => {
     // Check for existing session
     const savedUser = localStorage.getItem("user")
-    if (savedUser) {
+    const token = localStorage.getItem("access_token")
+
+    if (savedUser && token) {
       try {
         setUser(JSON.parse(savedUser))
+        // Optionally fetch fresh user data
+        fetchUserProfile()
       } catch (error) {
         console.error("Error parsing saved user:", error)
         localStorage.removeItem("user")
+        localStorage.removeItem("access_token")
       }
     }
     setIsLoading(false)
-  }, [])
+  }, [fetchUserProfile])
 
-  const sendVerificationCode = async (phone: string): Promise<boolean> => {
-    try {
-      // Simulate API call to send SMS
-      console.log("Sending verification code to:", phone)
 
-      // Mock API response
-      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // In real implementation, this would call your SMS service
-      return true
-    } catch (error) {
-      console.error("Error sending verification code:", error)
-      return false
-    }
-  }
 
-  const login = async (phone: string, code: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true)
 
-      // Simulate API call for login
-      console.log("Logging in with phone:", phone, "code:", code)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-      // Mock API response
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const data = await response.json()
 
-      // For demo purposes, accept any 6-digit code
-      if (code.length === 6) {
-        const mockUser: User = {
-          id: `user_${Date.now()}`,
-          phone,
-          name: `用户${phone.slice(-4)}`,
-          isVip: false,
-          createdAt: new Date().toISOString(),
+      if (response.ok) {
+        localStorage.setItem('access_token', data.access_token)
+
+        // Fetch user profile after login and wait for it to complete
+        try {
+          await fetchUserProfile()
+          return true
+        } catch (profileError) {
+          console.error("Failed to fetch user profile:", profileError)
+          // Even if profile fetch fails, login was successful
+          return true
         }
-
-        setUser(mockUser)
-        localStorage.setItem("user", JSON.stringify(mockUser))
-        return true
+      } else {
+        console.error("Login failed:", data.detail)
+        return false
       }
-
-      return false
     } catch (error) {
       console.error("Login error:", error)
       return false
@@ -92,10 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-  }
+
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
@@ -112,8 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         logout,
-        sendVerificationCode,
         updateUser,
+        fetchUserProfile,
       }}
     >
       {children}
