@@ -10,6 +10,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 // Types for notifications from backend API
 interface Notification {
@@ -33,28 +34,34 @@ const mockNews = [
     id: 1,
     title: "新增SVIP会员等级",
     titleEn: "New SVIP Membership Tier",
-    message: "我们推出了全新的SVIP会员等级，享受更多专属特权",
-    messageEn: "We've launched a new SVIP membership tier with exclusive benefits",
+    message: "我们推出了全新的SVIP会员等级，享受更多专属特权和高级功能，包括无限视频生成、优先处理队列、专属客服支持等。",
+    messageEn: "We've launched a new SVIP membership tier with exclusive benefits and advanced features, including unlimited video generation, priority processing queue, and dedicated customer support.",
     timestamp: "2025-07-19 10:00",
-    read: false,
+    externalLink: "https://example.com/svip-announcement",
+    category: "产品更新",
+    categoryEn: "Product Update",
   },
   {
     id: 2,
     title: "AI分析引擎升级",
     titleEn: "AI Analysis Engine Upgrade",
-    message: "我们的AI分析引擎已升级，生成的视频质量更高",
-    messageEn: "Our AI analysis engine has been upgraded for higher quality videos",
+    message: "我们的AI分析引擎已全面升级，采用最新的深度学习技术，生成的视频质量更高，分析更加深入准确。",
+    messageEn: "Our AI analysis engine has been comprehensively upgraded with the latest deep learning technology for higher quality videos and more accurate analysis.",
     timestamp: "2025-06-18 16:30",
-    read: true,
+    externalLink: "https://example.com/ai-upgrade",
+    category: "技术更新",
+    categoryEn: "Tech Update",
   },
   {
     id: 3,
     title: "春节活动预告",
     titleEn: "Spring Festival Event Preview",
-    message: "春节期间将有特别优惠活动，敬请期待",
-    messageEn: "Special offers coming during Spring Festival, stay tuned",
+    message: "春节期间将有特别优惠活动，VIP会员享受额外折扣，还有限时免费试用等精彩活动，敬请期待！",
+    messageEn: "Special offers coming during Spring Festival with extra discounts for VIP members and limited-time free trials. Stay tuned for exciting events!",
     timestamp: "2025-04-17 09:15",
-    read: true,
+    externalLink: "https://example.com/spring-festival-event",
+    category: "活动预告",
+    categoryEn: "Event Preview",
   },
 ]
 
@@ -67,6 +74,9 @@ export default function NotificationsPage() {
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
+
+  // Set page title
+  usePageTitle('notifications')
 
   // Fetch notifications from backend API
   const fetchNotifications = async () => {
@@ -213,11 +223,6 @@ export default function NotificationsPage() {
               </TabsTrigger>
               <TabsTrigger value="news" className={`${themeClasses.text} relative`}>
                 {language === "zh" ? "产品资讯" : "Product News"}
-                {unreadNews > 0 && (
-                  <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center">
-                    {unreadNews}
-                  </Badge>
-                )}
               </TabsTrigger>
             </TabsList>
 
@@ -307,36 +312,61 @@ export default function NotificationsPage() {
 
             {/* News Tab */}
             <TabsContent value="news">
-              <div className="space-y-4">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
                 {mockNews.map((news) => (
                   <Card
                     key={news.id}
-                    className={`${themeClasses.card} ${
-                      !news.read ? `ring-2 ring-gradient-to-r ${themeClasses.accent}` : ""
-                    } transition-all duration-200 hover:shadow-lg`}
+                    className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] cursor-pointer border-l-4 border-l-purple-500 bg-gradient-to-r ${
+                      theme === "light"
+                        ? "from-purple-50 to-white hover:from-purple-100"
+                        : "from-purple-900/20 to-transparent hover:from-purple-800/30"
+                    }`}
+                    onClick={() => window.open(news.externalLink, '_blank')}
                   >
                     <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <div className={`p-2 rounded-full ${theme === "light" ? "bg-gray-100" : "bg-white/10"}`}>
-                          <Newspaper className="w-5 h-5 text-purple-500" />
+                      <div className="space-y-4">
+                        {/* Header with category and date */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              theme === "light"
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-purple-800/50 text-purple-300"
+                            }`}>
+                              {language === "zh" ? news.category : news.categoryEn}
+                            </div>
+                            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                            <span className={`${themeClasses.secondaryText} text-sm`}>
+                              {news.timestamp}
+                            </span>
+                          </div>
+                          <div className={`p-2 rounded-full ${
+                            theme === "light" ? "bg-purple-100" : "bg-purple-800/30"
+                          }`}>
+                            <Newspaper className="w-5 h-5 text-purple-500" />
+                          </div>
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className={`${themeClasses.text} font-semibold`}>
-                              {language === "zh" ? news.title : news.titleEn}
-                            </h3>
-                            <div className="flex items-center space-x-2">
-                              {!news.read && <div className="w-2 h-2 bg-purple-500 rounded-full"></div>}
-                              <span className={`${themeClasses.secondaryText} text-sm whitespace-nowrap`}>
-                                {news.timestamp}
-                              </span>
-                            </div>
-                          </div>
+                        {/* Title */}
+                        <h3 className={`${themeClasses.text} text-xl font-bold leading-tight`}>
+                          {language === "zh" ? news.title : news.titleEn}
+                        </h3>
 
-                          <p className={`${themeClasses.secondaryText} leading-relaxed`}>
-                            {language === "zh" ? news.message : news.messageEn}
-                          </p>
+                        {/* Content */}
+                        <p className={`${themeClasses.secondaryText} leading-relaxed text-sm`}>
+                          {language === "zh" ? news.message : news.messageEn}
+                        </p>
+
+                        {/* Read more link */}
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex items-center space-x-2 text-purple-500 hover:text-purple-600 transition-colors">
+                            <span className="text-sm font-medium">
+                              {language === "zh" ? "阅读全文" : "Read More"}
+                            </span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
                     </CardContent>

@@ -16,6 +16,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 export default function AuthPage() {
   const searchParams = useSearchParams()
@@ -36,6 +37,9 @@ export default function AuthPage() {
   const { language, t } = useLanguage()
   const { login, user } = useAuth()
   const { toast } = useToast()
+
+  // Set page title
+  usePageTitle('auth')
 
   // Set redirect path and active tab based on URL params or referrer
   useEffect(() => {

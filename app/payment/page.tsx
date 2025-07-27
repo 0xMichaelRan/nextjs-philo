@@ -17,6 +17,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 const planPrices = {
   vip: {
@@ -95,6 +96,9 @@ export default function PaymentPage() {
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user, updateUser } = useAuth()
+
+  // Set page title
+  usePageTitle('payment')
 
   useEffect(() => {
     // Check if user is logged in

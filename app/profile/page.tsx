@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { User, Settings, CreditCard, Bell, Crown, Edit, Camera, QrCode, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +22,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 const mockBillingHistory = [
   {
@@ -53,10 +55,15 @@ const mockBillingHistory = [
 ]
 
 export default function ProfilePage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [showPaymentHistory, setShowPaymentHistory] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("basics")
+  const [paymentHistory, setPaymentHistory] = useState([])
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false)
   const [editForm, setEditForm] = useState({
     name: "",
     password: "",
@@ -77,15 +84,74 @@ export default function ProfilePage() {
   const { user, updateUser, fetchUserProfile } = useAuth()
   const { toast } = useToast()
 
+  // Set dynamic page title based on active tab
+  const getPageTitleKey = () => {
+    switch (activeTab) {
+      case 'basics': return 'profileBasics'
+      case 'preferences': return 'profilePreferences'
+      case 'billing': return 'profileBilling'
+      case 'notifications': return 'profileNotifications'
+      default: return 'profile'
+    }
+  }
+  usePageTitle(getPageTitleKey())
+
+  // Handle URL-based tabs
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['basics', 'preferences', 'billing', 'notifications'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
+
   // Initialize form with user data
-  useState(() => {
+  useEffect(() => {
     if (user) {
       setEditForm({
         name: user.name,
         password: "",
       })
     }
-  })
+  }, [user])
+
+  // Fetch payment history when billing tab is active
+  useEffect(() => {
+    if (activeTab === 'billing' && user) {
+      fetchPaymentHistory()
+    }
+  }, [activeTab, user])
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', value)
+    router.push(url.pathname + url.search)
+  }
+
+  const fetchPaymentHistory = async () => {
+    if (!user) return
+
+    try {
+      setIsLoadingPayments(true)
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.auth.paymentHistory(),
+        { method: 'GET' }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentHistory(data)
+      } else {
+        console.error('Failed to fetch payment history')
+        setPaymentHistory([])
+      }
+    } catch (error) {
+      console.error('Error fetching payment history:', error)
+      setPaymentHistory([])
+    } finally {
+      setIsLoadingPayments(false)
+    }
+  }
 
   const getThemeClass = (light: string, dark: string) => {
     return theme === "light" ? light : dark
@@ -292,7 +358,7 @@ export default function ProfilePage() {
     >
       <AppLayout title={t("profile.title")}>
         <div className="container mx-auto px-4 py-6">
-          <Tabs defaultValue="basics" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className={`grid w-full grid-cols-4 mb-6 ${getThemeClass("bg-gray-100", "bg-white/10")}`}>
               <TabsTrigger value="basics" className={getThemeClass("text-gray-800", "text-white")}>
                 {t("profile.basics")}
@@ -653,49 +719,59 @@ export default function ProfilePage() {
                   </CardHeader>
                   {showPaymentHistory && (
                     <CardContent>
-                      <div className="space-y-4">
-                        {mockBillingHistory.map((payment) => (
-                          <div
-                            key={payment.id}
-                            className={`flex items-center justify-between p-4 ${getThemeClass("bg-gray-100", "bg-white/5")} rounded-lg`}
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className={getThemeClass("text-gray-900", "text-white") + " font-medium"}>
-                                  {payment.type}
-                                </p>
-                                <Badge
-                                  variant={payment.status === "completed" ? "default" : "secondary"}
-                                  className="text-xs"
-                                >
-                                  {payment.status === "completed"
-                                    ? language === "zh"
-                                      ? "已完成"
-                                      : "Completed"
-                                    : language === "zh"
-                                      ? "处理中"
-                                      : "Processing"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className={getThemeClass("text-gray-600", "text-gray-400")}>
-                                  {payment.date} · {payment.method}
-                                </span>
-                                <span className={getThemeClass("text-gray-900", "text-white") + " font-semibold"}>
-                                  ¥{payment.amount}
-                                </span>
-                              </div>
-                              <p className={`${getThemeClass("text-gray-500", "text-gray-500")} text-xs mt-1`}>
-                                {language === "zh" ? "订单号" : "Order ID"}: {payment.orderId}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {mockBillingHistory.length === 0 && (
+                      {isLoadingPayments ? (
                         <div className="text-center py-8">
-                          <p className={getThemeClass("text-gray-500", "text-gray-400")}>
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                          <p className={getThemeClass("text-gray-600", "text-gray-400")}>
+                            {language === "zh" ? "加载中..." : "Loading..."}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {paymentHistory.map((payment: any) => (
+                            <div
+                              key={payment.id}
+                              className={`flex items-center justify-between p-4 ${getThemeClass("bg-gray-100", "bg-white/5")} rounded-lg`}
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className={getThemeClass("text-gray-900", "text-white") + " font-medium"}>
+                                    {payment.plan_name}
+                                  </p>
+                                  <Badge
+                                    variant={payment.status === "completed" ? "default" : "secondary"}
+                                    className="text-xs"
+                                  >
+                                    {payment.status === "completed"
+                                      ? language === "zh"
+                                        ? "已完成"
+                                        : "Completed"
+                                      : language === "zh"
+                                        ? "处理中"
+                                        : "Processing"}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className={getThemeClass("text-gray-600", "text-gray-400")}>
+                                    {new Date(payment.created_at).toLocaleDateString()} · {payment.currency}
+                                  </span>
+                                  <span className={getThemeClass("text-gray-900", "text-white") + " font-semibold"}>
+                                    ¥{payment.amount}
+                                  </span>
+                                </div>
+                                <p className={`${getThemeClass("text-gray-500", "text-gray-500")} text-xs mt-1`}>
+                                  {language === "zh" ? "订单号" : "Order ID"}: {payment.id}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {!isLoadingPayments && paymentHistory.length === 0 && (
+                        <div className="text-center py-8">
+                          <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className={getThemeClass("text-gray-600", "text-gray-400")}>
                             {language === "zh" ? "暂无支付记录" : "No payment history"}
                           </p>
                         </div>
