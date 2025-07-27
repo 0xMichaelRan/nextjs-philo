@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
@@ -28,6 +29,8 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState("")
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -178,6 +181,51 @@ export default function AuthPage() {
         setError("")
       } else {
         setError(data.detail || "Registration failed")
+      }
+    } catch (error) {
+      setError("Network error. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail.trim()) {
+      setError("Please enter your email address")
+      return
+    }
+
+    if (!validateEmail(resetEmail)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    setIsLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch(apiConfig.auth.forgotPassword(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: resetEmail,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess(t("auth.resetEmailSent"))
+        setResetEmail("")
+        setTimeout(() => {
+          setShowForgotPassword(false)
+          setSuccess("")
+        }, 3000)
+      } else {
+        setError(data.detail || t("auth.resetEmailFailed"))
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -404,15 +452,24 @@ export default function AuthPage() {
                 {/* Success Message */}
                 {success && <div className="text-green-500 text-sm text-center mt-4">{success}</div>}
 
-                {/* Skip Login Option */}
-                <div className="mt-6 text-center">
-                  <Button
-                    onClick={() => router.push(redirectPath)}
-                    variant="ghost"
-                    className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
-                  >
-                    Continue as Guest
-                  </Button>
+                {/* Skip Login Option and Forgot Password */}
+                <div className="mt-6 text-center space-y-2">
+                  <div className="flex justify-center space-x-4">
+                    <Button
+                      onClick={() => router.push(redirectPath)}
+                      variant="ghost"
+                      className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
+                    >
+                      Continue as Guest
+                    </Button>
+                    <Button
+                      onClick={() => setShowForgotPassword(true)}
+                      variant="ghost"
+                      className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
+                    >
+                      {t("auth.forgotPassword")}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Terms */}
@@ -432,6 +489,55 @@ export default function AuthPage() {
             </Card>
           </div>
         </div>
+
+        {/* Forgot Password Dialog */}
+        <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+          <DialogContent className={`${getCardBackgroundClass()} ${getTextColorClass()}`}>
+            <DialogHeader>
+              <DialogTitle className={getTextColorClass()}>{t("auth.resetPassword")}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="reset-email" className={getTextColorClass()}>
+                  {t("auth.enterEmailForReset")}
+                </Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder={t("auth.enterEmailForReset")}
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className={getInputClass()}
+                />
+              </div>
+
+              {error && <div className="text-red-500 text-sm">{error}</div>}
+              {success && <div className="text-green-500 text-sm">{success}</div>}
+
+              <div className="flex space-x-2">
+                <Button
+                  onClick={handleForgotPassword}
+                  disabled={isLoading}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                >
+                  {isLoading ? t("common.loading") : t("auth.sendResetEmail")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowForgotPassword(false)
+                    setResetEmail("")
+                    setError("")
+                    setSuccess("")
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   )

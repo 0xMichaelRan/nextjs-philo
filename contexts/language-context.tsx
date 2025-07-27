@@ -57,6 +57,12 @@ const translations = {
     "auth.invalidPhone": "请输入正确的手机号",
     "auth.invalidCode": "请输入正确的验证码",
     "auth.loginFailed": "登录失败，请重试",
+    "auth.forgotPassword": "忘记密码？",
+    "auth.resetPassword": "重置密码",
+    "auth.enterEmailForReset": "输入您的邮箱地址",
+    "auth.sendResetEmail": "发送重置邮件",
+    "auth.resetEmailSent": "密码重置邮件已发送！请检查您的收件箱。",
+    "auth.resetEmailFailed": "发送重置邮件失败",
 
     // Payment
     "payment.title": "选择支付方式",
@@ -308,6 +314,12 @@ const translations = {
     "auth.invalidPhone": "Please enter a valid phone number",
     "auth.invalidCode": "Please enter a valid verification code",
     "auth.loginFailed": "Login failed, please try again",
+    "auth.forgotPassword": "Forgot Password?",
+    "auth.resetPassword": "Reset Password",
+    "auth.enterEmailForReset": "Enter your email address",
+    "auth.sendResetEmail": "Send Reset Email",
+    "auth.resetEmailSent": "Password reset email sent! Please check your inbox.",
+    "auth.resetEmailFailed": "Failed to send reset email",
 
     // Payment
     "payment.title": "Select Payment Method",
