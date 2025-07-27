@@ -74,6 +74,7 @@ class ApiConfig {
   public payments = {
     create: () => `${this.baseUrl}/payments/create`,
     checkout: () => `${this.baseUrl}/payments/checkout`,
+    validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
     verify: () => `${this.baseUrl}/payments/verify`,
     history: () => `${this.baseUrl}/payments/history`,
   }

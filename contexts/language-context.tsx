@@ -83,6 +83,17 @@ const translations = {
     "payment.loginRequired": "请先登录",
     "payment.securePayment": "安全支付",
     "payment.encryptedTransaction": "交易信息已加密",
+    "payment.promoCode": "优惠码",
+    "payment.enterPromoCode": "输入优惠码",
+    "payment.apply": "应用",
+    "payment.promoApplied": "优惠码已应用！免费获得VIP会员",
+    "payment.invalidPromoCode": "优惠码未找到",
+    "payment.promoValidationError": "优惠码验证失败",
+    "payment.annualDiscount": "年付折扣",
+    "payment.promoDiscount": "优惠码折扣",
+    "payment.free": "免费",
+    "payment.getVipFree": "免费获取VIP",
+    "payment.vipPeriod": "VIP期限",
 
     // Movie Selection
     "movieSelection.title": "选个电影吧",
@@ -323,6 +334,17 @@ const translations = {
     "payment.loginRequired": "Please login first",
     "payment.securePayment": "Secure Payment",
     "payment.encryptedTransaction": "Transaction encrypted",
+    "payment.promoCode": "Promo Code",
+    "payment.enterPromoCode": "Enter promo code",
+    "payment.apply": "Apply",
+    "payment.promoApplied": "Promo code applied! Free VIP membership",
+    "payment.invalidPromoCode": "Promo code not found",
+    "payment.promoValidationError": "Promo code validation failed",
+    "payment.annualDiscount": "Annual Discount",
+    "payment.promoDiscount": "Promo Code Discount",
+    "payment.free": "FREE",
+    "payment.getVipFree": "Get VIP for Free",
+    "payment.vipPeriod": "VIP Period",
 
     // Movie Selection
     "movieSelection.title": "Pick a Movie",
@@ -516,7 +538,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }
 
   const t = (key: string): string => {
-    return translations[language][key] || key
+    return (translations[language] as any)[key] || key
   }
 
   return (
