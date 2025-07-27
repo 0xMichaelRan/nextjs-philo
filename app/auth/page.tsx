@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Phone, ArrowLeft } from "lucide-react"
+import { Mail, ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
@@ -17,16 +18,18 @@ export default function AuthPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [redirectPath, setRedirectPath] = useState("/video-generation")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [verificationCode, setVerificationCode] = useState("")
-  const [isCodeSent, setIsCodeSent] = useState(false)
-  const [countdown, setCountdown] = useState(0)
+  const [activeTab, setActiveTab] = useState("login")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
-  const { login, sendVerificationCode, user } = useAuth()
+  const { login, register, user } = useAuth()
 
   useEffect(() => {
     // Redirect if already logged in
@@ -41,61 +44,108 @@ export default function AuthPage() {
     }
   }, [searchParams, user, router, redirectPath])
 
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [countdown])
-
-  const validatePhone = (phone: string) => {
-    // Simple validation for Chinese mobile numbers
-    return /^1[3-9]\d{9}$/.test(phone)
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
-  const handleSendCode = async () => {
-    if (!validatePhone(phoneNumber)) {
-      setError(t("auth.invalidPhone"))
+  const validatePassword = (password: string) => {
+    return password.length >= 6
+  }
+
+  const handleLogin = async () => {
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    if (!validatePassword(password)) {
+      setError("Password must be at least 6 characters")
       return
     }
 
     setIsLoading(true)
     setError("")
+    setSuccess("")
 
     try {
-      const success = await sendVerificationCode(phoneNumber)
-      if (success) {
-        setIsCodeSent(true)
-        setCountdown(60)
-        setError("")
+      // Call your backend API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Store the token and user info
+        localStorage.setItem('access_token', data.access_token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+
+        setSuccess("Login successful!")
+        router.push(redirectPath)
       } else {
-        setError(t("auth.loginFailed"))
+        setError(data.detail || "Login failed")
       }
     } catch (error) {
-      setError(t("auth.loginFailed"))
+      setError("Network error. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleLogin = async () => {
-    if (verificationCode.length !== 6) {
-      setError(t("auth.invalidCode"))
+  const handleRegister = async () => {
+    if (!name.trim()) {
+      setError("Please enter your name")
+      return
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    if (!validatePassword(password)) {
+      setError("Password must be at least 6 characters")
       return
     }
 
     setIsLoading(true)
     setError("")
+    setSuccess("")
 
     try {
-      const success = await login(phoneNumber, verificationCode)
-      if (success) {
-        router.push(redirectPath)
+      // Call your backend API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess("Registration successful! Please login with your credentials.")
+        setActiveTab("login")
+        // Clear form
+        setName("")
+        setPassword("")
       } else {
-        setError(t("auth.loginFailed"))
+        setError(data.detail || "Registration failed")
       }
     } catch (error) {
-      setError(t("auth.loginFailed"))
+      setError("Network error. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -144,90 +194,180 @@ export default function AuthPage() {
 
             {/* Welcome Message */}
             <div className="text-center mb-8">
-              <h2 className={`text-2xl font-bold ${getTextColorClass()} mb-2`}>{t("auth.welcome")}</h2>
-              <p className={getSecondaryTextColorClass()}>{t("auth.subtitle")}</p>
+              <h2 className={`text-2xl font-bold ${getTextColorClass()} mb-2`}>Welcome to Movie Philosopher</h2>
+              <p className={getSecondaryTextColorClass()}>Sign in to your account or create a new one</p>
             </div>
 
             <Card className={getCardBackgroundClass()}>
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Phone Number Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className={getTextColorClass()}>
-                      {t("auth.phoneNumber")}
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder={t("auth.phonePlaceholder")}
-                      value={phoneNumber}
-                      onChange={(e) => {
-                        setPhoneNumber(e.target.value)
-                        setError("")
-                      }}
-                      className={getInputClass()}
-                      maxLength={11}
-                      disabled={isLoading}
-                    />
-                  </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="login">Login</TabsTrigger>
+                    <TabsTrigger value="register">Register</TabsTrigger>
+                  </TabsList>
 
-                  {/* Send Code Button */}
-                  <Button
-                    onClick={handleSendCode}
-                    disabled={!validatePhone(phoneNumber) || countdown > 0 || isLoading}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    {isLoading && !isCodeSent
-                      ? t("auth.sendingCode")
-                      : countdown > 0
-                        ? `${t("auth.resendCode")} (${countdown}s)`
-                        : t("auth.sendCode")}
-                  </Button>
+                  <TabsContent value="login" className="space-y-4">
+                    {/* Email Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className={getTextColorClass()}>
+                        Email
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value)
+                          setError("")
+                          setSuccess("")
+                        }}
+                        className={getInputClass()}
+                        disabled={isLoading}
+                      />
+                    </div>
 
-                  {/* Verification Code Input */}
-                  {isCodeSent && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="code" className={getTextColorClass()}>
-                          {t("auth.verificationCode")}
-                        </Label>
+                    {/* Password Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className={getTextColorClass()}>
+                        Password
+                      </Label>
+                      <div className="relative">
                         <Input
-                          id="code"
-                          type="text"
-                          placeholder={t("auth.codePlaceholder")}
-                          value={verificationCode}
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          value={password}
                           onChange={(e) => {
-                            setVerificationCode(e.target.value)
+                            setPassword(e.target.value)
                             setError("")
+                            setSuccess("")
                           }}
                           className={getInputClass()}
-                          maxLength={6}
                           disabled={isLoading}
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
+                    </div>
 
-                      {/* Login Button */}
-                      <Button
-                        onClick={handleLogin}
-                        disabled={verificationCode.length !== 6 || isLoading}
-                        className="w-full bg-purple-600 hover:bg-purple-700"
-                        size="lg"
-                      >
-                        {isLoading ? t("auth.loggingIn") : t("auth.login")}
-                      </Button>
-                    </>
-                  )}
+                    {/* Login Button */}
+                    <Button
+                      onClick={handleLogin}
+                      disabled={!email || !password || isLoading}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      size="lg"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      {isLoading ? "Logging in..." : "Login"}
+                    </Button>
+                  </TabsContent>
 
-                  {/* Error Message */}
-                  {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                  <TabsContent value="register" className="space-y-4">
+                    {/* Name Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className={getTextColorClass()}>
+                        Full Name
+                      </Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value)
+                          setError("")
+                          setSuccess("")
+                        }}
+                        className={getInputClass()}
+                        disabled={isLoading}
+                      />
+                    </div>
 
-                  {/* Success Message */}
-                  {isCodeSent && !error && (
-                    <div className="text-green-500 text-sm text-center">{t("auth.codeSent")}</div>
-                  )}
-                </div>
+                    {/* Email Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-email" className={getTextColorClass()}>
+                        Email
+                      </Label>
+                      <Input
+                        id="reg-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value)
+                          setError("")
+                          setSuccess("")
+                        }}
+                        className={getInputClass()}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    {/* Password Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-password" className={getTextColorClass()}>
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="reg-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a password (min 6 characters)"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value)
+                            setError("")
+                            setSuccess("")
+                          }}
+                          className={getInputClass()}
+                          disabled={isLoading}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Register Button */}
+                    <Button
+                      onClick={handleRegister}
+                      disabled={!name || !email || !password || isLoading}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      size="lg"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      {isLoading ? "Creating account..." : "Create Account"}
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Error Message */}
+                {error && <div className="text-red-500 text-sm text-center mt-4">{error}</div>}
+
+                {/* Success Message */}
+                {success && <div className="text-green-500 text-sm text-center mt-4">{success}</div>}
 
                 {/* Skip Login Option */}
                 <div className="mt-6 text-center">
@@ -236,20 +376,20 @@ export default function AuthPage() {
                     variant="ghost"
                     className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
                   >
-                    {t("auth.skipLogin")}
+                    Continue as Guest
                   </Button>
                 </div>
 
                 {/* Terms */}
                 <div className="mt-6 text-center">
                   <p className="text-xs text-gray-400">
-                    {t("auth.termsAgreement")}
+                    By continuing, you agree to our{" "}
                     <Link href="/terms" className="text-purple-400 hover:underline">
-                      {t("auth.termsOfService")}
+                      Terms of Service
                     </Link>
-                    {t("auth.and")}
+                    {" "}and{" "}
                     <Link href="/privacy" className="text-purple-400 hover:underline">
-                      {t("auth.privacyPolicy")}
+                      Privacy Policy
                     </Link>
                   </p>
                 </div>
