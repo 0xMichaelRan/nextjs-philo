@@ -56,13 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userData.preferences) {
           // Apply language preference
           if (userData.preferences.language) {
-            // Store in localStorage to be picked up by language context
             localStorage.setItem("preferred_language", userData.preferences.language)
           }
 
           // Apply theme preference
           if (userData.preferences.theme) {
-            // Store in localStorage to be picked up by theme context
             localStorage.setItem("preferred_theme", userData.preferences.theme)
           }
         }

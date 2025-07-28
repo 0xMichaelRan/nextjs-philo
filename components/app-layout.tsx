@@ -220,8 +220,8 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                   <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full mx-auto mb-2 flex items-center justify-center">
                     <span className="text-white text-sm font-bold">👑</span>
                   </div>
-                  <h3 className={`${getTextClasses()} font-semibold mb-1`}>{t("nav.upgradeVip")}</h3>
-                  <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-xs mb-3`}>
+                  <h3 className="text-gray-800 font-semibold mb-1">{t("nav.upgradeVip")}</h3>
+                  <p className="text-gray-600 text-xs mb-3">
                     {t("nav.unlimitedGeneration")} · {t("nav.hdQuality")}
                   </p>
                   <Link href="/vip" onClick={() => setIsNavOpen(false)}>

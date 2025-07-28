@@ -110,6 +110,8 @@ const translations = {
     "videoGeneration.vipValidUntil": "VIP有效期至",
     "videoGeneration.dailyUsage": "今日已用",
     "videoGeneration.totalGenerated": "累计生成",
+    "videoGeneration.lifetime": "永久",
+    "videoGeneration.times": "次",
 
     // Payment
     "payment.title": "选择支付方式",
@@ -259,9 +261,11 @@ const translations = {
     "jobPending.processing": "处理中",
     "jobPending.inQueue": "排队中",
     "jobPending.completed": "已完成",
+    "jobPending.noPendingJobs": "暂无待处理任务",
+    "jobPending.completedVideosCount": "共有 {count} 个已完成的视频",
 
     // VIP
-    "vip.title": "VIP会员",
+    "vip.title": "升级VIP会员",
     "vip.upgradeTitle": "升级VIP会员",
     "vip.subtitle": "解锁全部功能，享受无限制的AI电影分析视频生成",
     "vip.monthlyBilling": "按月付费",
@@ -414,6 +418,8 @@ const translations = {
     "videoGeneration.vipValidUntil": "VIP Valid Until",
     "videoGeneration.dailyUsage": "Daily Used",
     "videoGeneration.totalGenerated": "Total Generated",
+    "videoGeneration.lifetime": "Lifetime",
+    "videoGeneration.times": "times",
 
     // Payment
     "payment.title": "Select Payment Method",
@@ -563,9 +569,11 @@ const translations = {
     "jobPending.processing": "Processing",
     "jobPending.inQueue": "In Queue",
     "jobPending.completed": "Completed",
+    "jobPending.noPendingJobs": "No pending jobs",
+    "jobPending.completedVideosCount": "{count} completed videos",
 
     // VIP
-    "vip.title": "VIP Membership",
+    "vip.title": "Upgrade to VIP",
     "vip.upgradeTitle": "Upgrade to VIP",
     "vip.subtitle": "Unlock all features and enjoy unlimited AI movie analysis video generation",
     "vip.monthlyBilling": "Monthly",

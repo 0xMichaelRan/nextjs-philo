@@ -239,7 +239,7 @@ export default function NotificationsPage() {
 
   return (
     <div className={themeClasses.background}>
-      <AppLayout title={language === "zh" ? "通知中心" : "Notifications"}>
+      <AppLayout >
         <div className="container mx-auto px-6 py-8">
           {/* Header */}
           <div className="text-center mb-8">

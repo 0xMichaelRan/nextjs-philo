@@ -264,8 +264,8 @@ export default function VideoGenerationPage() {
                   </div>
                   <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                     {user?.is_vip
-                      ? `${t("videoGeneration.vipValidUntil")}: ${formatVipExpiry(user.vip_expiry_date) || (language === "zh" ? "永久" : "Lifetime")}`
-                      : `${t("videoGeneration.dailyUsage")}: ${userInfo.dailyLimit - userInfo.dailyUsed}/${userInfo.dailyLimit} ${language === "zh" ? "次" : "times"}`}
+                      ? `${t("videoGeneration.vipValidUntil")}: ${formatVipExpiry(user.vip_expiry_date) || t("videoGeneration.lifetime")}`
+                      : `${t("videoGeneration.dailyUsage")}: ${userInfo.dailyLimit - userInfo.dailyUsed}/${userInfo.dailyLimit} ${t("videoGeneration.times")}`}
                   </div>
                 </div>
                 <div className="text-right">

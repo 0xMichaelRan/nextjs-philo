@@ -59,7 +59,12 @@ export default function ProfilePage() {
     expiry_date: string | null
   } | null>(null)
   const [isDenouncing, setIsDenouncing] = useState(false)
-  const [isSavingPreferences, setIsSavingPreferences] = useState(false)
+
+  const [isEditingPreferences, setIsEditingPreferences] = useState(false)
+  const [tempPreferences, setTempPreferences] = useState({
+    language: "zh",
+    theme: "dark",
+  })
 
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
@@ -118,11 +123,19 @@ export default function ProfilePage() {
   // Load preferences from user data
   useEffect(() => {
     if (user && user.preferences) {
+      const userLang = user.preferences.language || language
+      const userTheme = user.preferences.theme || theme
+
       setPreferences(prev => ({
         ...prev,
-        language: user.preferences.language || language,
-        theme: user.preferences.theme || theme,
+        language: userLang,
+        theme: userTheme,
       }))
+
+      setTempPreferences({
+        language: userLang,
+        theme: userTheme,
+      })
     }
   }, [user, language, theme])
 
@@ -312,50 +325,79 @@ export default function ProfilePage() {
     }
   }
 
-  const handleSavePreferences = async () => {
+  const handleSavePreferences = () => {
     if (!user) return
 
-    try {
-      setIsSavingPreferences(true)
-
-      const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.auth.updateUser(),
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            preferences: {
-              language: preferences.language,
-              theme: preferences.theme
-            }
-          }),
-        }
-      )
-
-      if (response.ok) {
-        toast({
-          title: language === "zh" ? "偏好设置已保存" : "Preferences Saved",
-          description: language === "zh"
-            ? "您的偏好设置已成功保存。"
-            : "Your preferences have been saved successfully.",
-        })
-      } else {
-        throw new Error('Failed to save preferences')
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error)
-      toast({
-        title: language === "zh" ? "保存失败" : "Save Failed",
-        description: language === "zh"
-          ? "保存偏好设置时发生错误，请稍后重试。"
-          : "An error occurred while saving preferences. Please try again later.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSavingPreferences(false)
+    // Immediately apply changes to UI
+    if (tempPreferences.language !== language) {
+      setLanguage(tempPreferences.language as "zh" | "en")
     }
+    if (tempPreferences.theme !== theme) {
+      toggleTheme()
+    }
+
+    // Update the display preferences
+    setPreferences(prev => ({
+      ...prev,
+      language: tempPreferences.language,
+      theme: tempPreferences.theme,
+    }))
+
+    // Update user profile data to reflect new preferences
+    const updatedPreferences = {
+      ...user.preferences,
+      language: tempPreferences.language,
+      theme: tempPreferences.theme
+    }
+
+    // Update user data in auth context immediately
+    updateUser({
+      preferences: updatedPreferences
+    })
+
+    // Update localStorage to persist the changes
+    localStorage.setItem("language", tempPreferences.language)
+    localStorage.setItem("theme", tempPreferences.theme)
+
+    // Exit editing state immediately
+    setIsEditingPreferences(false)
+
+    // Show success toast immediately
+    toast({
+      title: tempPreferences.language === "zh" ? "偏好设置已保存" : "Preferences Saved",
+      description: tempPreferences.language === "zh"
+        ? "您的偏好设置已成功保存。"
+        : "Your preferences have been saved successfully.",
+    })
+
+    // Save to backend asynchronously without waiting for response
+    apiConfig.makeAuthenticatedRequest(
+      apiConfig.auth.updateUser(),
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          preferences: {
+            language: tempPreferences.language,
+            theme: tempPreferences.theme
+          }
+        }),
+      }
+    ).catch(error => {
+      console.error('Error saving preferences to backend:', error)
+      // Silently fail - user already sees success message and UI is updated
+    })
+  }
+
+  const handleCancelPreferences = () => {
+    // Reset temp preferences to current saved values
+    setTempPreferences({
+      language: preferences.language,
+      theme: preferences.theme,
+    })
+    setIsEditingPreferences(false)
   }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -476,7 +518,7 @@ export default function ProfilePage() {
     <div
       className={`min-h-screen ${getThemeClass("bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100", "bg-gradient-to-br from-indigo-900 via-blue-900 to-cyan-900")}`}
     >
-      <AppLayout title={t("profile.title")}>
+      <AppLayout >
         <div className="container mx-auto px-4 py-6">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className={`grid w-full grid-cols-4 mb-6 ${getThemeClass("bg-gray-100", "bg-white/10")}`}>
@@ -687,82 +729,119 @@ export default function ProfilePage() {
                 className={`${getThemeClass("bg-gray-50", "bg-white/10")} ${getThemeClass("border-gray-200", "border-white/20")}`}
               >
                 <CardHeader>
-                  <CardTitle className={`${getThemeClass("text-gray-900", "text-white")} flex items-center`}>
-                    <Settings className="w-5 h-5 mr-2" />
-                    {t("profile.preferences")}
+                  <CardTitle className={`${getThemeClass("text-gray-900", "text-white")} flex items-center justify-between`}>
+                    <div className="flex items-center">
+                      <Settings className="w-5 h-5 mr-2" />
+                      {t("profile.preferences")}
+                    </div>
+                    {!isEditingPreferences && (
+                      <Button
+                        onClick={() => setIsEditingPreferences(true)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {language === "zh" ? "编辑" : "Edit"}
+                      </Button>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Language Preference */}
-                  <div className="space-y-3">
-                    <Label className={getThemeClass("text-gray-900", "text-white")}>
-                      {language === "zh" ? "默认语言" : "Default Language"}
-                    </Label>
-                    <RadioGroup
-                      value={preferences.language}
-                      onValueChange={(value) => {
-                        setPreferences((prev) => ({ ...prev, language: value }))
-                        setLanguage(value as "zh" | "en")
-                      }}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="zh" id="lang-zh" />
-                        <Label htmlFor="lang-zh" className={getThemeClass("text-gray-700", "text-gray-300")}>
-                          中文 (Chinese)
+                  {isEditingPreferences ? (
+                    <>
+                      {/* Language Preference - Edit Mode */}
+                      <div className="space-y-3">
+                        <Label className={getThemeClass("text-gray-900", "text-white")}>
+                          {language === "zh" ? "默认语言" : "Default Language"}
                         </Label>
+                        <RadioGroup
+                          value={tempPreferences.language}
+                          onValueChange={(value) => {
+                            setTempPreferences((prev) => ({ ...prev, language: value }))
+                          }}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="zh" id="lang-zh-edit" />
+                            <Label htmlFor="lang-zh-edit" className={getThemeClass("text-gray-700", "text-gray-300")}>
+                              中文 (Chinese)
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="en" id="lang-en-edit" />
+                            <Label htmlFor="lang-en-edit" className={getThemeClass("text-gray-700", "text-gray-300")}>
+                              English
+                            </Label>
+                          </div>
+                        </RadioGroup>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="en" id="lang-en" />
-                        <Label htmlFor="lang-en" className={getThemeClass("text-gray-700", "text-gray-300")}>
-                          English
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
 
-                  {/* Theme Preference */}
-                  <div className="space-y-3">
-                    <Label className={getThemeClass("text-gray-900", "text-white")}>
-                      {language === "zh" ? "主题模式" : "Theme Mode"}
-                    </Label>
-                    <RadioGroup
-                      value={preferences.theme}
-                      onValueChange={(value) => {
-                        setPreferences((prev) => ({ ...prev, theme: value }))
-                        if (value !== theme) {
-                          toggleTheme()
-                        }
-                      }}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="light" id="theme-light" />
-                        <Label htmlFor="theme-light" className={getThemeClass("text-gray-700", "text-gray-300")}>
-                          {language === "zh" ? "浅色模式" : "Light Mode"}
+                      {/* Theme Preference - Edit Mode */}
+                      <div className="space-y-3">
+                        <Label className={getThemeClass("text-gray-900", "text-white")}>
+                          {language === "zh" ? "主题模式" : "Theme Mode"}
                         </Label>
+                        <RadioGroup
+                          value={tempPreferences.theme}
+                          onValueChange={(value) => {
+                            setTempPreferences((prev) => ({ ...prev, theme: value }))
+                          }}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="light" id="theme-light-edit" />
+                            <Label htmlFor="theme-light-edit" className={getThemeClass("text-gray-700", "text-gray-300")}>
+                              {language === "zh" ? "浅色模式" : "Light Mode"}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="dark" id="theme-dark-edit" />
+                            <Label htmlFor="theme-dark-edit" className={getThemeClass("text-gray-700", "text-gray-300")}>
+                              {language === "zh" ? "深色模式" : "Dark Mode"}
+                            </Label>
+                          </div>
+                        </RadioGroup>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="dark" id="theme-dark" />
-                        <Label htmlFor="theme-dark" className={getThemeClass("text-gray-700", "text-gray-300")}>
-                          {language === "zh" ? "深色模式" : "Dark Mode"}
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
 
-                  <Button
-                    onClick={handleSavePreferences}
-                    disabled={isSavingPreferences}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
-                  >
-                    {isSavingPreferences ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {language === "zh" ? "保存中..." : "Saving..."}
-                      </>
-                    ) : (
-                      language === "zh" ? "保存偏好设置" : "Save Preferences"
-                    )}
-                  </Button>
+                      {/* Edit Mode Buttons */}
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={handleSavePreferences}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {language === "zh" ? "保存" : "Save"}
+                        </Button>
+                        <Button
+                          onClick={handleCancelPreferences}
+                          variant="outline"
+                        >
+                          {language === "zh" ? "取消" : "Cancel"}
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Language Preference - View Mode */}
+                      <div className="space-y-3">
+                        <Label className={getThemeClass("text-gray-900", "text-white")}>
+                          {language === "zh" ? "默认语言" : "Default Language"}
+                        </Label>
+                        <p className={getThemeClass("text-gray-700", "text-gray-300")}>
+                          {preferences.language === "zh" ? "中文 (Chinese)" : "English"}
+                        </p>
+                      </div>
+
+                      {/* Theme Preference - View Mode */}
+                      <div className="space-y-3">
+                        <Label className={getThemeClass("text-gray-900", "text-white")}>
+                          {language === "zh" ? "主题模式" : "Theme Mode"}
+                        </Label>
+                        <p className={getThemeClass("text-gray-700", "text-gray-300")}>
+                          {preferences.theme === "light"
+                            ? (language === "zh" ? "浅色模式" : "Light Mode")
+                            : (language === "zh" ? "深色模式" : "Dark Mode")
+                          }
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

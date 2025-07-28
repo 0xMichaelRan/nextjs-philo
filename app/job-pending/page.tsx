@@ -139,7 +139,7 @@ export default function JobPendingPage() {
       case "processing":
         return t("jobPending.processing")
       case "queued":
-        return `${t("jobPending.inQueue")} (${language === "zh" ? "第" : "#"}${job.queuePosition}${language === "zh" ? "位" : ""})`
+        return `${t("jobPending.inQueue")} (#${job.queuePosition})`
       default:
         return "Unknown"
     }
@@ -175,13 +175,13 @@ export default function JobPendingPage() {
                       <div className="flex items-center space-x-4">
                         <img
                           src={job.thumbnail || "/placeholder.svg"}
-                          alt={language === "zh" ? job.movieTitle : job.movieTitleEn}
+                          alt={job.movieTitle}
                           className="w-20 h-12 object-cover rounded"
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className={`${themeClasses.text} font-semibold text-lg`}>
-                              {language === "zh" ? job.movieTitle : job.movieTitleEn}
+                              {job.movieTitle}
                             </h3>
                             <div className="flex items-center space-x-2">
                               {getStatusIcon(job.status)}
@@ -228,7 +228,7 @@ export default function JobPendingPage() {
                 <CardContent className="p-8">
                   <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className={`${themeClasses.secondaryText} text-lg`}>
-                    {language === "zh" ? "暂无待处理任务" : "No pending jobs"}
+                    {t("jobPending.noPendingJobs")}
                   </p>
                 </CardContent>
               </Card>
@@ -266,7 +266,7 @@ export default function JobPendingPage() {
                       <div className="relative">
                         <img
                           src={job.thumbnail || "/placeholder.svg"}
-                          alt={language === "zh" ? job.movieTitle : job.movieTitleEn}
+                          alt={job.movieTitle}
                           className="w-full h-32 object-cover"
                         />
                         <button
@@ -282,17 +282,17 @@ export default function JobPendingPage() {
                           </Badge>
                         </div>
                         <Badge className="absolute bottom-2 right-2 bg-black/70 text-white text-xs">
-                          {language === "zh" ? job.duration : job.durationEn}
+                          {job.duration}
                         </Badge>
                       </div>
                       <div className="p-4">
                         <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
-                          {language === "zh" ? job.movieTitle : job.movieTitleEn}
+                          {job.movieTitle}
                         </h3>
                         <div className="space-y-2">
                           <div className={`flex justify-between text-xs ${themeClasses.secondaryText}`}>
                             <span>
-                              {language === "zh" ? "完成时间" : "Completed"}: {job.completedAt}
+                              {t("jobPending.completed")}: {job.completedAt}
                             </span>
                           </div>
                           <div className="flex space-x-2">
@@ -322,9 +322,7 @@ export default function JobPendingPage() {
               <Card className={`${themeClasses.card} text-center`}>
                 <CardContent className="p-6">
                   <p className={`${themeClasses.secondaryText}`}>
-                    {language === "zh"
-                      ? `共有 ${completedJobs.length} 个已完成的视频`
-                      : `${completedJobs.length} completed videos`}
+                    {t("jobPending.completedVideosCount", { count: completedJobs.length })}
                   </p>
                 </CardContent>
               </Card>

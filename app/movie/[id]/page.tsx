@@ -148,7 +148,7 @@ export default function MovieHomePage() {
   }
 
   return (
-    <AppLayout title="电影详情">
+    <AppLayout >
       <div className="container mx-auto px-6 py-8">
         {/* Movie Info Section */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">

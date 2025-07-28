@@ -172,17 +172,14 @@ export default function VipPage() {
     <div
       className={`${getThemeClass("bg-gradient-to-br from-emerald-100 via-green-100 to-teal-100", "bg-gradient-to-br from-emerald-900 via-green-900 to-teal-900")} min-h-screen`}
     >
-      <AppLayout title={t("vip.title")}>
+      <AppLayout >
         <div className="container mx-auto px-4 py-8">
           {/* Hero Section */}
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center mb-4">
-              <Crown className="w-12 h-12 text-yellow-500 mr-3" />
-              <h2 className={`${getThemeClass("text-black", "text-white")} text-4xl font-bold`}>
-                {t("vip.upgradeTitle")}
-              </h2>
+            <div className="flex justify-center">
+              <Crown className="w-12 h-12 text-yellow-500" />
             </div>
-            <p className={`${getThemeClass("text-gray-700", "text-gray-300")} text-xl mb-6`}>{t("vip.subtitle")}</p>
+            <p className={`${getThemeClass("text-gray-700", "text-gray-300")} text-xl mb-6`}>{t("vip.title")}</p>
           </div>
 
           {/* Pricing Plans - 3 Column Layout */}
