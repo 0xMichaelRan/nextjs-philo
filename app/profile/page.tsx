@@ -84,6 +84,8 @@ export default function ProfilePage() {
     days_remaining: number | null
     expiry_date: string | null
   } | null>(null)
+  const [isDenouncing, setIsDenouncing] = useState(false)
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false)
 
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
@@ -127,28 +129,28 @@ export default function ProfilePage() {
     }
   }, [activeTab, user])
 
-  // Fetch VIP status
+  // Set VIP status from user data (no separate API call needed)
   useEffect(() => {
-    const fetchVipStatus = async () => {
-      if (!user) return
-
-      try {
-        const response = await apiConfig.makeAuthenticatedRequest(
-          apiConfig.payments.vipStatus(),
-          { method: 'GET' }
-        )
-
-        if (response.ok) {
-          const status = await response.json()
-          setVipStatus(status)
-        }
-      } catch (error) {
-        console.error('Error fetching VIP status:', error)
-      }
+    if (user) {
+      setVipStatus({
+        is_vip: user.is_vip,
+        is_active: user.is_vip && user.vip_days_remaining !== null && user.vip_days_remaining !== undefined && user.vip_days_remaining > 0,
+        days_remaining: user.vip_days_remaining ?? null,
+        expiry_date: user.vip_expiry_date ?? null
+      })
     }
-
-    fetchVipStatus()
   }, [user])
+
+  // Load preferences from user data
+  useEffect(() => {
+    if (user && user.preferences) {
+      setPreferences(prev => ({
+        ...prev,
+        language: user.preferences.language || language,
+        theme: user.preferences.theme || theme,
+      }))
+    }
+  }, [user, language, theme])
 
   const handleTabChange = (value: string) => {
     setActiveTab(value)
@@ -186,19 +188,7 @@ export default function ProfilePage() {
     return theme === "light" ? light : dark
   }
 
-  // Calculate days remaining for VIP
-  const calculateDaysRemaining = (expiryDate: string | undefined) => {
-    if (!expiryDate) return null
-    try {
-      const expiry = new Date(expiryDate)
-      const now = new Date()
-      const diffTime = expiry.getTime() - now.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays > 0 ? diffDays : 0
-    } catch {
-      return null
-    }
-  }
+
 
   // Format VIP expiry for display
   const formatVipExpiry = (expiryDate: string | undefined) => {
@@ -295,6 +285,98 @@ export default function ProfilePage() {
     if (event.key === 'Enter' && !isLoading) {
       event.preventDefault()
       handleSaveProfile()
+    }
+  }
+
+  const handleDenounceVip = async () => {
+    if (!user || !user.is_vip) return
+
+    const confirmed = window.confirm(
+      language === "zh"
+        ? "确定要取消VIP会员状态吗？此操作不可撤销。"
+        : "Are you sure you want to denounce your VIP status? This action cannot be undone."
+    )
+
+    if (!confirmed) return
+
+    try {
+      setIsDenouncing(true)
+
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.payments.denounceVip(),
+        { method: 'POST' }
+      )
+
+      if (response.ok) {
+        // Refresh user profile to reflect changes (VIP status is included)
+        await fetchUserProfile()
+
+        toast({
+          title: language === "zh" ? "VIP状态已取消" : "VIP Status Cancelled",
+          description: language === "zh"
+            ? "您的VIP会员状态已成功取消。"
+            : "Your VIP membership status has been successfully cancelled.",
+        })
+      } else {
+        throw new Error('Failed to denounce VIP status')
+      }
+    } catch (error) {
+      console.error('Error denouncing VIP:', error)
+      toast({
+        title: language === "zh" ? "操作失败" : "Operation Failed",
+        description: language === "zh"
+          ? "取消VIP状态时发生错误，请稍后重试。"
+          : "An error occurred while cancelling VIP status. Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDenouncing(false)
+    }
+  }
+
+  const handleSavePreferences = async () => {
+    if (!user) return
+
+    try {
+      setIsSavingPreferences(true)
+
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.auth.updateUser(),
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            preferences: {
+              language: preferences.language,
+              theme: preferences.theme
+            }
+          }),
+        }
+      )
+
+      if (response.ok) {
+        toast({
+          title: language === "zh" ? "偏好设置已保存" : "Preferences Saved",
+          description: language === "zh"
+            ? "您的偏好设置已成功保存。"
+            : "Your preferences have been saved successfully.",
+        })
+      } else {
+        throw new Error('Failed to save preferences')
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error)
+      toast({
+        title: language === "zh" ? "保存失败" : "Save Failed",
+        description: language === "zh"
+          ? "保存偏好设置时发生错误，请稍后重试。"
+          : "An error occurred while saving preferences. Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSavingPreferences(false)
     }
   }
 
@@ -577,6 +659,23 @@ export default function ProfilePage() {
                           >
                             {t("profile.cancel")}
                           </Button>
+                          {user.is_vip && (
+                            <Button
+                              onClick={handleDenounceVip}
+                              disabled={isDenouncing}
+                              variant="destructive"
+                              className="bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {isDenouncing ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                  {language === "zh" ? "取消中..." : "Cancelling..."}
+                                </>
+                              ) : (
+                                language === "zh" ? "取消VIP" : "Cancel VIP"
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -616,6 +715,8 @@ export default function ProfilePage() {
                     </CardContent>
                   </Card>
                 )}
+
+
               </div>
             </TabsContent>
 
@@ -687,8 +788,19 @@ export default function ProfilePage() {
                     </RadioGroup>
                   </div>
 
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    {language === "zh" ? "保存偏好设置" : "Save Preferences"}
+                  <Button
+                    onClick={handleSavePreferences}
+                    disabled={isSavingPreferences}
+                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {isSavingPreferences ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        {language === "zh" ? "保存中..." : "Saving..."}
+                      </>
+                    ) : (
+                      language === "zh" ? "保存偏好设置" : "Save Preferences"
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -717,10 +829,10 @@ export default function ProfilePage() {
                           <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
                             {language === "zh" ? "有效期至" : "Valid until"}: {formatVipExpiry(user.vip_expiry_date)}
                           </p>
-                          {user.vip_expiry_date && calculateDaysRemaining(user.vip_expiry_date) !== null && (
+                          {user.vip_days_remaining !== null && user.vip_days_remaining !== undefined && (
                             <p className={`${getThemeClass("text-gray-500", "text-gray-400")} text-xs`}>
-                              {calculateDaysRemaining(user.vip_expiry_date)! > 0
-                                ? `${calculateDaysRemaining(user.vip_expiry_date)} ${language === "zh" ? "天后到期" : "days remaining"}`
+                              {user.vip_days_remaining > 0
+                                ? `${user.vip_days_remaining} ${language === "zh" ? "天后到期" : "days remaining"}`
                                 : (language === "zh" ? "已过期" : "Expired")
                               }
                             </p>

@@ -629,9 +629,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("zh")
 
   useEffect(() => {
+    // Check for user preferred language first, then fallback to saved language
+    const preferredLanguage = localStorage.getItem("preferred_language") as Language
     const savedLanguage = localStorage.getItem("language") as Language
-    if (savedLanguage && (savedLanguage === "zh" || savedLanguage === "en")) {
-      setLanguage(savedLanguage)
+
+    const languageToUse = preferredLanguage || savedLanguage
+
+    if (languageToUse && (languageToUse === "zh" || languageToUse === "en")) {
+      setLanguage(languageToUse)
+      // Update the regular language storage
+      localStorage.setItem("language", languageToUse)
     }
   }, [])
 

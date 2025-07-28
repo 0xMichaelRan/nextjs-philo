@@ -68,17 +68,27 @@ const mockNews = [
 ]
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState("notifications")
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
 
+  const [activeTab, setActiveTab] = useState(user ? "notifications" : "news")
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   // Set page title
   usePageTitle('notifications')
+
+  // Update active tab based on user login status
+  useEffect(() => {
+    if (!user && activeTab === "notifications") {
+      setActiveTab("news")
+    } else if (user && activeTab === "news") {
+      setActiveTab("notifications")
+    }
+  }, [user, activeTab])
 
   // Fetch notifications from backend API
   const fetchNotifications = async () => {
@@ -239,15 +249,17 @@ export default function NotificationsPage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full grid-cols-2 mb-8 ${theme === "light" ? "bg-white/50" : "bg-white/10"}`}>
-              <TabsTrigger value="notifications" className={`${themeClasses.text} relative`}>
-                {language === "zh" ? "系统通知" : "Notifications"}
-                {unreadCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
+            <TabsList className={`grid w-full ${user ? 'grid-cols-2' : 'grid-cols-1'} mb-8 ${theme === "light" ? "bg-white/50" : "bg-white/10"}`}>
+              {user && (
+                <TabsTrigger value="notifications" className={`${themeClasses.text} relative`}>
+                  {language === "zh" ? "系统通知" : "Notifications"}
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
               <TabsTrigger value="news" className={`${themeClasses.text} relative`}>
                 {language === "zh" ? "产品资讯" : "Product News"}
               </TabsTrigger>

@@ -10,6 +10,7 @@ interface User {
   name: string
   is_vip: boolean
   vip_expiry_date?: string
+  vip_days_remaining?: number
   subscription_status?: string
   preferences?: any
   created_at: string
@@ -50,9 +51,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await response.json()
         setUser(userData)
         localStorage.setItem("user", JSON.stringify(userData))
+
+        // Apply user preferences to UI if they exist
+        if (userData.preferences) {
+          // Apply language preference
+          if (userData.preferences.language) {
+            // Store in localStorage to be picked up by language context
+            localStorage.setItem("preferred_language", userData.preferences.language)
+          }
+
+          // Apply theme preference
+          if (userData.preferences.theme) {
+            // Store in localStorage to be picked up by theme context
+            localStorage.setItem("preferred_theme", userData.preferences.theme)
+          }
+        }
       } else {
-        // Token might be expired
-        logout()
+        // Only logout if it's an authentication error (401)
+        if (response.status === 401) {
+          logout()
+        } else {
+          console.error("Failed to fetch user profile:", response.status, response.statusText)
+        }
       }
     } catch (error) {
       console.error("Error fetching user profile:", error)

@@ -191,8 +191,9 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                         }`}
                       >
                         {user.is_vip ? (() => {
-                          const daysLeft = calculateDaysRemaining(user.vip_expiry_date)
-                          if (daysLeft === null) return "VIP"
+                          // Use backend-calculated days remaining
+                          const daysLeft = user.vip_days_remaining
+                          if (daysLeft === null || daysLeft === undefined) return "VIP"
                           if (daysLeft === 0) return language === "zh" ? "今日到期" : "Expires today"
                           return `${daysLeft} ${language === "zh" ? "天剩余" : "days left"}`
                         })() : t("nav.freeUser")}

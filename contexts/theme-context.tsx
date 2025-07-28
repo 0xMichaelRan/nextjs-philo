@@ -16,9 +16,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark")
 
   useEffect(() => {
+    // Check for user preferred theme first, then fallback to saved theme
+    const preferredTheme = localStorage.getItem("preferred_theme") as Theme
     const savedTheme = localStorage.getItem("theme") as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
+
+    const themeToUse = preferredTheme || savedTheme
+
+    if (themeToUse) {
+      setTheme(themeToUse)
+      // Update the regular theme storage
+      localStorage.setItem("theme", themeToUse)
     }
   }, [])
 

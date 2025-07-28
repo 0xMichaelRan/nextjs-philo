@@ -82,7 +82,7 @@ export default function PaymentPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [selectedPlan, setSelectedPlan] = useState("vip")
-  const [billingCycle, setBillingCycle] = useState("yearly")
+  const [billingCycle, setBillingCycle] = useState("monthly")
   const [selectedPayment, setSelectedPayment] = useState("alipay")
   const [isProcessing, setIsProcessing] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
@@ -119,26 +119,18 @@ export default function PaymentPage() {
     }
   }, [searchParams, user, router])
 
-  // Fetch current VIP status on component mount
+  // Set VIP status from user data (no separate API call needed)
   useEffect(() => {
-    const fetchVipStatus = async () => {
-      try {
-        const response = await apiConfig.makeAuthenticatedRequest(
-          apiConfig.payments.vipStatus(),
-          { method: 'GET' }
-        )
-
-        if (response.ok) {
-          const vipStatus = await response.json()
-          setCurrentVipStatus(vipStatus)
-        }
-      } catch (error) {
-        console.error('Error fetching VIP status:', error)
-      }
-    }
-
     if (user) {
-      fetchVipStatus()
+      setCurrentVipStatus({
+        is_vip: user.is_vip,
+        is_active: user.is_vip && user.vip_days_remaining !== null && user.vip_days_remaining !== undefined && user.vip_days_remaining > 0,
+        expiry_date: user.vip_expiry_date ?? null,
+        expiry_date_formatted: {
+          zh: user.vip_expiry_date ? new Date(user.vip_expiry_date).toLocaleDateString("zh-CN") : "无",
+          en: user.vip_expiry_date ? new Date(user.vip_expiry_date).toLocaleDateString("en-US") : "None"
+        }
+      })
     }
   }, [user])
 

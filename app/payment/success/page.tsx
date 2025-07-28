@@ -64,19 +64,7 @@ export default function PaymentSuccessPage() {
     }
   }
 
-  // Calculate days remaining
-  const calculateDaysRemaining = (expiryDate: string | undefined) => {
-    if (!expiryDate) return null
-    try {
-      const expiry = new Date(expiryDate)
-      const now = new Date()
-      const diffTime = expiry.getTime() - now.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays > 0 ? diffDays : 0
-    } catch {
-      return null
-    }
-  }
+
 
   return (
     <AppLayout>
@@ -110,10 +98,10 @@ export default function PaymentSuccessPage() {
                           {formatVipExpiry(user.vip_expiry_date)}
                         </p>
 
-                        {calculateDaysRemaining(user.vip_expiry_date) !== null && (
+                        {user.vip_days_remaining !== null && user.vip_days_remaining !== undefined && (
                           <p className={`${themeClasses.secondaryText} text-center`}>
-                            {calculateDaysRemaining(user.vip_expiry_date)! > 0
-                              ? `${calculateDaysRemaining(user.vip_expiry_date)} ${language === "zh" ? "天有效期" : "days remaining"}`
+                            {user.vip_days_remaining > 0
+                              ? `${user.vip_days_remaining} ${language === "zh" ? "天有效期" : "days remaining"}`
                               : (language === "zh" ? "今日到期" : "Expires today")
                             }
                           </p>
