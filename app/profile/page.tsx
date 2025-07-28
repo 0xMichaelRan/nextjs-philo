@@ -78,6 +78,12 @@ export default function ProfilePage() {
     newsletter: false,
     promotional: false,
   })
+  const [vipStatus, setVipStatus] = useState<{
+    is_vip: boolean
+    is_active: boolean
+    days_remaining: number | null
+    expiry_date: string | null
+  } | null>(null)
 
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
@@ -120,6 +126,29 @@ export default function ProfilePage() {
       fetchPaymentHistory()
     }
   }, [activeTab, user])
+
+  // Fetch VIP status
+  useEffect(() => {
+    const fetchVipStatus = async () => {
+      if (!user) return
+
+      try {
+        const response = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.payments.vipStatus(),
+          { method: 'GET' }
+        )
+
+        if (response.ok) {
+          const status = await response.json()
+          setVipStatus(status)
+        }
+      } catch (error) {
+        console.error('Error fetching VIP status:', error)
+      }
+    }
+
+    fetchVipStatus()
+  }, [user])
 
   const handleTabChange = (value: string) => {
     setActiveTab(value)
@@ -463,10 +492,12 @@ export default function ProfilePage() {
                             {user.name}
                           </h3>
                           {user.is_vip && (
-                            <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500">
-                              <Crown className="w-3 h-3 mr-1" />
-                              VIP
-                            </Badge>
+                            <Link href="/vip">
+                              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 cursor-pointer hover:from-yellow-600 hover:to-orange-600 transition-colors">
+                                <Crown className="w-3 h-3 mr-1" />
+                                VIP
+                              </Badge>
+                            </Link>
                           )}
                         </div>
                         <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
@@ -475,6 +506,15 @@ export default function ProfilePage() {
                         <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
                           {t("profile.totalGenerated")}: 15{t("profile.videos")}
                         </p>
+                        {user.is_vip && (
+                          <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
+                            {language === "zh" ? "VIP剩余天数" : "VIP Days Remaining"}: {
+                              vipStatus?.days_remaining !== null
+                                ? `${vipStatus?.days_remaining || 0} ${language === "zh" ? "天" : "days"}`
+                                : (language === "zh" ? "加载中..." : "Loading...")
+                            }
+                          </p>
+                        )}
                       </div>
                     </div>
 

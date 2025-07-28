@@ -92,6 +92,12 @@ export default function PaymentPage() {
   const [promoError, setPromoError] = useState("")
   const [finalPrice, setFinalPrice] = useState(0)
   const [promoDiscount, setPromoDiscount] = useState(0)
+  const [currentVipStatus, setCurrentVipStatus] = useState<{
+    is_vip: boolean
+    is_active: boolean
+    expiry_date: string | null
+    expiry_date_formatted: { zh: string; en: string }
+  } | null>(null)
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -112,6 +118,29 @@ export default function PaymentPage() {
       setSelectedPlan(plan)
     }
   }, [searchParams, user, router])
+
+  // Fetch current VIP status on component mount
+  useEffect(() => {
+    const fetchVipStatus = async () => {
+      try {
+        const response = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.payments.vipStatus(),
+          { method: 'GET' }
+        )
+
+        if (response.ok) {
+          const vipStatus = await response.json()
+          setCurrentVipStatus(vipStatus)
+        }
+      } catch (error) {
+        console.error('Error fetching VIP status:', error)
+      }
+    }
+
+    if (user) {
+      fetchVipStatus()
+    }
+  }, [user])
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -157,20 +186,27 @@ export default function PaymentPage() {
     }
   }, [promoCode])
 
-  // Calculate VIP period
-  const getVipPeriod = () => {
-    const startDate = new Date()
-    const endDate = new Date()
-
-    if (billingCycle === "yearly") {
-      endDate.setFullYear(endDate.getFullYear() + 1)
-    } else {
-      endDate.setMonth(endDate.getMonth() + 1)
+  // Get current VIP status display
+  const getCurrentVipDisplay = () => {
+    if (!currentVipStatus) {
+      return language === "zh" ? "加载中..." : "Loading..."
     }
 
-    return {
-      start: startDate.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US"),
-      end: endDate.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")
+    if (!currentVipStatus.is_vip || !currentVipStatus.expiry_date) {
+      return language === "zh" ? "当前无VIP" : "No VIP currently"
+    }
+
+    const expiryDate = new Date(currentVipStatus.expiry_date)
+    const today = new Date()
+
+    if (expiryDate > today) {
+      // VIP expires in the future
+      const formattedDate = expiryDate.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")
+      return language === "zh" ? `VIP有效期至 ${formattedDate}` : `VIP valid until ${formattedDate}`
+    } else {
+      // VIP expired in the past
+      const formattedDate = expiryDate.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")
+      return language === "zh" ? `VIP已于 ${formattedDate} 过期` : `VIP expired on ${formattedDate}`
     }
   }
 
@@ -227,7 +263,7 @@ export default function PaymentPage() {
     }
   }
 
-  const vipPeriod = getVipPeriod()
+  const currentVipDisplay = getCurrentVipDisplay()
 
   // Get avatar gradient based on name
   const getAvatarGradient = (name: string) => {
@@ -510,9 +546,8 @@ export default function PaymentPage() {
                         <div className="flex items-center space-x-2 mt-2">
                           <Calendar className="w-4 h-4 text-green-500" />
                           <span className={`${themeClasses.text} text-sm`}>
-                            {t("payment.vipPeriod")}:
-                            <span className="font-medium text-green-500 ml-1">
-                              {vipPeriod.start} - {vipPeriod.end}
+                            <span className="font-medium text-green-500">
+                              {currentVipDisplay}
                             </span>
                           </span>
                         </div>

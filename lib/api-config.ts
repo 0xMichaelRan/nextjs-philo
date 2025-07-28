@@ -79,6 +79,7 @@ class ApiConfig {
     validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
     verify: () => `${this.baseUrl}/payments/verify`,
     history: () => `${this.baseUrl}/payments/history`,
+    vipStatus: () => `${this.baseUrl}/payments/vip-status`,
   }
 
   // Utility method to get authorization headers

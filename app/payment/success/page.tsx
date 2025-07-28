@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle, Crown, ArrowRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,19 @@ export default function PaymentSuccessPage() {
   const router = useRouter()
   const { theme } = useTheme()
   const { language, t } = useLanguage()
-  const { user } = useAuth()
+  const { user, fetchUserProfile } = useAuth()
+  const [vipDataLoaded, setVipDataLoaded] = useState(false)
+
+  useEffect(() => {
+    // Refresh user profile to get updated VIP status and expiry date
+    const refreshProfile = async () => {
+      await fetchUserProfile()
+      // Add a small delay to ensure data is loaded
+      setTimeout(() => setVipDataLoaded(true), 1000)
+    }
+
+    refreshProfile()
+  }, [])
 
 
   const getThemeClasses = () => {
@@ -92,17 +104,28 @@ export default function PaymentSuccessPage() {
                       </span>
                     </div>
 
-                    <p className={`${themeClasses.text} text-lg font-semibold mb-2 text-center`}>
-                      {formatVipExpiry(user.vip_expiry_date)}
-                    </p>
+                    {vipDataLoaded ? (
+                      <>
+                        <p className={`${themeClasses.text} text-lg font-semibold mb-2 text-center`}>
+                          {formatVipExpiry(user.vip_expiry_date)}
+                        </p>
 
-                    {calculateDaysRemaining(user.vip_expiry_date) !== null && (
-                      <p className={`${themeClasses.secondaryText} text-center`}>
-                        {calculateDaysRemaining(user.vip_expiry_date)! > 0
-                          ? `${calculateDaysRemaining(user.vip_expiry_date)} ${language === "zh" ? "天有效期" : "days remaining"}`
-                          : (language === "zh" ? "今日到期" : "Expires today")
-                        }
-                      </p>
+                        {calculateDaysRemaining(user.vip_expiry_date) !== null && (
+                          <p className={`${themeClasses.secondaryText} text-center`}>
+                            {calculateDaysRemaining(user.vip_expiry_date)! > 0
+                              ? `${calculateDaysRemaining(user.vip_expiry_date)} ${language === "zh" ? "天有效期" : "days remaining"}`
+                              : (language === "zh" ? "今日到期" : "Expires today")
+                            }
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                        <p className={`${themeClasses.secondaryText} text-sm`}>
+                          {language === "zh" ? "正在更新会员信息..." : "Updating membership information..."}
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -111,9 +134,11 @@ export default function PaymentSuccessPage() {
                   <Link href="/video-generation">
                     <Button className="w-full bg-green-600 hover:bg-green-700">
                       <ArrowRight className="w-4 h-4 mr-2" />
-                      {language === "zh" ? "开始创作视频" : "Start Creating Videos"}
+                      {language === "zh" ? "开始创作吧！" : "Start Creating"}
                     </Button>
                   </Link>
+  {/* extra spacer */}
+  <div className="h-2" />       {/* or h-4, h-6, etc. */}
 
                   <Link href="/profile">
                     <Button variant="outline" className="w-full bg-transparent">

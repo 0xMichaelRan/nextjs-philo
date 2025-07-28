@@ -196,19 +196,23 @@ export default function NotificationsPage() {
     }
   }
 
-  // Format timestamp for display
+  // Format timestamp for display - returns object with date and time
   const formatTimestamp = (timestamp: string) => {
     try {
       const date = new Date(timestamp)
-      return date.toLocaleString(language === "zh" ? "zh-CN" : "en-US", {
+      const dateStr = date.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: '2-digit'
       })
+      const timeStr = date.toLocaleTimeString(language === "zh" ? "zh-CN" : "en-US", {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return { date: dateStr, time: timeStr }
     } catch {
-      return timestamp
+      return { date: timestamp, time: '' }
     }
   }
 
@@ -313,9 +317,17 @@ export default function NotificationsPage() {
                                     </span>
                                   </div>
                                 )}
-                                <span className={`${themeClasses.secondaryText} text-sm whitespace-nowrap`}>
-                                  {formatTimestamp(notification.created_at)}
-                                </span>
+                                <div className={`${themeClasses.secondaryText} text-sm text-right`}>
+                                  {(() => {
+                                    const { date, time } = formatTimestamp(notification.created_at)
+                                    return (
+                                      <>
+                                        <div className="whitespace-nowrap">{date}</div>
+                                        <div className="whitespace-nowrap text-xs">{time}</div>
+                                      </>
+                                    )
+                                  })()}
+                                </div>
                               </div>
                             </div>
 
