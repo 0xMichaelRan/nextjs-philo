@@ -1101,6 +1101,75 @@ export default function ProfilePage() {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Profile Footer Section */}
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="space-y-4">
+              {/* Help & Support Links */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <a
+                  href="/help"
+                  className={`${getThemeClass("text-gray-700 hover:text-purple-600", "text-gray-400 hover:text-purple-400")} text-sm font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start p-3 rounded-lg ${getThemeClass("hover:bg-gray-50", "hover:bg-white/5")}`}
+                >
+                  <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {language === "zh" ? "帮助中心" : "Help Center"}
+                </a>
+
+                <a
+                  href="/blog"
+                  className={`${getThemeClass("text-gray-700 hover:text-purple-600", "text-gray-400 hover:text-purple-400")} text-sm font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start p-3 rounded-lg ${getThemeClass("hover:bg-gray-50", "hover:bg-white/5")}`}
+                >
+                  <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                  </svg>
+                  {language === "zh" ? "博客" : "Blog"}
+                </a>
+
+                <a
+                  href="/terms"
+                  className={`${getThemeClass("text-gray-700 hover:text-purple-600", "text-gray-400 hover:text-purple-400")} text-sm font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start p-3 rounded-lg ${getThemeClass("hover:bg-gray-50", "hover:bg-white/5")}`}
+                >
+                  <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {language === "zh" ? "条款与条件" : "Terms & Conditions"}
+                </a>
+              </div>
+
+              {/* Additional Links */}
+              <div className="flex flex-wrap justify-center sm:justify-start gap-4 pt-2">
+                <a
+                  href="/privacy"
+                  className={`${getThemeClass("text-gray-600 hover:text-gray-800", "text-gray-500 hover:text-gray-300")} text-xs transition-colors duration-200`}
+                >
+                  {language === "zh" ? "隐私政策" : "Privacy Policy"}
+                </a>
+                <span className={`${getThemeClass("text-gray-400", "text-gray-600")} text-xs`}>•</span>
+                <a
+                  href="/contact"
+                  className={`${getThemeClass("text-gray-600 hover:text-gray-800", "text-gray-500 hover:text-gray-300")} text-xs transition-colors duration-200`}
+                >
+                  {language === "zh" ? "联系我们" : "Contact Us"}
+                </a>
+                <span className={`${getThemeClass("text-gray-400", "text-gray-600")} text-xs`}>•</span>
+                <a
+                  href="/faq"
+                  className={`${getThemeClass("text-gray-600 hover:text-gray-800", "text-gray-500 hover:text-gray-300")} text-xs transition-colors duration-200`}
+                >
+                  {language === "zh" ? "常见问题" : "FAQ"}
+                </a>
+              </div>
+
+              {/* App Version & Copyright */}
+              <div className="text-center pt-3">
+                <p className={`${getThemeClass("text-gray-500", "text-gray-600")} text-xs`}>
+                  {language === "zh" ? "版本 1.0.0 • © 2025 Philo AI" : "Version 1.0.0 • © 2025 Philo AI"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </AppLayout>
     </div>
