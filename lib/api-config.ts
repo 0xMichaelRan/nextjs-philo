@@ -32,6 +32,7 @@ class ApiConfig {
     uploadAvatar: () => `${this.baseUrl}/auth/avatar`,
     paymentHistory: () => `${this.baseUrl}/auth/payment-history`,
     forgotPassword: () => `${this.baseUrl}/auth/forgot-password`,
+    resetPassword: () => `${this.baseUrl}/auth/reset-password`,
   }
 
   // Notification endpoints

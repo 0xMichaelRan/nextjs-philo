@@ -73,7 +73,6 @@ const translations = {
     "auth.welcomeTitle": "欢迎来到电影哲学家",
     "auth.welcomeSubtitle": "登录您的账户或创建新账户",
     "auth.enterPassword": "输入您的密码",
-    "auth.loggingIn": "登录中...",
     "auth.fullName": "姓名",
     "auth.enterFullName": "输入您的姓名",
     "auth.createPassword": "创建密码（至少6个字符）",
@@ -81,6 +80,33 @@ const translations = {
     "auth.createAccount": "创建账户",
     "auth.continueAsGuest": "以访客身份继续",
     "auth.termsText": "继续即表示您同意我们的",
+
+    // Reset Password
+    "resetPassword.title": "重置密码",
+    "resetPassword.subtitle": "输入您的新密码",
+    "resetPassword.newPassword": "新密码",
+    "resetPassword.enterNewPassword": "输入新密码（至少6个字符）",
+    "resetPassword.confirmPassword": "确认密码",
+    "resetPassword.confirmNewPassword": "再次输入新密码",
+    "resetPassword.passwordMismatch": "密码不匹配",
+    "resetPassword.resetPassword": "重置密码",
+    "resetPassword.resetting": "重置中...",
+    "resetPassword.resetFailed": "密码重置失败",
+    "resetPassword.invalidLink": "无效的重置链接",
+    "resetPassword.successTitle": "密码重置成功！",
+    "resetPassword.successMessage": "您的密码已成功重置。现在可以使用新密码登录。",
+    "resetPassword.goToLogin": "前往登录",
+    "resetPassword.backToLogin": "返回登录",
+
+    // Additional Video Generation keys
+    "videoGeneration.processingQueue": "处理队列",
+    "videoGeneration.status": "状态",
+    "videoGeneration.created": "创建",
+    "videoGeneration.queuePosition": "第{position}位",
+    "videoGeneration.unknownStatus": "未知状态",
+    "videoGeneration.vipValidUntil": "VIP有效期至",
+    "videoGeneration.dailyUsage": "今日已用",
+    "videoGeneration.totalGenerated": "累计生成",
 
     // Payment
     "payment.title": "选择支付方式",
@@ -355,6 +381,33 @@ const translations = {
     "auth.createAccount": "Create Account",
     "auth.continueAsGuest": "Continue as Guest",
     "auth.termsText": "By continuing, you agree to our",
+
+    // Reset Password
+    "resetPassword.title": "Reset Password",
+    "resetPassword.subtitle": "Enter your new password",
+    "resetPassword.newPassword": "New Password",
+    "resetPassword.enterNewPassword": "Enter new password (min 6 characters)",
+    "resetPassword.confirmPassword": "Confirm Password",
+    "resetPassword.confirmNewPassword": "Confirm your new password",
+    "resetPassword.passwordMismatch": "Passwords do not match",
+    "resetPassword.resetPassword": "Reset Password",
+    "resetPassword.resetting": "Resetting...",
+    "resetPassword.resetFailed": "Password reset failed",
+    "resetPassword.invalidLink": "Invalid reset link",
+    "resetPassword.successTitle": "Password Reset Successful!",
+    "resetPassword.successMessage": "Your password has been successfully reset. You can now login with your new password.",
+    "resetPassword.goToLogin": "Go to Login",
+    "resetPassword.backToLogin": "Back to Login",
+
+    // Additional Video Generation keys
+    "videoGeneration.processingQueue": "Processing Queue",
+    "videoGeneration.status": "Status",
+    "videoGeneration.created": "Created",
+    "videoGeneration.queuePosition": "Position {position}",
+    "videoGeneration.unknownStatus": "Unknown Status",
+    "videoGeneration.vipValidUntil": "VIP Valid Until",
+    "videoGeneration.dailyUsage": "Daily Used",
+    "videoGeneration.totalGenerated": "Total Generated",
 
     // Payment
     "payment.title": "Select Payment Method",

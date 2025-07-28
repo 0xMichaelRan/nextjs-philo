@@ -10,6 +10,7 @@ import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { VideoPlayer } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
+import { useLanguage } from "@/contexts/language-context"
 
 const mockJobs = [
   {
@@ -64,6 +65,7 @@ export default function VideoGenerationPage() {
   const [userInfo, setUserInfo] = useState(userStats)
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const { theme } = useTheme()
+  const { language, t } = useLanguage()
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -79,11 +81,11 @@ export default function VideoGenerationPage() {
   const getStatusText = (job: any) => {
     switch (job.status) {
       case "completed":
-        return "已完成"
+        return t("videoGeneration.completed")
       case "queued":
-        return `排队中 (第${job.queuePosition}位)`
+        return `${t("videoGeneration.queued")} (${t("videoGeneration.queuePosition").replace("{position}", job.queuePosition)})`
       default:
-        return "未知状态"
+        return t("videoGeneration.unknownStatus")
     }
   }
 
@@ -114,14 +116,14 @@ export default function VideoGenerationPage() {
 
   return (
     <div className={themeClasses.background}>
-      <AppLayout title="视频生成中心">
+      <AppLayout title={t("videoGeneration.title")}>
         <div className="container mx-auto px-6 py-8">
           {/* Action Buttons */}
             <div className="flex space-x-4 mb-12">
             <Link href="/job-pending">
               <Button variant="outline" className="bg-transparent" size="lg">
                 <Clock className="w-5 h-5 mr-2" />
-                处理队列
+                {t("videoGeneration.processingQueue")}
               </Button>
             </Link>
           </div>
@@ -155,7 +157,7 @@ export default function VideoGenerationPage() {
 
           {/* Videos Grid */}
           <div className="mb-12">
-            <h2 className={`${themeClasses.text} text-2xl font-bold mb-8`}>我的视频</h2>
+            <h2 className={`${themeClasses.text} text-2xl font-bold mb-8`}>{t("videoGeneration.myVideos")}</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {jobs.map((job) => (
                 <Card key={job.id} className={`${themeClasses.card} overflow-hidden`}>
@@ -188,14 +190,14 @@ export default function VideoGenerationPage() {
                         <div
                           className={`flex justify-between text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}
                         >
-                          <span>状态: {getStatusText(job)}</span>
+                          <span>{t("videoGeneration.status")}: {getStatusText(job)}</span>
                         </div>
 
                         <div
                           className={`flex justify-between text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}
                         >
-                          <span>创建: {job.createdAt}</span>
-                          {job.completedAt && <span>完成: {job.completedAt}</span>}
+                          <span>{t("videoGeneration.created")}: {job.createdAt}</span>
+                          {job.completedAt && <span>{t("videoGeneration.completed")}: {job.completedAt}</span>}
                         </div>
 
                         {job.status === "completed" && (
@@ -207,11 +209,11 @@ export default function VideoGenerationPage() {
                               onClick={() => handleVideoPlay(job)}
                             >
                               <Play className="w-4 h-4 mr-2" />
-                              播放
+                              {t("videoGeneration.play")}
                             </Button>
                             <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
                               <Download className="w-4 h-4 mr-2" />
-                              下载
+                              {t("videoGeneration.download")}
                             </Button>
                           </div>
                         )}
@@ -225,10 +227,10 @@ export default function VideoGenerationPage() {
             {jobs.length === 0 && (
               <div className="text-center py-12">
                 <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-lg mb-4`}>
-                  还没有生成任何视频
+                  {t("videoGeneration.noVideos")}
                 </p>
                 <Link href="/">
-                  <Button className={themeClasses.button}>开始创建您的第一个视频</Button>
+                  <Button className={themeClasses.button}>{t("videoGeneration.createFirst")}</Button>
                 </Link>
               </div>
             )}
@@ -240,18 +242,18 @@ export default function VideoGenerationPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <h3 className={`${themeClasses.text} font-semibold`}>{userInfo.isVip ? "VIP用户" : "免费用户"}</h3>
+                    <h3 className={`${themeClasses.text} font-semibold`}>{userInfo.isVip ? t("videoGeneration.vipUser") : t("videoGeneration.freeUser")}</h3>
                     {userInfo.isVip && <Crown className="w-4 h-4 text-yellow-500" />}
                   </div>
                   <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                     {userInfo.isVip
-                      ? `VIP有效期至: ${userInfo.vipExpiry}`
-                      : `今日剩余: ${userInfo.dailyLimit - userInfo.dailyUsed}/${userInfo.dailyLimit} 次`}
+                      ? `${t("videoGeneration.vipValidUntil")}: ${userInfo.vipExpiry}`
+                      : `${t("videoGeneration.dailyUsage")}: ${userInfo.dailyLimit - userInfo.dailyUsed}/${userInfo.dailyLimit} ${language === "zh" ? "次" : "times"}`}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className={`${themeClasses.text} font-semibold`}>{userInfo.totalGenerated}</div>
-                  <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>累计生成</div>
+                  <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{t("videoGeneration.totalGenerated")}</div>
                 </div>
               </div>
 
@@ -259,14 +261,14 @@ export default function VideoGenerationPage() {
                 <Link href="/profile" className="flex-1">
                   <Button variant="outline" className="w-full bg-transparent">
                     <User className="w-4 h-4 mr-2" />
-                    个人中心
+                    {t("videoGeneration.profileCenter")}
                   </Button>
                 </Link>
                 {!userInfo.isVip && (
                   <Link href="/vip" className="flex-1">
                     <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
                       <Crown className="w-4 h-4 mr-2" />
-                      升级VIP
+                      {t("videoGeneration.upgradeVip")}
                     </Button>
                   </Link>
                 )}

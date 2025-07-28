@@ -16,11 +16,9 @@ import { usePageTitle } from "@/hooks/use-page-title"
 interface Notification {
   id: number
   user_id: string
-  title: string // Backward compatibility
-  message: string // Backward compatibility
-  title_zh?: string
+  title_zh: string
   title_en?: string
-  message_zh?: string
+  message_zh: string
   message_en?: string
   type: string
   is_read: boolean
@@ -279,8 +277,8 @@ export default function NotificationsPage() {
                             <div className="flex items-center justify-between mb-2">
                               <h3 className={`${themeClasses.text} font-semibold`}>
                                 {language === "zh"
-                                  ? (notification.title_zh || notification.title)
-                                  : (notification.title_en || notification.title)
+                                  ? notification.title_zh
+                                  : (notification.title_en || notification.title_zh)
                                 }
                               </h3>
                               <div className="flex items-center space-x-2">
@@ -293,8 +291,8 @@ export default function NotificationsPage() {
 
                             <p className={`${themeClasses.secondaryText} leading-relaxed`}>
                               {language === "zh"
-                                ? (notification.message_zh || notification.message)
-                                : (notification.message_en || notification.message)
+                                ? notification.message_zh
+                                : (notification.message_en || notification.message_zh)
                               }
                             </p>
                           </div>
@@ -337,11 +335,12 @@ export default function NotificationsPage() {
                       const readMoreBtn = e.currentTarget.querySelector('[data-read-more]') as HTMLElement
                       const target = e.target as HTMLElement
                       if (readMoreBtn && !target?.closest('[data-read-more]')) {
-                        // Add pulse animation to read more button
-                        readMoreBtn.classList.add('animate-pulse')
+                        // Add highlight animation to read more button
+                        readMoreBtn.classList.add('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
+                        readMoreBtn.style.transition = 'all 0.2s ease-in-out'
                         setTimeout(() => {
-                          readMoreBtn.classList.remove('animate-pulse')
-                        }, 1000)
+                          readMoreBtn.classList.remove('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
+                        }, 800)
                       }
                     }}
                   >

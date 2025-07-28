@@ -20,6 +20,10 @@ const pageTitles: PageTitleConfig = {
     zh: "登录注册 - 电影哲学家",
     en: "Login & Register - Movie Philosopher"
   },
+  resetPassword: {
+    zh: "重置密码 - 电影哲学家",
+    en: "Reset Password - Movie Philosopher"
+  },
   
   // Movie selection and generation
   movieSelection: {
