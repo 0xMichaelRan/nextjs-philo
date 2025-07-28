@@ -190,9 +190,15 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                             : "bg-gray-500 text-white"
                         }`}
                       >
-                        {user.is_vip ? "VIP" : t("nav.freeUser")}
+                        {user.is_vip ? (() => {
+                          const daysLeft = calculateDaysRemaining(user.vip_expiry_date)
+                          if (daysLeft === null) return "VIP"
+                          if (daysLeft === 0) return language === "zh" ? "今日到期" : "Expires today"
+                          return `${daysLeft} ${language === "zh" ? "天剩余" : "days left"}`
+                        })() : t("nav.freeUser")}
                       </Badge>
                     </div>
+
                   </div>
                 </CardContent>
               </Card>
@@ -243,27 +249,22 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                     }`}
                   >
                     {/* Profile Photo */}
-                    <div className="w-10 h-10 mr-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 mr-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                       {user.avatar ? (
                         <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
                       ) : (
                         <span className="text-sm">{user.name.charAt(0).toUpperCase()}</span>
                       )}
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-medium truncate">{user.name}</p>
                       <p className={`text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} truncate`}>
                         {user.email}
                       </p>
                     </div>
                     {user.is_vip && (
-                      <Badge className="bg-yellow-500 text-black text-xs">
-                        {(() => {
-                          const daysLeft = calculateDaysRemaining(user.vip_expiry_date)
-                          if (daysLeft === null) return "VIP"
-                          if (daysLeft === 0) return language === "zh" ? "今日到期" : "Expires today"
-                          return `${daysLeft} ${language === "zh" ? "天" : "days"}`
-                        })()}
+                      <Badge className="bg-yellow-500 text-black text-xs flex-shrink-0">
+                        VIP
                       </Badge>
                     )}
                   </Button>
