@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle, Crown, ArrowRight } from "lucide-react"
+import { CheckCircle, Crown, ArrowRight, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
@@ -37,6 +37,35 @@ export default function PaymentSuccessPage() {
 
   const themeClasses = getThemeClasses()
 
+  // Format VIP expiry for display
+  const formatVipExpiry = (expiryDate: string | undefined) => {
+    if (!expiryDate) return language === "zh" ? "永久" : "Lifetime"
+    try {
+      const date = new Date(expiryDate)
+      return date.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch {
+      return language === "zh" ? "无效日期" : "Invalid date"
+    }
+  }
+
+  // Calculate days remaining
+  const calculateDaysRemaining = (expiryDate: string | undefined) => {
+    if (!expiryDate) return null
+    try {
+      const expiry = new Date(expiryDate)
+      const now = new Date()
+      const diffTime = expiry.getTime() - now.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays > 0 ? diffDays : 0
+    } catch {
+      return null
+    }
+  }
+
   return (
     <AppLayout>
       <div className={themeClasses.background}>
@@ -54,15 +83,27 @@ export default function PaymentSuccessPage() {
                   </p>
                 </div>
 
-                {user && (
-                  <div className={`${themeClasses.card} p-4 rounded-lg mb-6`}>
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <Crown className="w-5 h-5 text-yellow-500" />
-                      <span className={`${themeClasses.text} font-semibold`}>VIP {t("nav.memberStatus")}</span>
+                {user?.is_vip && (
+                  <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-lg p-6 mb-6">
+                    <div className="flex items-center justify-center mb-4">
+                      <Calendar className="w-6 h-6 text-orange-500 mr-2" />
+                      <span className={`${themeClasses.text} font-semibold text-lg`}>
+                        {language === "zh" ? "会员有效期" : "Membership Validity"}
+                      </span>
                     </div>
-                    <p className={`${themeClasses.secondaryText} text-sm`}>
-                      {language === "zh" ? "有效期至" : "Valid until"}: {user.vipExpiry}
+
+                    <p className={`${themeClasses.text} text-lg font-semibold mb-2 text-center`}>
+                      {formatVipExpiry(user.vip_expiry_date)}
                     </p>
+
+                    {calculateDaysRemaining(user.vip_expiry_date) !== null && (
+                      <p className={`${themeClasses.secondaryText} text-center`}>
+                        {calculateDaysRemaining(user.vip_expiry_date)! > 0
+                          ? `${calculateDaysRemaining(user.vip_expiry_date)} ${language === "zh" ? "天有效期" : "days remaining"}`
+                          : (language === "zh" ? "今日到期" : "Expires today")
+                        }
+                      </p>
+                    )}
                   </div>
                 )}
 

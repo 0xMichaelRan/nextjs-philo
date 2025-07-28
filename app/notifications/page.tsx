@@ -110,6 +110,17 @@ export default function NotificationsPage() {
 
   // Mark notification as read
   const markAsRead = async (notificationId: number) => {
+    // First update the UI immediately for better UX
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === notificationId
+          ? { ...notification, is_read: true }
+          : notification
+      )
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
+
+    // Then update the backend asynchronously
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
         apiConfig.notifications.markRead(notificationId),
@@ -118,18 +129,28 @@ export default function NotificationsPage() {
         }
       )
 
-      if (response.ok) {
-        // Update local state
+      if (!response.ok) {
+        // If backend update fails, revert the UI change
         setNotifications(prev =>
           prev.map(notification =>
             notification.id === notificationId
-              ? { ...notification, is_read: true }
+              ? { ...notification, is_read: false }
               : notification
           )
         )
-        setUnreadCount(prev => Math.max(0, prev - 1))
+        setUnreadCount(prev => prev + 1)
+        console.error("Failed to mark notification as read")
       }
     } catch (error) {
+      // If network error, revert the UI change
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, is_read: false }
+            : notification
+        )
+      )
+      setUnreadCount(prev => prev + 1)
       console.error("Error marking notification as read:", error)
     }
   }
@@ -263,7 +284,9 @@ export default function NotificationsPage() {
                     <Card
                       key={notification.id}
                       className={`${themeClasses.card} ${
-                        !notification.is_read ? `ring-2 ring-gradient-to-r ${themeClasses.accent}` : ""
+                        !notification.is_read
+                          ? `ring-2 ring-blue-400 shadow-lg ${theme === "light" ? "bg-blue-50/50" : "bg-blue-900/20"} border-blue-200`
+                          : ""
                       } transition-all duration-200 hover:shadow-lg cursor-pointer`}
                       onClick={() => !notification.is_read && markAsRead(notification.id)}
                     >
@@ -282,7 +305,14 @@ export default function NotificationsPage() {
                                 }
                               </h3>
                               <div className="flex items-center space-x-2">
-                                {!notification.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                                {!notification.is_read && (
+                                  <div className="flex items-center space-x-1">
+                                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                      {language === "zh" ? "新" : "NEW"}
+                                    </span>
+                                  </div>
+                                )}
                                 <span className={`${themeClasses.secondaryText} text-sm whitespace-nowrap`}>
                                   {formatTimestamp(notification.created_at)}
                                 </span>

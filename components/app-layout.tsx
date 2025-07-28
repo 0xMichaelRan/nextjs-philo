@@ -61,6 +61,20 @@ export function AppLayout({ children, title }: AppLayoutProps) {
     return "text-white"
   }
 
+  // Calculate days remaining for VIP
+  const calculateDaysRemaining = (expiryDate: string | undefined) => {
+    if (!expiryDate) return null
+    try {
+      const expiry = new Date(expiryDate)
+      const now = new Date()
+      const diffTime = expiry.getTime() - now.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays > 0 ? diffDays : 0
+    } catch {
+      return null
+    }
+  }
+
   const getCardClasses = () => {
     if (theme === "light") {
       return "bg-white/80 border-gray-200/50"
@@ -242,7 +256,16 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                         {user.email}
                       </p>
                     </div>
-                    {user.is_vip && <Badge className="bg-yellow-500 text-black text-xs">VIP</Badge>}
+                    {user.is_vip && (
+                      <Badge className="bg-yellow-500 text-black text-xs">
+                        {(() => {
+                          const daysLeft = calculateDaysRemaining(user.vip_expiry_date)
+                          if (daysLeft === null) return "VIP"
+                          if (daysLeft === 0) return language === "zh" ? "今日到期" : "Expires today"
+                          return `${daysLeft} ${language === "zh" ? "天" : "days"}`
+                        })()}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
               </div>

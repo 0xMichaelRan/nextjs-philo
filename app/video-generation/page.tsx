@@ -11,6 +11,7 @@ import { AppLayout } from "@/components/app-layout"
 import { VideoPlayer } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
 
 const mockJobs = [
   {
@@ -66,6 +67,22 @@ export default function VideoGenerationPage() {
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
+  const { user } = useAuth()
+
+  // Format VIP expiry date
+  const formatVipExpiry = (expiryDate: string | undefined) => {
+    if (!expiryDate) return null
+    try {
+      const date = new Date(expiryDate)
+      return date.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    } catch {
+      return null
+    }
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -242,12 +259,12 @@ export default function VideoGenerationPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <h3 className={`${themeClasses.text} font-semibold`}>{userInfo.isVip ? t("videoGeneration.vipUser") : t("videoGeneration.freeUser")}</h3>
-                    {userInfo.isVip && <Crown className="w-4 h-4 text-yellow-500" />}
+                    <h3 className={`${themeClasses.text} font-semibold`}>{user?.is_vip ? t("videoGeneration.vipUser") : t("videoGeneration.freeUser")}</h3>
+                    {user?.is_vip && <Crown className="w-4 h-4 text-yellow-500" />}
                   </div>
                   <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
-                    {userInfo.isVip
-                      ? `${t("videoGeneration.vipValidUntil")}: ${userInfo.vipExpiry}`
+                    {user?.is_vip
+                      ? `${t("videoGeneration.vipValidUntil")}: ${formatVipExpiry(user.vip_expiry_date) || (language === "zh" ? "永久" : "Lifetime")}`
                       : `${t("videoGeneration.dailyUsage")}: ${userInfo.dailyLimit - userInfo.dailyUsed}/${userInfo.dailyLimit} ${language === "zh" ? "次" : "times"}`}
                   </div>
                 </div>
@@ -264,7 +281,7 @@ export default function VideoGenerationPage() {
                     {t("videoGeneration.profileCenter")}
                   </Button>
                 </Link>
-                {!userInfo.isVip && (
+                {!user?.is_vip && (
                   <Link href="/vip" className="flex-1">
                     <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
                       <Crown className="w-4 h-4 mr-2" />

@@ -157,6 +157,35 @@ export default function ProfilePage() {
     return theme === "light" ? light : dark
   }
 
+  // Calculate days remaining for VIP
+  const calculateDaysRemaining = (expiryDate: string | undefined) => {
+    if (!expiryDate) return null
+    try {
+      const expiry = new Date(expiryDate)
+      const now = new Date()
+      const diffTime = expiry.getTime() - now.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays > 0 ? diffDays : 0
+    } catch {
+      return null
+    }
+  }
+
+  // Format VIP expiry for display
+  const formatVipExpiry = (expiryDate: string | undefined) => {
+    if (!expiryDate) return language === "zh" ? "永久" : "Lifetime"
+    try {
+      const date = new Date(expiryDate)
+      return date.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    } catch {
+      return language === "zh" ? "无效日期" : "Invalid date"
+    }
+  }
+
   const handleSaveProfile = async () => {
     if (!user) return
 
@@ -642,10 +671,20 @@ export default function ProfilePage() {
                     <CardContent className="space-y-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className={`${getThemeClass("text-gray-900", "text-white")} font-semibold`}>VIP会员</p>
-                          <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
-                            {language === "zh" ? "有效期至" : "Valid until"}: {user.subscription_status || "Active"}
+                          <p className={`${getThemeClass("text-gray-900", "text-white")} font-semibold`}>
+                            {language === "zh" ? "VIP会员" : "VIP Member"}
                           </p>
+                          <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
+                            {language === "zh" ? "有效期至" : "Valid until"}: {formatVipExpiry(user.vip_expiry_date)}
+                          </p>
+                          {user.vip_expiry_date && calculateDaysRemaining(user.vip_expiry_date) !== null && (
+                            <p className={`${getThemeClass("text-gray-500", "text-gray-400")} text-xs`}>
+                              {calculateDaysRemaining(user.vip_expiry_date)! > 0
+                                ? `${calculateDaysRemaining(user.vip_expiry_date)} ${language === "zh" ? "天后到期" : "days remaining"}`
+                                : (language === "zh" ? "已过期" : "Expired")
+                              }
+                            </p>
+                          )}
                         </div>
                         <Badge className="bg-green-500 text-white">{language === "zh" ? "活跃" : "Active"}</Badge>
                       </div>

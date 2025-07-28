@@ -24,6 +24,10 @@ const pageTitles: PageTitleConfig = {
     zh: "重置密码 - 电影哲学家",
     en: "Reset Password - Movie Philosopher"
   },
+  paymentSuccess: {
+    zh: "支付成功 - 电影哲学家",
+    en: "Payment Successful - Movie Philosopher"
+  },
   
   // Movie selection and generation
   movieSelection: {

@@ -98,6 +98,9 @@ const translations = {
     "resetPassword.goToLogin": "前往登录",
     "resetPassword.backToLogin": "返回登录",
 
+    // Payment Success
+    "paymentSuccess.title": "支付成功",
+
     // Additional Video Generation keys
     "videoGeneration.processingQueue": "处理队列",
     "videoGeneration.status": "状态",
@@ -398,6 +401,9 @@ const translations = {
     "resetPassword.successMessage": "Your password has been successfully reset. You can now login with your new password.",
     "resetPassword.goToLogin": "Go to Login",
     "resetPassword.backToLogin": "Back to Login",
+
+    // Payment Success
+    "paymentSuccess.title": "Payment Successful",
 
     // Additional Video Generation keys
     "videoGeneration.processingQueue": "Processing Queue",

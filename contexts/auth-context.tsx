@@ -9,6 +9,7 @@ interface User {
   email: string
   name: string
   is_vip: boolean
+  vip_expiry_date?: string
   subscription_status?: string
   preferences?: any
   created_at: string

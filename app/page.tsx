@@ -156,7 +156,7 @@ export default function HomePage() {
                 {language === "zh" ? "电影哲学家" : "Movie Philosopher"}
               </span>
             </div>
-            <Link href="/auth">
+            <Link href="/auth?redirect=movie-selection">
               <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 relative z-10">
                 {language === "zh" ? "登录" : "Login"}
               </Button>
