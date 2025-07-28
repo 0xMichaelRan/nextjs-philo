@@ -269,7 +269,7 @@ export default function VideoGenerationPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`${themeClasses.text} font-semibold`}>{userInfo.totalGenerated}</div>
+                  <div className={`${themeClasses.text} font-semibold`}>{userInfo.totalGenerated}个</div>
                   <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{t("videoGeneration.totalGenerated")}</div>
                 </div>
               </div>
