@@ -84,10 +84,10 @@ export default function NotificationsPage() {
   // Update active tab based on user login status
   useEffect(() => {
     if (!user && activeTab === "notifications") {
+      // If user logs out and is on notifications tab, switch to news
       setActiveTab("news")
-    } else if (user && activeTab === "news") {
-      setActiveTab("notifications")
     }
+    // Don't automatically switch logged-in users away from news tab
   }, [user, activeTab])
 
   // Fetch notifications from backend API
@@ -165,10 +165,19 @@ export default function NotificationsPage() {
     }
   }
 
-  // Load notifications on component mount
+  // Load notifications on component mount and when user changes
   useEffect(() => {
-    fetchNotifications()
+    if (user) {
+      fetchNotifications()
+    }
   }, [user])
+
+  // Also load notifications when component first mounts
+  useEffect(() => {
+    if (user) {
+      fetchNotifications()
+    }
+  }, [])
 
   const getThemeClasses = () => {
     if (theme === "light") {

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { User, Settings, CreditCard, Bell, Crown, Edit, Camera, QrCode, ChevronDown, ChevronUp } from "lucide-react"
+import { User, Settings, CreditCard, Bell, Crown, Edit, Camera, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+
 import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
@@ -23,43 +23,17 @@ import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { UpgradeVipCard } from "@/components/upgrade-vip-card"
+import { CustomerSupportCard } from "@/components/customer-support-card"
 
-const mockBillingHistory = [
-  {
-    id: 1,
-    date: "2024-01-20",
-    amount: 261,
-    type: "VIP年度会员",
-    method: "支付宝",
-    status: "completed",
-    orderId: "VIP20240120001",
-  },
-  {
-    id: 2,
-    date: "2023-12-20",
-    amount: 29,
-    type: "VIP月度会员",
-    method: "微信支付",
-    status: "completed",
-    orderId: "VIP20231220001",
-  },
-  {
-    id: 3,
-    date: "2023-11-20",
-    amount: 29,
-    type: "VIP月度会员",
-    method: "支付宝",
-    status: "completed",
-    orderId: "VIP20231120001",
-  },
-]
+
 
 export default function ProfilePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [showPaymentHistory, setShowPaymentHistory] = useState(false)
-  const [showQRCode, setShowQRCode] = useState(false)
+
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("basics")
   const [paymentHistory, setPaymentHistory] = useState([])
@@ -71,7 +45,7 @@ export default function ProfilePage() {
   const [preferences, setPreferences] = useState({
     language: "zh",
     theme: "dark",
-    autoRenewal: true,
+    autoRenewal: false,
   })
   const [notifications, setNotifications] = useState({
     videoNotifications: true,
@@ -311,6 +285,10 @@ export default function ProfilePage() {
         // Refresh user profile to reflect changes (VIP status is included)
         await fetchUserProfile()
 
+        // Exit editing state
+        setIsEditing(false)
+        setEditForm(prev => ({ ...prev, password: "" }))
+
         toast({
           title: language === "zh" ? "VIP状态已取消" : "VIP Status Cancelled",
           description: language === "zh"
@@ -450,8 +428,10 @@ export default function ProfilePage() {
     }
   }
 
-  const nextPaymentDate = user?.is_vip ? "2024-12-20" : null
-  const nextPaymentAmount = user?.is_vip ? 261 : null
+  // Calculate next payment date as the last day of VIP expiration
+  const nextPaymentDate = user?.is_vip && user?.vip_expiry_date
+    ? new Date(user.vip_expiry_date).toLocaleDateString()
+    : null
   const paymentMethod = user?.is_vip ? "支付宝" : null
 
   // Generate gradient colors for avatar placeholder
@@ -695,26 +675,7 @@ export default function ProfilePage() {
                 </Card>
 
                 {/* VIP Status */}
-                {!user.is_vip && (
-                  <Card className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30">
-                    <CardContent className="p-6 text-center">
-                      <Crown className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                      <h3 className={`${getThemeClass("text-gray-900", "text-white")} text-xl font-semibold mb-2`}>
-                        {language === "zh" ? "升级VIP会员" : "Upgrade to VIP"}
-                      </h3>
-                      <p className={`${getThemeClass("text-gray-600", "text-gray-300")} mb-4`}>
-                        {language === "zh"
-                          ? "解锁无限生成、高清画质、优先处理等特权"
-                          : "Unlock unlimited generation, HD quality, priority processing"}
-                      </p>
-                      <Link href="/vip">
-                        <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
-                          {language === "zh" ? "立即升级" : "Upgrade Now"}
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                )}
+                {!user.is_vip && <UpgradeVipCard />}
 
 
               </div>
@@ -849,12 +810,7 @@ export default function ProfilePage() {
                             </span>
                             <span className={getThemeClass("text-gray-900", "text-white")}>{nextPaymentDate}</span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className={getThemeClass("text-gray-700", "text-gray-300")}>
-                              {language === "zh" ? "下次付款金额" : "Next Payment Amount"}
-                            </span>
-                            <span className={getThemeClass("text-gray-900", "text-white")}>¥{nextPaymentAmount}</span>
-                          </div>
+
                           <div className="flex justify-between items-center">
                             <span className={getThemeClass("text-gray-700", "text-gray-300")}>
                               {language === "zh" ? "付款方式" : "Payment Method"}
@@ -944,7 +900,7 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                   <span className={getThemeClass("text-gray-600", "text-gray-400")}>
-                                    {new Date(payment.created_at).toLocaleDateString()} · {payment.currency}
+                                    {new Date(payment.created_at).toLocaleDateString()} · {new Date(payment.created_at).toLocaleTimeString()}
                                   </span>
                                   <span className={getThemeClass("text-gray-900", "text-white") + " font-semibold"}>
                                     ¥{payment.amount}
@@ -972,65 +928,10 @@ export default function ProfilePage() {
                 </Card>
 
                 {/* VIP Promotion */}
-                {!user.is_vip && (
-                  <Card className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30">
-                    <CardContent className="p-6 text-center">
-                      <Crown className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                      <h3 className={`${getThemeClass("text-gray-900", "text-white")} text-xl font-semibold mb-2`}>
-                        {language === "zh" ? "升级VIP会员" : "Upgrade to VIP"}
-                      </h3>
-                      <p className={`${getThemeClass("text-gray-600", "text-gray-300")} mb-4`}>
-                        {language === "zh"
-                          ? "解锁无限生成、高清画质、优先处理等特权"
-                          : "Unlock unlimited generation, HD quality, priority processing"}
-                      </p>
-                      <Link href="/vip">
-                        <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
-                          {language === "zh" ? "立即升级" : "Upgrade Now"}
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                )}
+                {!user.is_vip && <UpgradeVipCard />}
 
                 {/* Customer Support */}
-                <Card
-                  className={`${getThemeClass("bg-gray-50", "bg-white/10")} ${getThemeClass("border-gray-200", "border-white/20")}`}
-                >
-                  <CardContent className="p-6 text-center">
-                    <h3 className={`${getThemeClass("text-gray-900", "text-white")} text-lg font-semibold mb-2`}>
-                      {language === "zh" ? "客服支持" : "Customer Support"}
-                    </h3>
-                    <p className={`${getThemeClass("text-gray-600", "text-gray-300")} mb-4`}>
-                      {language === "zh" ? "遇到问题？联系我们的客服团队" : "Need help? Contact our support team"}
-                    </p>
-                    <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="bg-transparent">
-                          <QrCode className="w-4 h-4 mr-2" />
-                          {language === "zh" ? "客服二维码" : "Support QR Code"}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className={getThemeClass("bg-white", "bg-gray-900")}>
-                        <DialogHeader>
-                          <DialogTitle className={getThemeClass("text-gray-900", "text-white")}>
-                            {language === "zh" ? "客服二维码" : "Customer Support QR Code"}
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <QrCode className="w-32 h-32 text-gray-400" />
-                          </div>
-                          <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm text-center`}>
-                            {language === "zh"
-                              ? "扫描二维码添加客服微信"
-                              : "Scan QR code to add customer service WeChat"}
-                          </p>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </CardContent>
-                </Card>
+                <CustomerSupportCard />
 
                 {/* Explanatory Text */}
                 <div className={`${getThemeClass("text-gray-600", "text-gray-400")} text-sm space-y-2`}>
