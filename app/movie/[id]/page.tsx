@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Play, Star, Clock, Calendar, Users } from "lucide-react"
+import { Play, Star, Clock, Calendar, Users, Globe, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
@@ -123,6 +124,7 @@ export default function MovieHomePage() {
   const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [currentLanguage, setCurrentLanguage] = useState<"zh" | "en">("zh")
   const { theme } = useTheme()
 
   useEffect(() => {
@@ -212,12 +214,7 @@ export default function MovieHomePage() {
     return "bg-white/10 border-white/20"
   }
 
-  const getButtonClasses = () => {
-    if (theme === "light") {
-      return "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-    }
-    return "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
-  }
+
 
   if (loading) {
     return (
@@ -250,90 +247,181 @@ export default function MovieHomePage() {
   }
 
   return (
-    <AppLayout >
-      <div className="container mx-auto px-6 py-8">
-        {/* Movie Info Section */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
+    <AppLayout>
+      {/* Header with Language Toggle */}
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="flex items-center"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              返回
+            </Button>
+
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={currentLanguage === "zh" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setCurrentLanguage("zh")}
+              >
+                中文
+              </Button>
+              <Button
+                variant={currentLanguage === "en" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setCurrentLanguage("en")}
+              >
+                English
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Hero Section with Movie Info */}
+        <div className="grid lg:grid-cols-4 gap-8 mb-12">
           {/* Movie Poster */}
-          <div className="md:col-span-1">
-            <Card className={`${getCardClasses()} overflow-hidden`}>
-              <CardContent className="p-0">
-                <Image
-                  src={movieData.poster_url || "/placeholder.svg"}
-                  alt={movieData.title_zh || movieData.title}
-                  width={300}
-                  height={450}
-                  className="w-full h-auto object-cover"
-                />
-              </CardContent>
-            </Card>
+          <div className="lg:col-span-1">
+            <div className="sticky top-32">
+              <Card className={`${getCardClasses()} overflow-hidden shadow-xl`}>
+                <CardContent className="p-0 relative">
+                  <Image
+                    src={movieData.poster_url || "/placeholder.svg"}
+                    alt={currentLanguage === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
+                    width={400}
+                    height={600}
+                    className="w-full h-auto object-cover"
+                  />
+                  {movieData.rating && (
+                    <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-2 rounded-full flex items-center shadow-lg">
+                      <Star className="w-4 h-4 mr-1" />
+                      <span className="font-bold">{movieData.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Movie Details */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-8">
+            {/* Title Section */}
             <div>
-              <h1 className={`text-4xl font-bold ${getTextClasses()} mb-2`}>{movieData.title_zh || movieData.title}</h1>
-              <h2 className={`text-2xl ${theme === "light" ? "text-purple-600" : "text-cyan-300"} mb-4`}>
-                {movieData.title_en}
+              <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold ${getTextClasses()} mb-3`}>
+                {currentLanguage === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
+              </h1>
+              <h2 className={`text-xl md:text-2xl ${theme === "light" ? "text-purple-600" : "text-cyan-300"} mb-4`}>
+                {currentLanguage === "zh" ? movieData.title_en : (movieData.title_zh || movieData.original_title)}
               </h2>
 
-              <div className="flex flex-wrap gap-3 mb-6">
-                <Badge className="bg-orange-500 text-white flex items-center">
-                  <Star className="w-3 h-3 mr-1" />
-                  {movieData.rating || 0}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"}`}
-                >
-                  <Calendar className="w-3 h-3 mr-1" />
-                  {movieData.year || "未知年份"}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"}`}
-                >
-                  <Clock className="w-3 h-3 mr-1" />
-                  {movieData.duration_minutes ? `${movieData.duration_minutes}分钟` : "未知时长"}
-                </Badge>
+              {movieData.tagline && (
+                <p className={`text-lg ${theme === "light" ? "text-gray-600" : "text-gray-300"} italic mb-6`}>
+                  "{movieData.tagline}"
+                </p>
+              )}
+
+              {/* Enhanced Badges */}
+              <div className="flex flex-wrap gap-3 mb-8">
+                {movieData.year && (
+                  <Badge variant="outline" className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"} text-sm px-3 py-1`}>
+                    <Calendar className="w-4 h-4 mr-1" />
+                    {movieData.year}
+                  </Badge>
+                )}
+                {movieData.duration_minutes && (
+                  <Badge variant="outline" className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"} text-sm px-3 py-1`}>
+                    <Clock className="w-4 h-4 mr-1" />
+                    {movieData.duration_minutes}分钟
+                  </Badge>
+                )}
+                {movieData.original_language && (
+                  <Badge variant="outline" className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"} text-sm px-3 py-1`}>
+                    <Globe className="w-4 h-4 mr-1" />
+                    {movieData.original_language.toUpperCase()}
+                  </Badge>
+                )}
+                {movieData.vote_count && (
+                  <Badge variant="outline" className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"} text-sm px-3 py-1`}>
+                    <Users className="w-4 h-4 mr-1" />
+                    {movieData.vote_count.toLocaleString()} 评分
+                  </Badge>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {movieData.director && (
-                  <div>
-                    <h3 className={`${getTextClasses()} font-semibold mb-2`}>导演</h3>
-                    <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{movieData.director}</p>
+              {/* Enhanced Movie Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {movieData.genre.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>类型</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {movieData.genre.map((g, index) => (
+                        <Badge key={index} className="bg-purple-600 hover:bg-purple-700 text-white">
+                          {g}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
-                <div>
-                  <h3 className={`${getTextClasses()} font-semibold mb-2`}>类型</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {movieData.genre.map((g, index) => (
-                      <Badge key={index} variant="secondary">
-                        {g}
-                      </Badge>
-                    ))}
+
+                {movieData.popularity && (
+                  <div className="space-y-3">
+                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>热度指数</h3>
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div
+                          className="bg-gradient-to-r from-pink-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                          style={{width: `${Math.min(movieData.popularity / 100 * 100, 100)}%`}}
+                        />
+                      </div>
+                      <span className={`${getTextClasses()} font-medium`}>
+                        {movieData.popularity.toFixed(1)}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {movieData.tmdb_id && (
+                  <div className="space-y-3">
+                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>数据库ID</h3>
+                    <div className="space-y-1">
+                      <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-sm`}>
+                        TMDB: {movieData.tmdb_id}
+                      </p>
+                      <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-sm`}>
+                        IMDb: {movieData.id}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <h3 className={`${getTextClasses()} font-semibold mb-2`}>剧情简介</h3>
-                <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} leading-relaxed`}>
-                  {movieData.description || "暂无简介"}
-                </p>
-              </div>
+              {/* Description */}
+              {movieData.description && (
+                <div className="space-y-4">
+                  <h3 className={`${getTextClasses()} font-semibold text-xl`}>剧情简介</h3>
+                  <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} leading-relaxed text-lg`}>
+                    {movieData.description}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerateVideo}
-              size="lg"
-              className={`w-full ${getButtonClasses()} text-white font-semibold py-4`}
-            >
-              <Play className="w-5 h-5 mr-2" />
-              生成分析视频
-            </Button>
+            {/* Enhanced Action Button */}
+            <div className="pt-6">
+              <Button
+                onClick={handleGenerateVideo}
+                size="lg"
+                className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-12 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Play className="w-6 h-6 mr-3" />
+                开始生成视频分析
+              </Button>
+            </div>
           </div>
         </div>
 

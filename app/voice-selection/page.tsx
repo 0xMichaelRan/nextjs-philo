@@ -12,6 +12,20 @@ import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { apiConfig } from "@/lib/api-config"
+
+interface VoiceOption {
+  id: number
+  name: string
+  display_name: string
+  description?: string
+  language: string
+  gender?: string
+  voice_file: string
+  is_active: boolean
+  is_premium: boolean
+  voice_url: string
+}
 
 const voiceOptions = [
   {
@@ -67,6 +81,8 @@ export default function VoiceSelectionPage() {
   const [movieTitleEn, setMovieTitleEn] = useState("")
   const [selectedVoice, setSelectedVoice] = useState("")
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
+  const [voices, setVoices] = useState<VoiceOption[]>([])
+  const [loading, setLoading] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -79,7 +95,57 @@ export default function VoiceSelectionPage() {
     if (titleEn) setMovieTitleEn(titleEn)
   }, [searchParams])
 
-  const handlePlayAudio = (voiceId: string, audioSample: string) => {
+  // Fetch voices from API
+  useEffect(() => {
+    fetchVoices()
+  }, [language])
+
+  const fetchVoices = async () => {
+    setLoading(true)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        `${apiConfig.voices.list()}?language=${language}`
+      )
+
+      if (response.ok) {
+        const data: VoiceOption[] = await response.json()
+        setVoices(data)
+      } else {
+        // Fallback to mock data
+        setVoices(voiceOptions.map((voice, index) => ({
+          id: index + 1,
+          name: voice.id,
+          display_name: language === "zh" ? voice.name : voice.nameEn,
+          description: language === "zh" ? voice.description : voice.descriptionEn,
+          language: "zh",
+          gender: voice.id.includes("male") ? "male" : "female",
+          voice_file: voice.audioSample.replace("/", ""),
+          is_active: true,
+          is_premium: false,
+          voice_url: voice.audioSample
+        })))
+      }
+    } catch (error) {
+      console.error("Error fetching voices:", error)
+      // Fallback to mock data
+      setVoices(voiceOptions.map((voice, index) => ({
+        id: index + 1,
+        name: voice.id,
+        display_name: language === "zh" ? voice.name : voice.nameEn,
+        description: language === "zh" ? voice.description : voice.descriptionEn,
+        language: "zh",
+        gender: voice.id.includes("male") ? "male" : "female",
+        voice_file: voice.audioSample.replace("/", ""),
+        is_active: true,
+        is_premium: false,
+        voice_url: voice.audioSample
+      })))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePlayAudio = (voiceId: string, audioUrl: string) => {
     if (playingVoice === voiceId) {
       // Stop current audio
       if (audioRef.current) {
@@ -90,12 +156,25 @@ export default function VoiceSelectionPage() {
     } else {
       // Play new audio
       if (audioRef.current) {
-        audioRef.current.src = audioSample
-        audioRef.current.play()
+        audioRef.current.src = audioUrl
+        audioRef.current.play().catch(error => {
+          console.error("Error playing audio:", error)
+          setPlayingVoice(null)
+        })
         setPlayingVoice(voiceId)
       }
     }
   }
+
+  // Handle audio end
+  useEffect(() => {
+    const audio = audioRef.current
+    if (audio) {
+      const handleEnded = () => setPlayingVoice(null)
+      audio.addEventListener('ended', handleEnded)
+      return () => audio.removeEventListener('ended', handleEnded)
+    }
+  }, [])
 
   const handleNext = () => {
     if (selectedVoice) {
@@ -174,90 +253,108 @@ export default function VoiceSelectionPage() {
             </div>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <p className={`${themeClasses.text} text-lg`}>加载中...</p>
+            </div>
+          )}
+
           {/* Voice Options */}
-          <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-6">
-              {voiceOptions.map((voice) => (
-                <Card key={voice.id} className={getCardStyle(voice.id)}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Avatar className="w-16 h-16">
-                        <AvatarImage src={voice.avatar || "/placeholder.svg"} alt={voice.name} />
-                        <AvatarFallback className="text-lg bg-gradient-to-br from-pink-500 to-purple-500 text-white">
-                          {(language === "zh" ? voice.name : voice.nameEn).charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h3 className={`${themeClasses.text} font-semibold text-lg mb-1`}>
-                          {language === "zh" ? voice.name : voice.nameEn}
-                        </h3>
-                        <p className={`${themeClasses.secondaryText} text-sm mb-2`}>
-                          {language === "zh" ? voice.description : voice.descriptionEn}
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {(language === "zh" ? voice.characteristics : voice.characteristicsEn).map((char, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {char}
+          {!loading && (
+            <div className="max-w-4xl mx-auto">
+              <div className="grid md:grid-cols-2 gap-6">
+                {voices.map((voice) => (
+                  <Card key={voice.id} className={getCardStyle(voice.id.toString())}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4 mb-4">
+                        <Avatar className="w-16 h-16">
+                          <AvatarFallback className="text-lg bg-gradient-to-br from-pink-500 to-purple-500 text-white">
+                            {voice.display_name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className={`${themeClasses.text} font-semibold text-lg mb-1`}>
+                            {voice.display_name}
+                          </h3>
+                          {voice.description && (
+                            <p className={`${themeClasses.secondaryText} text-sm mb-2`}>
+                              {voice.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {voice.language === "zh" ? "中文" : "English"}
                             </Badge>
-                          ))}
+                            {voice.gender && (
+                              <Badge variant="secondary" className="text-xs">
+                                {voice.gender === "male" ? "男声" : voice.gender === "female" ? "女声" : "中性"}
+                              </Badge>
+                            )}
+                            {voice.is_premium && (
+                              <Badge variant="secondary" className="text-xs bg-yellow-500 text-white">
+                                VIP
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Audio Preview and Select Buttons */}
-                    <div className="flex items-center space-x-2 mt-4">
-                      <Button
-                        onClick={() => handlePlayAudio(voice.id, voice.audioSample)}
-                        size="sm"
-                        variant="outline"
-                        className={getButtonStyle(voice.id, "preview")}
-                      >
-                        {playingVoice === voice.id ? (
-                          <>
-                            <Pause className="w-4 h-4 mr-2" />
-                            {t("voiceSelection.stopAudio")}
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2" />
-                            {t("voiceSelection.tryAudio")}
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => setSelectedVoice(voice.id)}
-                        size="sm"
-                        className={getButtonStyle(voice.id, "select")}
-                      >
-                        {selectedVoice === voice.id ? t("voiceSelection.selected") : t("voiceSelection.select")}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      {/* Audio Preview and Select Buttons */}
+                      <div className="flex items-center space-x-2 mt-4">
+                        <Button
+                          onClick={() => handlePlayAudio(voice.id.toString(), voice.voice_url)}
+                          size="sm"
+                          variant="outline"
+                          className={getButtonStyle(voice.id.toString(), "preview")}
+                        >
+                          {playingVoice === voice.id.toString() ? (
+                            <>
+                              <Pause className="w-4 h-4 mr-2" />
+                              {t("voiceSelection.stopAudio")}
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-2" />
+                              {t("voiceSelection.tryAudio")}
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => setSelectedVoice(voice.id.toString())}
+                          size="sm"
+                          className={getButtonStyle(voice.id.toString(), "select")}
+                        >
+                          {selectedVoice === voice.id.toString() ? t("voiceSelection.selected") : t("voiceSelection.select")}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* Custom Voice Option */}
-            <div className="mt-8">
-              <Link href={`/custom-voice?${searchParams.toString()}`}>
-                <Card
-                  className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-purple-400 transition-all duration-300 hover:border-purple-500`}
-                >
-                  <CardContent className="p-6 text-center">
-                    <Mic className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-                    <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
-                      {t("voiceSelection.customVoice")}
-                    </h3>
-                    <p className={`${themeClasses.secondaryText} text-sm mb-4`}>
-                      {language === "zh"
-                        ? "录制您的专属声音，让AI用您的声音讲述电影故事"
-                        : "Record your personal voice for AI narration"}
-                    </p>
-                    <Badge className="bg-yellow-500 text-black">VIP</Badge>
-                  </CardContent>
-                </Card>
-              </Link>
-            </div>
+          {/* Custom Voice Option */}
+          <div className="mt-8">
+            <Link href={`/custom-voice?${searchParams.toString()}`}>
+              <Card
+                className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-purple-400 transition-all duration-300 hover:border-purple-500`}
+              >
+                <CardContent className="p-6 text-center">
+                  <Mic className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+                  <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
+                    {t("voiceSelection.customVoice")}
+                  </h3>
+                  <p className={`${themeClasses.secondaryText} text-sm mb-4`}>
+                    {language === "zh"
+                      ? "录制您的专属声音，让AI用您的声音讲述电影故事"
+                      : "Record your personal voice for AI narration"}
+                  </p>
+                  <Badge className="bg-yellow-500 text-black">VIP</Badge>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           {/* Audio Element */}
