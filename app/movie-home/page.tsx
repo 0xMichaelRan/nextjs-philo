@@ -8,6 +8,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
+import { apiConfig } from "@/lib/api-config"
+
+interface MovieData {
+  id: string
+  title: string
+  title_en: string
+  title_zh?: string
+  year?: number
+  genre: string[]
+  director?: string
+  duration_minutes?: number
+  rating?: number
+  description?: string
+  poster_url?: string
+  backdrop_url?: string
+  tmdb_id?: number
+  original_title?: string
+  original_language?: string
+  vote_count?: number
+  popularity?: number
+  tagline?: string
+}
 
 const mockMovieData = {
   director: "弗兰克·德拉邦特",
@@ -55,6 +77,9 @@ export default function MovieHomePage() {
   const [movieId, setMovieId] = useState("")
   const [titleCn, setTitleCn] = useState("")
   const [titleEn, setTitleEn] = useState("")
+  const [movieData, setMovieData] = useState<MovieData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const id = searchParams.get("movieId")
@@ -66,6 +91,38 @@ export default function MovieHomePage() {
     if (en) setTitleEn(decodeURIComponent(en))
   }, [searchParams])
 
+  // Fetch movie data from API
+  useEffect(() => {
+    if (movieId) {
+      fetchMovieData(movieId)
+    }
+  }, [movieId])
+
+  const fetchMovieData = async (id: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.movies.details(id) + "?language=zh"
+      )
+
+      if (response.ok) {
+        const data: MovieData = await response.json()
+        setMovieData(data)
+        // Update titles if they weren't provided in URL params
+        if (!titleCn && data.title_zh) setTitleCn(data.title_zh)
+        if (!titleEn && data.title_en) setTitleEn(data.title_en)
+      } else {
+        setError("无法加载电影信息")
+      }
+    } catch (err) {
+      console.error("Error fetching movie data:", err)
+      setError("网络错误，请稍后重试")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleGenerateVideo = () => {
     const params = new URLSearchParams()
     params.set("movieId", movieId)
@@ -73,6 +130,36 @@ export default function MovieHomePage() {
     params.set("titleEn", titleEn)
     router.push(`/analysis-options?${params.toString()}`)
   }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cyan-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">加载中...</div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cyan-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">{error}</div>
+      </div>
+    )
+  }
+
+  // Use real movie data if available, otherwise fall back to mock data
+  const displayData = movieData ? {
+    director: movieData.director || "未知导演",
+    genre: movieData.genre || [],
+    duration: movieData.duration_minutes ? `${movieData.duration_minutes}分钟` : "未知时长",
+    releaseDate: movieData.year ? `${movieData.year}` : "未知年份",
+    rating: movieData.rating || 0,
+    description: movieData.description || "暂无简介",
+    cast: [], // Cast info not available in current API
+    sampleVideos: mockMovieData.sampleVideos // Keep mock sample videos for now
+  } : mockMovieData
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-900 via-blue-900 to-indigo-900">
@@ -100,7 +187,7 @@ export default function MovieHomePage() {
             <Card className="bg-white/10 border-white/20 overflow-hidden">
               <CardContent className="p-0">
                 <Image
-                  src={`/placeholder.svg?height=450&width=300&query=${encodeURIComponent(titleEn)}+movie+poster`}
+                  src={movieData?.poster_url || `/placeholder.svg?height=450&width=300&query=${encodeURIComponent(titleEn)}+movie+poster`}
                   alt={titleCn}
                   width={300}
                   height={450}
@@ -119,42 +206,44 @@ export default function MovieHomePage() {
               <div className="flex flex-wrap gap-3 mb-6">
                 <Badge className="bg-orange-500 text-white flex items-center">
                   <Star className="w-3 h-3 mr-1" />
-                  {mockMovieData.rating}
+                  {displayData.rating}
                 </Badge>
                 <Badge variant="outline" className="text-white border-white/30">
                   <Calendar className="w-3 h-3 mr-1" />
-                  {mockMovieData.releaseDate}
+                  {displayData.releaseDate}
                 </Badge>
                 <Badge variant="outline" className="text-white border-white/30">
                   <Clock className="w-3 h-3 mr-1" />
-                  {mockMovieData.duration}
+                  {displayData.duration}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <h3 className="text-white font-semibold mb-2">导演</h3>
-                  <p className="text-gray-300">{mockMovieData.director}</p>
+                  <p className="text-gray-300">{displayData.director}</p>
                 </div>
                 <div>
                   <h3 className="text-white font-semibold mb-2">类型</h3>
                   <div className="flex flex-wrap gap-2">
-                    {mockMovieData.genre.map((g, index) => (
+                    {displayData.genre.map((g, index) => (
                       <Badge key={index} variant="secondary">
                         {g}
                       </Badge>
                     ))}
                   </div>
                 </div>
-                <div className="md:col-span-2">
-                  <h3 className="text-white font-semibold mb-2">主演</h3>
-                  <p className="text-gray-300">{mockMovieData.cast.join(" / ")}</p>
-                </div>
+                {displayData.cast.length > 0 && (
+                  <div className="md:col-span-2">
+                    <h3 className="text-white font-semibold mb-2">主演</h3>
+                    <p className="text-gray-300">{displayData.cast.join(" / ")}</p>
+                  </div>
+                )}
               </div>
 
               <div>
                 <h3 className="text-white font-semibold mb-2">剧情简介</h3>
-                <p className="text-gray-300 leading-relaxed">{mockMovieData.description}</p>
+                <p className="text-gray-300 leading-relaxed">{displayData.description}</p>
               </div>
             </div>
 
@@ -180,7 +269,7 @@ export default function MovieHomePage() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockMovieData.sampleVideos.map((video) => (
+              {displayData.sampleVideos.map((video) => (
                 <Card
                   key={video.id}
                   className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group"

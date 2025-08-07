@@ -10,71 +10,41 @@ import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { apiConfig } from "@/lib/api-config"
 
-const popularMovies = [
+interface Movie {
+  id: string
+  title: string
+  title_en: string
+  title_zh?: string
+  year?: number
+  genre: string[]
+  rating?: number
+  poster_url?: string
+  backdrop_url?: string
+}
+
+// Mock data for fallback
+const fallbackMovies = [
   {
-    id: 1,
-    titleCn: "肖申克的救赎",
-    titleEn: "The Shawshank Redemption",
-    year: "1994",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.7,
-  },
-  {
-    id: 2,
-    titleCn: "霸王别姬",
-    titleEn: "Farewell My Concubine",
-    year: "1993",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.6,
-  },
-  {
-    id: 3,
-    titleCn: "阿甘正传",
-    titleEn: "Forrest Gump",
-    year: "1994",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.5,
-  },
-  {
-    id: 4,
-    titleCn: "泰坦尼克号",
-    titleEn: "Titanic",
-    year: "1997",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.4,
-  },
-  {
-    id: 5,
-    titleCn: "这个杀手不太冷",
-    titleEn: "Léon: The Professional",
-    year: "1994",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.4,
-  },
-  {
-    id: 6,
-    titleCn: "千与千寻",
-    titleEn: "Spirited Away",
-    year: "2001",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.4,
-  },
-  {
-    id: 7,
-    titleCn: "辛德勒的名单",
-    titleEn: "Schindler's List",
-    year: "1993",
-    poster: "/placeholder.svg?height=300&width=200",
-    rating: 9.6,
-  },
-  {
-    id: 8,
-    titleCn: "盗梦空间",
-    titleEn: "Inception",
-    year: "2010",
-    poster: "/placeholder.svg?height=300&width=200",
+    id: "tt0111161",
+    title: "肖申克的救赎",
+    title_en: "The Shawshank Redemption",
+    title_zh: "肖申克的救赎",
+    year: 1994,
+    genre: ["剧情", "犯罪"],
     rating: 9.3,
+    poster_url: "/placeholder.svg?height=300&width=200",
+  },
+  {
+    id: "tt0068646",
+    title: "教父",
+    title_en: "The Godfather",
+    title_zh: "教父",
+    year: 1972,
+    genre: ["剧情", "犯罪"],
+    rating: 9.2,
+    poster_url: "/placeholder.svg?height=300&width=200",
   },
 ]
 
@@ -91,12 +61,21 @@ const recommendedKeywords = [
 
 export default function MovieSelectionPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [filteredMovies, setFilteredMovies] = useState(popularMovies)
+  const [movies, setMovies] = useState<Movie[]>([])
+  const [filteredMovies, setFilteredMovies] = useState<Movie[]>([])
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
 
+  // Fetch popular movies on component mount
+  useEffect(() => {
+    fetchPopularMovies()
+  }, [])
+
+  // Handle click outside for search suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
@@ -110,19 +89,77 @@ export default function MovieSelectionPage() {
     }
   }, [])
 
+  const fetchPopularMovies = async () => {
+    setLoading(true)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        `${apiConfig.movies.list()}?page=1&per_page=20&language=${language}`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setMovies(data.movies || [])
+        setFilteredMovies(data.movies || [])
+      } else {
+        // Fallback to mock data
+        setMovies(fallbackMovies)
+        setFilteredMovies(fallbackMovies)
+      }
+    } catch (error) {
+      console.error("Error fetching movies:", error)
+      // Fallback to mock data
+      setMovies(fallbackMovies)
+      setFilteredMovies(fallbackMovies)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const searchMovies = async (query: string) => {
+    if (!query.trim()) {
+      setFilteredMovies(movies)
+      return
+    }
+
+    setSearchLoading(true)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        `${apiConfig.movies.search()}?q=${encodeURIComponent(query)}&page=1&per_page=20`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setFilteredMovies(data.movies || [])
+      } else {
+        // Fallback to local filtering
+        setFilteredMovies(
+          movies.filter(
+            (movie) =>
+              movie.title.toLowerCase().includes(query.toLowerCase()) ||
+              movie.title_en.toLowerCase().includes(query.toLowerCase()) ||
+              (movie.title_zh && movie.title_zh.toLowerCase().includes(query.toLowerCase()))
+          )
+        )
+      }
+    } catch (error) {
+      console.error("Error searching movies:", error)
+      // Fallback to local filtering
+      setFilteredMovies(
+        movies.filter(
+          (movie) =>
+            movie.title.toLowerCase().includes(query.toLowerCase()) ||
+            movie.title_en.toLowerCase().includes(query.toLowerCase()) ||
+            (movie.title_zh && movie.title_zh.toLowerCase().includes(query.toLowerCase()))
+        )
+      )
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-    if (query.trim() === "") {
-      setFilteredMovies(popularMovies)
-    } else {
-      setFilteredMovies(
-        popularMovies.filter(
-          (movie) =>
-            movie.titleCn.toLowerCase().includes(query.toLowerCase()) ||
-            movie.titleEn.toLowerCase().includes(query.toLowerCase()),
-        ),
-      )
-    }
+    searchMovies(query)
   }
 
   const handleSearchFocus = () => {
@@ -252,38 +289,66 @@ export default function MovieSelectionPage() {
           )}
         </div>
 
-        {/* Movies Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredMovies.map((movie) => (
-            <Link key={movie.id} href={`/movie/${movie.id}`}>
-              <Card className={`${getCardClasses()} transition-all duration-300 cursor-pointer group overflow-hidden`}>
-                <CardContent className="p-0">
-                  <div className="relative overflow-hidden">
-                    <Image
-                      src={movie.poster || "/placeholder.svg"}
-                      alt={language === "zh" ? movie.titleCn : movie.titleEn}
-                      width={200}
-                      height={300}
-                      className="w-full h-64 md:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <Badge className="absolute top-3 right-3 bg-orange-500 text-white font-bold">{movie.rating}</Badge>
-                  </div>
-                  <div className="p-4">
-                    <h3 className={`font-semibold ${getTextClasses()} text-sm mb-1 line-clamp-1`}>
-                      {language === "zh" ? movie.titleCn : movie.titleEn}
-                    </h3>
-                    <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-xs mb-2 line-clamp-1`}>
-                      {language === "zh" ? movie.titleEn : movie.titleCn}
-                    </p>
-                    <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-xs`}>{movie.year}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-lg`}>
+              加载中...
+            </p>
+          </div>
+        )}
 
-        {filteredMovies.length === 0 && (
+        {/* Search Loading State */}
+        {searchLoading && (
+          <div className="text-center py-4">
+            <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-sm`}>
+              搜索中...
+            </p>
+          </div>
+        )}
+
+        {/* Movies Grid */}
+        {!loading && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredMovies.map((movie) => (
+              <Link key={movie.id} href={`/movie/${movie.id}`}>
+                <Card className={`${getCardClasses()} transition-all duration-300 cursor-pointer group overflow-hidden`}>
+                  <CardContent className="p-0">
+                    <div className="relative overflow-hidden">
+                      <Image
+                        src={movie.poster_url || "/placeholder.svg"}
+                        alt={language === "zh" ? (movie.title_zh || movie.title) : movie.title_en}
+                        width={200}
+                        height={300}
+                        className="w-full h-64 md:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {movie.rating && (
+                        <Badge className="absolute top-3 right-3 bg-orange-500 text-white font-bold">
+                          {movie.rating.toFixed(1)}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className={`font-semibold ${getTextClasses()} text-sm mb-1 line-clamp-1`}>
+                        {language === "zh" ? (movie.title_zh || movie.title) : movie.title_en}
+                      </h3>
+                      <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-xs mb-2 line-clamp-1`}>
+                        {language === "zh" ? movie.title_en : (movie.title_zh || movie.title)}
+                      </p>
+                      {movie.year && (
+                        <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-xs`}>
+                          {movie.year}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {!loading && !searchLoading && filteredMovies.length === 0 && (
           <div className="text-center py-12">
             <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-lg mb-4`}>
               {t("movieSelection.noResults")}

@@ -9,6 +9,28 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
+import { apiConfig } from "@/lib/api-config"
+
+interface MovieData {
+  id: string
+  title: string
+  title_en: string
+  title_zh?: string
+  year?: number
+  genre: string[]
+  director?: string
+  duration_minutes?: number
+  rating?: number
+  description?: string
+  poster_url?: string
+  backdrop_url?: string
+  tmdb_id?: number
+  original_title?: string
+  original_language?: string
+  vote_count?: number
+  popularity?: number
+  tagline?: string
+}
 
 const mockMoviesData = {
   "1": {
@@ -98,20 +120,80 @@ const mockMoviesData = {
 export default function MovieHomePage() {
   const params = useParams()
   const router = useRouter()
-  const [movieData, setMovieData] = useState<any>(null)
+  const [movieData, setMovieData] = useState<MovieData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { theme } = useTheme()
 
   useEffect(() => {
     const movieId = params.id as string
-    if (movieId && mockMoviesData[movieId]) {
-      setMovieData(mockMoviesData[movieId])
+    if (movieId) {
+      fetchMovieData(movieId)
     }
   }, [params])
+
+  const fetchMovieData = async (id: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.movies.details(id) + "?language=zh"
+      )
+
+      if (response.ok) {
+        const data: MovieData = await response.json()
+        setMovieData(data)
+      } else {
+        // Fallback to mock data if API fails
+        if (mockMoviesData[id as keyof typeof mockMoviesData]) {
+          const mockData = mockMoviesData[id as keyof typeof mockMoviesData]
+          setMovieData({
+            id: mockData.id.toString(),
+            title: mockData.titleCn,
+            title_en: mockData.titleEn,
+            title_zh: mockData.titleCn,
+            year: parseInt(mockData.releaseDate.split('-')[0]),
+            genre: mockData.genre,
+            director: mockData.director,
+            duration_minutes: parseInt(mockData.duration.replace('分钟', '')),
+            rating: mockData.rating,
+            description: mockData.description,
+            poster_url: mockData.poster
+          })
+        } else {
+          setError("无法加载电影信息")
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching movie data:", err)
+      // Fallback to mock data
+      if (mockMoviesData[id as keyof typeof mockMoviesData]) {
+        const mockData = mockMoviesData[id as keyof typeof mockMoviesData]
+        setMovieData({
+          id: mockData.id.toString(),
+          title: mockData.titleCn,
+          title_en: mockData.titleEn,
+          title_zh: mockData.titleCn,
+          year: parseInt(mockData.releaseDate.split('-')[0]),
+          genre: mockData.genre,
+          director: mockData.director,
+          duration_minutes: parseInt(mockData.duration.replace('分钟', '')),
+          rating: mockData.rating,
+          description: mockData.description,
+          poster_url: mockData.poster
+        })
+      } else {
+        setError("网络错误，请稍后重试")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleGenerateVideo = () => {
     if (movieData) {
       router.push(
-        `/analysis-options?movieId=${movieData.id}&titleCn=${encodeURIComponent(movieData.titleCn)}&titleEn=${encodeURIComponent(movieData.titleEn)}`,
+        `/analysis-options?movieId=${movieData.id}&titleCn=${encodeURIComponent(movieData.title_zh || movieData.title)}&titleEn=${encodeURIComponent(movieData.title_en)}`,
       )
     }
   }
@@ -137,11 +219,31 @@ export default function MovieHomePage() {
     return "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
   }
 
-  if (!movieData) {
+  if (loading) {
     return (
       <AppLayout title="电影详情">
         <div className="flex items-center justify-center h-96">
           <p className={`${getTextClasses()} text-xl`}>加载中...</p>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AppLayout title="电影详情">
+        <div className="flex items-center justify-center h-96">
+          <p className={`${getTextClasses()} text-xl`}>{error}</p>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (!movieData) {
+    return (
+      <AppLayout title="电影详情">
+        <div className="flex items-center justify-center h-96">
+          <p className={`${getTextClasses()} text-xl`}>电影不存在</p>
         </div>
       </AppLayout>
     )
@@ -157,8 +259,8 @@ export default function MovieHomePage() {
             <Card className={`${getCardClasses()} overflow-hidden`}>
               <CardContent className="p-0">
                 <Image
-                  src={movieData.poster || "/placeholder.svg"}
-                  alt={movieData.titleCn}
+                  src={movieData.poster_url || "/placeholder.svg"}
+                  alt={movieData.title_zh || movieData.title}
                   width={300}
                   height={450}
                   className="w-full h-auto object-cover"
@@ -170,37 +272,39 @@ export default function MovieHomePage() {
           {/* Movie Details */}
           <div className="md:col-span-2 space-y-6">
             <div>
-              <h1 className={`text-4xl font-bold ${getTextClasses()} mb-2`}>{movieData.titleCn}</h1>
+              <h1 className={`text-4xl font-bold ${getTextClasses()} mb-2`}>{movieData.title_zh || movieData.title}</h1>
               <h2 className={`text-2xl ${theme === "light" ? "text-purple-600" : "text-cyan-300"} mb-4`}>
-                {movieData.titleEn}
+                {movieData.title_en}
               </h2>
 
               <div className="flex flex-wrap gap-3 mb-6">
                 <Badge className="bg-orange-500 text-white flex items-center">
                   <Star className="w-3 h-3 mr-1" />
-                  {movieData.rating}
+                  {movieData.rating || 0}
                 </Badge>
                 <Badge
                   variant="outline"
                   className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"}`}
                 >
                   <Calendar className="w-3 h-3 mr-1" />
-                  {movieData.releaseDate}
+                  {movieData.year || "未知年份"}
                 </Badge>
                 <Badge
                   variant="outline"
                   className={`${theme === "light" ? "text-gray-700 border-gray-300" : "text-white border-white/30"}`}
                 >
                   <Clock className="w-3 h-3 mr-1" />
-                  {movieData.duration}
+                  {movieData.duration_minutes ? `${movieData.duration_minutes}分钟` : "未知时长"}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <h3 className={`${getTextClasses()} font-semibold mb-2`}>导演</h3>
-                  <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{movieData.director}</p>
-                </div>
+                {movieData.director && (
+                  <div>
+                    <h3 className={`${getTextClasses()} font-semibold mb-2`}>导演</h3>
+                    <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{movieData.director}</p>
+                  </div>
+                )}
                 <div>
                   <h3 className={`${getTextClasses()} font-semibold mb-2`}>类型</h3>
                   <div className="flex flex-wrap gap-2">
@@ -211,18 +315,12 @@ export default function MovieHomePage() {
                     ))}
                   </div>
                 </div>
-                <div className="md:col-span-2">
-                  <h3 className={`${getTextClasses()} font-semibold mb-2`}>主演</h3>
-                  <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
-                    {movieData.cast.join(" / ")}
-                  </p>
-                </div>
               </div>
 
               <div>
                 <h3 className={`${getTextClasses()} font-semibold mb-2`}>剧情简介</h3>
                 <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} leading-relaxed`}>
-                  {movieData.description}
+                  {movieData.description || "暂无简介"}
                 </p>
               </div>
             </div>
@@ -249,7 +347,7 @@ export default function MovieHomePage() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {movieData.sampleVideos.map((video) => (
+              {mockMoviesData["1"].sampleVideos.map((video) => (
                 <Card
                   key={video.id}
                   className={`${theme === "light" ? "bg-white/60 border-gray-200/30 hover:bg-white/80" : "bg-white/5 border-white/10 hover:bg-white/10"} transition-all duration-300 cursor-pointer group`}
