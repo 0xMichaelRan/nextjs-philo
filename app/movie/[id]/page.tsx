@@ -262,20 +262,20 @@ export default function MovieHomePage() {
               返回
             </Button>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               <Button
                 variant={currentLanguage === "zh" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setCurrentLanguage("zh")}
               >
-                中文
+                中
               </Button>
               <Button
                 variant={currentLanguage === "en" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setCurrentLanguage("en")}
               >
-                English
+                EN
               </Button>
             </div>
           </div>
