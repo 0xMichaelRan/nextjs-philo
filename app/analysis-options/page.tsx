@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
+
 import { AppLayout } from "@/components/app-layout"
+import { MovieHeader } from "@/components/movie-header"
 import { useTheme } from "@/contexts/theme-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -176,19 +177,13 @@ export default function AnalysisOptionsPage() {
       <AppLayout title="分析选项">
         <div className="container mx-auto px-6 py-8 pb-24">
           {/* Movie Info */}
-          <div className="flex items-center space-x-4 mb-12 max-w-2xl mx-auto">
-            <Image
-              src={`/placeholder.svg?height=120&width=80&query=${encodeURIComponent(movieTitleEn || movieTitle)}+movie+poster`}
-              alt={movieTitle}
-              width={80}
-              height={120}
-              className="w-16 h-24 object-cover rounded-lg"
-            />
-            <div>
-              <h2 className={`${getTextClasses()} text-xl font-bold`}>{movieTitle}</h2>
-              <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>请选择您的分析偏好</p>
-            </div>
-          </div>
+          <MovieHeader
+            movieId={movieId}
+            movieTitle={movieTitle}
+            movieTitleEn={movieTitleEn}
+            subtitle="请选择您的分析偏好"
+            className="mb-12 max-w-2xl mx-auto"
+          />
 
           {/* Options */}
           <div className="space-y-8 max-w-2xl mx-auto">

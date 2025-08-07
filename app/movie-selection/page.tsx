@@ -316,11 +316,15 @@ export default function MovieSelectionPage() {
                   <CardContent className="p-0">
                     <div className="relative overflow-hidden">
                       <Image
-                        src={movie.poster_url || "/placeholder.svg"}
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movie.id}/image?file=poster`}
                         alt={language === "zh" ? (movie.title_zh || movie.title) : movie.title_en}
                         width={200}
                         height={300}
                         className="w-full h-64 md:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg";
+                        }}
                       />
                       {movie.rating && (
                         <Badge className="absolute top-3 right-3 bg-orange-500 text-white font-bold">

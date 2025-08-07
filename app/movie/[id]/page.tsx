@@ -291,7 +291,7 @@ export default function MovieHomePage() {
               <Card className={`${getCardClasses()} overflow-hidden shadow-xl`}>
                 <CardContent className="p-0 relative">
                   <Image
-                    src={movieData.poster_url || "/placeholder.svg"}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop` || "/placeholder.svg"}
                     alt={currentLanguage === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
                     width={400}
                     height={600}
