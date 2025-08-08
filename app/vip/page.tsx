@@ -160,11 +160,7 @@ export default function VipPage() {
   const handleSubscribe = (planId: string) => {
     if (planId === "free") return
 
-    if (!user) {
-      router.push("/auth?redirect=vip")
-      return
-    }
-
+    // Allow access to payment page without login requirement
     router.push(`/payment?plan=${planId}`)
   }
 

@@ -80,10 +80,20 @@ class ApiConfig {
   // Payment endpoints
   public payments = {
     checkout: () => `${this.baseUrl}/payments/checkout`,
+    complete: (paymentId: number) => `${this.baseUrl}/payments/${paymentId}/complete`,
+    mockComplete: () => `${this.baseUrl}/payments/mock-complete`,
     confirm: (paymentId: number) => `${this.baseUrl}/payments/confirm/${paymentId}`,
     history: () => `${this.baseUrl}/payments/history`,
     subscription: () => `${this.baseUrl}/payments/subscription`,
     validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
+  }
+
+  // Job endpoints
+  public jobs = {
+    create: () => `${this.baseUrl}/jobs`,
+    list: () => `${this.baseUrl}/jobs`,
+    details: (id: string) => `${this.baseUrl}/jobs/${id}`,
+    update: (id: string) => `${this.baseUrl}/jobs/${id}`,
   }
 
   // Utility method to get authorization headers

@@ -11,6 +11,9 @@ import { AppLayout } from "@/components/app-layout"
 import { MovieHeader } from "@/components/movie-header"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { apiConfig } from "@/lib/api-config"
+import { useToast } from "@/hooks/use-toast"
 
 
 
@@ -41,6 +44,8 @@ export default function ScriptReviewPage() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
+  const { user } = useAuth()
+  const { toast } = useToast()
 
   useEffect(() => {
     const movieId = searchParams.get("movieId")
@@ -125,22 +130,96 @@ export default function ScriptReviewPage() {
   }
 
   const handleRegenerate = () => {
-    // Check if user is logged in
-    const isLoggedIn = false // This would come from your auth state
-
-    if (!isLoggedIn) {
-      router.push("/auth?redirect=script-review")
-    } else {
-      setIsGenerating(true)
-      // Simulate regeneration
-      setTimeout(() => {
-        setIsGenerating(false)
-      }, 3000)
-    }
+    // Allow regeneration without login requirement
+    setIsGenerating(true)
+    // Simulate regeneration
+    setTimeout(() => {
+      setIsGenerating(false)
+    }, 3000)
   }
 
-  const handleNext = () => {
-    router.push(`/job-submission?${searchParams.toString()}`)
+  const handleNext = async () => {
+    try {
+      // Extract user choices from URL parameters
+      const movieId = searchParams.get("movieId") || ""
+      const movieTitle = searchParams.get("movieTitle") || movieData?.title || ""
+      const movieTitleEn = searchParams.get("movieTitleEn") || movieData?.title_en || ""
+      const analysisStyle = searchParams.get("analysisStyle") || "philosophical"
+      const analysisDepth = searchParams.get("analysisDepth") || "deep"
+      const analysisCharacter = searchParams.get("analysisCharacter") || "philosopher"
+      const analysisTheme = searchParams.get("analysisTheme") || "general"
+      const voiceId = searchParams.get("voiceId") || ""
+      const voiceName = searchParams.get("voiceName") || ""
+      const voiceLanguage = searchParams.get("voiceLanguage") || "zh"
+      const customVoiceId = searchParams.get("customVoiceId") || ""
+      const scriptLength = searchParams.get("scriptLength") || "medium"
+      const scriptTone = searchParams.get("scriptTone") || "analytical"
+
+      // Create job data
+      const jobData = {
+        movie_id: movieId,
+        movie_title: movieTitle,
+        movie_title_en: movieTitleEn,
+        analysis_options: {
+          style: analysisStyle,
+          depth: analysisDepth,
+          character: analysisCharacter,
+          theme: analysisTheme
+        },
+        voice_options: {
+          voice_id: voiceId,
+          voice_name: voiceName,
+          language: voiceLanguage,
+          custom_voice_id: customVoiceId
+        },
+        script_options: {
+          length: scriptLength,
+          tone: scriptTone
+        },
+        status: "pending"
+      }
+
+      // Only create job if user is logged in
+      if (user) {
+        const response = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.jobs.create(),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(jobData)
+          }
+        )
+
+        if (response.ok) {
+          const result = await response.json()
+          toast({
+            title: "Job Created",
+            description: "Your video analysis job has been created successfully.",
+            variant: "success",
+          })
+
+          // Navigate to job submission with job ID
+          router.push(`/job-submission?jobId=${result.id}&${searchParams.toString()}`)
+        } else {
+          throw new Error("Failed to create job")
+        }
+      } else {
+        // For non-logged users, just navigate to job submission
+        router.push(`/job-submission?${searchParams.toString()}`)
+      }
+    } catch (error) {
+      console.error("Error creating job:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create job. Please try again.",
+        variant: "destructive",
+      })
+
+      // Still navigate to job submission even if job creation fails
+      router.push(`/job-submission?${searchParams.toString()}`)
+    }
   }
 
   const getThemeClasses = () => {

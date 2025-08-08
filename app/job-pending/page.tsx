@@ -11,6 +11,7 @@ import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
 
 interface Job {
   id: string
@@ -59,6 +60,14 @@ export default function JobPendingPage() {
   const [jobs, setJobs] = useState(mockJobs)
   const { theme } = useTheme()
   const { language } = useLanguage()
+  const { user } = useAuth()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      window.location.href = "/auth?redirect=job-pending"
+    }
+  }, [user])
 
   useEffect(() => {
     // Simulate progress updates

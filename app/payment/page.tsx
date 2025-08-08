@@ -322,20 +322,53 @@ export default function PaymentPage() {
           // Store payment info for later confirmation
           localStorage.setItem('pending_payment_id', result.payment_id.toString())
 
-          // Simulate payment completion after 5 seconds
-          setTimeout(() => {
-            updateUser({
-              is_vip: true,
-            })
+          // Mock payment completion after 3 seconds
+          setTimeout(async () => {
+            try {
+              // Call backend to complete mock payment and update database
+              const mockCompleteResponse = await apiConfig.makeAuthenticatedRequest(
+                apiConfig.payments.mockComplete(),
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    plan: selectedPlan,
+                    billing_cycle: billingCycle
+                  })
+                }
+              )
 
-            toast({
-              title: t("payment.paymentSuccess"),
-              description: t("payment.vipActivated"),
-              variant: "success",
-            })
+              if (mockCompleteResponse.ok) {
+                // Update local user state
+                updateUser({
+                  is_vip: true,
+                  vip_expiry_date: new Date(Date.now() + (billingCycle === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString()
+                })
 
-            router.push("/payment/success")
-          }, 5000)
+                toast({
+                  title: t("payment.paymentSuccess"),
+                  description: t("payment.vipActivated"),
+                  variant: "success",
+                })
+
+                // Clear any stored payment info
+                localStorage.removeItem('pending_payment_id')
+
+                router.push("/payment/success")
+              } else {
+                throw new Error("Mock payment completion failed")
+              }
+            } catch (error) {
+              console.error("Error in mock payment:", error)
+              toast({
+                title: t("payment.paymentFailed"),
+                description: t("payment.paymentError"),
+                variant: "destructive",
+              })
+            }
+          }, 3000)
         }
       } else {
         const error = await response.json()
