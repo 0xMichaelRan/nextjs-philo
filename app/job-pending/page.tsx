@@ -69,6 +69,27 @@ export default function JobPendingPage() {
     }
   }, [user])
 
+  const getThemeClasses = () => {
+    if (theme === "light") {
+      return {
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        text: "text-gray-800",
+        secondaryText: "text-gray-600",
+        card: "bg-white/80 border-gray-200/50",
+        cardHover: "hover:bg-white/90",
+      }
+    }
+    return {
+      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
+      text: "text-white",
+      secondaryText: "text-gray-300",
+      card: "bg-white/10 border-white/20",
+      cardHover: "hover:bg-white/20",
+    }
+  }
+
+  const themeClasses = getThemeClasses()
+
   useEffect(() => {
     // Simulate progress updates
     const interval = setInterval(() => {
@@ -122,14 +143,14 @@ export default function JobPendingPage() {
 
   return (
     <AppLayout title={language === "zh" ? "视频任务" : "Video Jobs"}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen ${themeClasses.background}`}>
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
               {language === "zh" ? "视频任务" : "Video Jobs"}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className={themeClasses.secondaryText}>
               {language === "zh" ? "查看您的视频生成进度" : "Track your video generation progress"}
             </p>
           </div>
@@ -137,14 +158,14 @@ export default function JobPendingPage() {
           {/* Jobs List */}
           <div className="space-y-4">
             {jobs.map((job) => (
-              <Card key={job.id} className="bg-white dark:bg-gray-800 shadow-sm">
+              <Card key={job.id} className={`${themeClasses.card} ${themeClasses.cardHover} shadow-sm transition-all duration-200`}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className={`text-lg font-semibold ${themeClasses.text}`}>
                         {job.movieTitle}
                       </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className={`text-sm ${themeClasses.secondaryText}`}>
                         {language === "zh" ? "创建于" : "Created"} {job.createdAt}
                       </p>
                     </div>
@@ -155,10 +176,10 @@ export default function JobPendingPage() {
                   {job.status === "processing" && (
                     <div className="mb-4">
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-600 dark:text-gray-400">
+                        <span className={themeClasses.secondaryText}>
                           {language === "zh" ? "进度" : "Progress"}
                         </span>
-                        <span className="text-gray-900 dark:text-white font-medium">
+                        <span className={`${themeClasses.text} font-medium`}>
                           {job.progress}%
                         </span>
                       </div>
@@ -169,11 +190,11 @@ export default function JobPendingPage() {
                   {/* Queue position for queued jobs */}
                   {job.status === "queued" && job.queuePosition && (
                     <div className="mb-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className={`text-sm ${themeClasses.secondaryText}`}>
                         {language === "zh" ? `队列位置: 第 ${job.queuePosition} 位` : `Queue position: #${job.queuePosition}`}
                       </p>
                       {job.estimatedTime && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className={`text-sm ${themeClasses.secondaryText}`}>
                           {language === "zh" ? "预计等待时间" : "Estimated wait"}: {formatTime(job.estimatedTime)}
                         </p>
                       )}
@@ -198,17 +219,17 @@ export default function JobPendingPage() {
             ))}
 
             {jobs.length === 0 && (
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className={themeClasses.card}>
                 <CardContent className="p-12 text-center">
-                  <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  <Clock className={`w-12 h-12 ${themeClasses.secondaryText} mx-auto mb-4`} />
+                  <h3 className={`text-lg font-medium ${themeClasses.text} mb-2`}>
                     {language === "zh" ? "暂无任务" : "No jobs yet"}
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className={themeClasses.secondaryText}>
                     {language === "zh" ? "您还没有创建任何视频任务" : "You haven't created any video jobs yet"}
                   </p>
                   <Link href="/movie-selection">
-                    <Button className="mt-4">
+                    <Button className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                       {language === "zh" ? "创建视频" : "Create Video"}
                     </Button>
                   </Link>

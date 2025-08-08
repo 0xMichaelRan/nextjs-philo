@@ -97,6 +97,9 @@ export default function VoiceSelectionPage() {
   const [audioProgress, setAudioProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
   const [voiceLanguage, setVoiceLanguage] = useState<"zh" | "en">("zh")
+  const [customVoices, setCustomVoices] = useState<any[]>([])
+  const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
+  const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -104,6 +107,31 @@ export default function VoiceSelectionPage() {
 
   // Set page title
   usePageTitle("voiceSelection")
+
+  // Fetch custom voices for VIP users
+  const fetchCustomVoices = async () => {
+    if (!user?.is_vip) return
+
+    try {
+      setCustomVoicesLoading(true)
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.voices.custom()
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setCustomVoices(data.voices || [])
+        setVoiceBalance({
+          used: data.voices?.length || 0,
+          limit: data.limits?.vip_limit || 1
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching custom voices:", error)
+    } finally {
+      setCustomVoicesLoading(false)
+    }
+  }
 
   useEffect(() => {
     const title = searchParams.get("titleCn")
@@ -118,7 +146,12 @@ export default function VoiceSelectionPage() {
 
     // Set voice language to match UI language
     setVoiceLanguage(language as "zh" | "en")
-  }, [searchParams, language])
+
+    // Fetch custom voices if user is VIP
+    if (user?.is_vip) {
+      fetchCustomVoices()
+    }
+  }, [searchParams, language, user])
 
   // Fetch voices from API
   useEffect(() => {
@@ -218,7 +251,24 @@ export default function VoiceSelectionPage() {
   const handleNext = () => {
     if (selectedVoice) {
       const params = new URLSearchParams(searchParams.toString())
-      params.set("voice", selectedVoice)
+
+      if (selectedVoice.startsWith("custom_")) {
+        // Handle custom voice selection
+        const customVoiceId = selectedVoice.replace("custom_", "")
+        const customVoice = customVoices.find(v => v.id.toString() === customVoiceId)
+
+        params.set("voiceId", "custom")
+        params.set("customVoiceId", customVoiceId)
+        params.set("voiceName", customVoice?.display_name || "Custom Voice")
+        params.set("voiceLanguage", customVoice?.language || "zh")
+      } else {
+        // Handle regular voice selection
+        const voice = voices.find(v => v.id.toString() === selectedVoice)
+        params.set("voiceId", selectedVoice)
+        params.set("voiceName", voice?.name || "")
+        params.set("voiceLanguage", voiceLanguage)
+      }
+
       router.push(`/script-review?${params.toString()}`)
     }
   }
@@ -404,9 +454,59 @@ export default function VoiceSelectionPage() {
             </div>
           )}
 
-          {/* Custom Voice Option */}
+          {/* Custom Voices Section */}
+          {user?.is_vip && customVoices.length > 0 && (
+            <div className="mt-8 max-w-4xl mx-auto">
+              <h3 className={`text-xl font-bold ${themeClasses.text} mb-4 text-center`}>
+                {language === "zh" ? "我的专属声音" : "My Custom Voices"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {customVoices.map((voice) => (
+                  <Card
+                    key={voice.id}
+                    className={`${themeClasses.card} ${themeClasses.cardHover} border-2 transition-all duration-300 cursor-pointer ${
+                      selectedVoice === `custom_${voice.id}`
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                        : "border-gray-200 dark:border-gray-700"
+                    }`}
+                    onClick={() => setSelectedVoice(`custom_${voice.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                            <Mic className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className={`font-semibold ${themeClasses.text}`}>
+                              {voice.display_name}
+                            </h4>
+                            <p className={`text-sm ${themeClasses.secondaryText}`}>
+                              {voice.language === "zh" ? "中文" : "English"} • {voice.file_size_mb}MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant={selectedVoice === `custom_${voice.id}` ? "default" : "outline"}
+                          size="sm"
+                          className={selectedVoice === `custom_${voice.id}` ?
+                            "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white" :
+                            ""
+                          }
+                        >
+                          {selectedVoice === `custom_${voice.id}` ? t("voiceSelection.selected") : t("voiceSelection.select")}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Custom Voice Recording Option */}
           <div className="mt-8 max-w-4xl mx-auto">
-            {user && user.is_vip ? (
+            {user && user.is_vip && voiceBalance.used < voiceBalance.limit ? (
               // VIP User - Show Custom Voice Button
               <Link href={`/custom-voice-record?${searchParams.toString()}`}>
                 <Card

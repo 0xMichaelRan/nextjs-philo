@@ -43,7 +43,8 @@ export default function CustomVoiceRecordPage() {
   // Check VIP status
   useEffect(() => {
     if (!user || !user.is_vip) {
-      router.push(`/voice-selection?${searchParams.toString()}`)
+      const returnTo = searchParams.get("returnTo") || "voice-selection"
+      router.push(`/${returnTo}?${searchParams.toString()}`)
     }
     // Set record language to match UI language
     setRecordLanguage(language as "zh" | "en")
@@ -240,7 +241,8 @@ export default function CustomVoiceRecordPage() {
       if (response.ok) {
         setStep("save")
         setTimeout(() => {
-          router.push(`/voice-selection?${searchParams.toString()}`)
+          const returnTo = searchParams.get("returnTo") || "voice-selection"
+          router.push(`/${returnTo}?${searchParams.toString()}`)
         }, 2000)
       } else {
         const errorData = await response.json()
@@ -273,11 +275,17 @@ export default function CustomVoiceRecordPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push(`/voice-selection?${searchParams.toString()}`)}
+              onClick={() => {
+                const returnTo = searchParams.get("returnTo") || "voice-selection"
+                router.push(`/${returnTo}?${searchParams.toString()}`)
+              }}
               className={`${themeClasses.text} hover:bg-white/10`}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {language === "zh" ? "返回声音选择" : "Back to Voice Selection"}
+              {searchParams.get("returnTo") === "my-voices"
+                ? (language === "zh" ? "返回我的声音" : "Back to My Voices")
+                : (language === "zh" ? "返回声音选择" : "Back to Voice Selection")
+              }
             </Button>
 
             <div className="flex items-center space-x-4">

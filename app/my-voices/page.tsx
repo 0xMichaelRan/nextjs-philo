@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Mic, Plus, Trash2, Play, Pause, Volume2, Calendar, HardDrive } from "lucide-react"
+import { Mic, Plus, Trash2, Play, Pause, Calendar, HardDrive } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -167,19 +166,24 @@ export default function MyVoicesPage() {
       <AppLayout title={t("myVoices.title")}>
         <div className="container mx-auto px-6 py-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
                 {t("myVoices.title")}
               </h1>
-              <p className={themeClasses.textSecondary}>
-                {t("myVoices.subtitle")}
-              </p>
+              <div className="flex items-center space-x-4">
+                <p className={themeClasses.textSecondary}>
+                  {t("myVoices.subtitle")}
+                </p>
+                <span className={`text-sm px-2 py-1 rounded-full ${themeClasses.textSecondary} bg-gray-100 dark:bg-gray-800`}>
+                  {voicesData?.voices.length || 0} / {maxVoices} {t("myVoices.voicesUsed")}
+                </span>
+              </div>
             </div>
-            
+
             {canAddMore && (
-              <Link href="/custom-voice-record">
-                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Link href="/custom-voice-record?returnTo=my-voices">
+                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                   <Plus className="w-4 h-4 mr-2" />
                   {t("myVoices.addNew")}
                 </Button>
@@ -187,43 +191,7 @@ export default function MyVoicesPage() {
             )}
           </div>
 
-          {/* Usage Stats */}
-          <Card className={`${themeClasses.card} mb-8`}>
-            <CardHeader>
-              <CardTitle className={`${themeClasses.text} flex items-center`}>
-                <Volume2 className="w-5 h-5 mr-2" />
-                {t("myVoices.usage")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className={themeClasses.textSecondary}>
-                    {t("myVoices.voicesUsed")}
-                  </span>
-                  <span className={themeClasses.text}>
-                    {voicesData?.voices.length || 0} / {maxVoices}
-                  </span>
-                </div>
-                <Progress 
-                  value={((voicesData?.voices.length || 0) / maxVoices) * 100} 
-                  className="w-full"
-                />
-                <div className="flex items-center justify-between text-sm">
-                  <span className={themeClasses.textSecondary}>
-                    {t("myVoices.plan")}: {voicesData?.limits.current_plan.toUpperCase()}
-                  </span>
-                  {!canAddMore && (
-                    <Link href="/payment">
-                      <Button variant="outline" size="sm">
-                        {t("myVoices.upgrade")}
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
 
           {/* Voices List */}
           {loading ? (
@@ -243,7 +211,7 @@ export default function MyVoicesPage() {
                 <p className={`${themeClasses.textSecondary} mb-6`}>
                   {t("myVoices.noVoicesDesc")}
                 </p>
-                <Link href="/custom-voice-record">
+                <Link href="/custom-voice-record?returnTo=my-voices">
                   <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                     <Plus className="w-4 h-4 mr-2" />
                     {t("myVoices.createFirst")}
