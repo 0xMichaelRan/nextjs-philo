@@ -222,7 +222,7 @@ export default function ProfilePage() {
       const response = await apiConfig.makeAuthenticatedRequest(
         apiConfig.auth.updateUser(),
         {
-          method: 'PATCH',
+          method: 'PUT',
           body: JSON.stringify(updateData),
         }
       )
@@ -374,7 +374,7 @@ export default function ProfilePage() {
     apiConfig.makeAuthenticatedRequest(
       apiConfig.auth.updateUser(),
       {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -429,7 +429,7 @@ export default function ProfilePage() {
 
       // Create FormData for file upload
       const formData = new FormData()
-      formData.append('avatar_file', file)
+      formData.append('avatar', file)
 
       // Call backend API to upload avatar
       const response = await fetch(apiConfig.auth.uploadAvatar(), {

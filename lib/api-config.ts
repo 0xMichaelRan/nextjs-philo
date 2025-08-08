@@ -57,6 +57,7 @@ class ApiConfig {
   public voices = {
     list: () => `${this.baseUrl}/voices`,
     custom: () => `${this.baseUrl}/voices/custom`,
+    deleteCustom: (id: number) => `${this.baseUrl}/voices/custom/${id}`,
     details: (id: number) => `${this.baseUrl}/voices/${id}`,
   }
 

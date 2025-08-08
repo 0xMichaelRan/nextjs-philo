@@ -13,6 +13,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { apiConfig } from "@/lib/api-config"
 
 export default function CustomVoiceRecordPage() {
   const searchParams = useSearchParams()
@@ -226,14 +227,12 @@ export default function CustomVoiceRecordPage() {
       formData.append('audio', audioBlob, `${recordingName}.${fileExtension}`)
       formData.append('name', recordingName)
       formData.append('language', recordLanguage)
-      formData.append('user_id', user.id.toString())
-      formData.append('username', (user as any).username || user.email || `user_${user.id}`)
 
       // Upload to backend API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voices/custom`, {
+      const response = await fetch(apiConfig.voices.custom(), {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: formData
       })

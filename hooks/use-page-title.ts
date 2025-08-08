@@ -42,6 +42,10 @@ const pageTitles: PageTitleConfig = {
     zh: "自定义配音 - 电影哲学家",
     en: "Custom Voice - Movie Philosopher"
   },
+  myVoices: {
+    zh: "我的声音 - 电影哲学家",
+    en: "My Voices - Movie Philosopher"
+  },
   scriptReview: {
     zh: "脚本预览 - 电影哲学家",
     en: "Script Review - Movie Philosopher"
