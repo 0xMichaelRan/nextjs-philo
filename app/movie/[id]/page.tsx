@@ -411,8 +411,8 @@ export default function MovieHomePage() {
               )}
             </div>
 
-            {/* Enhanced Action Button */}
-            <div className="pt-6">
+            {/* Enhanced Action Button - Hidden on mobile (shown in fixed bottom bar) */}
+            <div className="pt-6 hidden md:block">
               <Button
                 onClick={handleGenerateVideo}
                 size="lg"
@@ -477,6 +477,21 @@ export default function MovieHomePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Fixed Bottom Action Bar for Mobile */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 p-4 safe-area-pb">
+        <Button
+          onClick={handleGenerateVideo}
+          size="lg"
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          <Play className="w-6 h-6 mr-3" />
+          开始生成视频分析
+        </Button>
+      </div>
+
+      {/* Add bottom padding to prevent content from being hidden behind fixed button */}
+      <div className="h-20 md:hidden"></div>
     </AppLayout>
   )
 }

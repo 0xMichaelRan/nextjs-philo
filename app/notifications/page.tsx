@@ -135,7 +135,11 @@ export default function NotificationsPage() {
       const response = await apiConfig.makeAuthenticatedRequest(
         apiConfig.notifications.markRead(notificationId),
         {
-          method: 'PATCH',
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_read: true }),
         }
       )
 
