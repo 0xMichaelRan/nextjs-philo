@@ -5,10 +5,14 @@ import { Play, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 export default function HomePage() {
   const [currentSection, setCurrentSection] = useState(0)
   const { language, t } = useLanguage()
+
+  // Set page title
+  usePageTitle("home")
 
   const sections = [
     {

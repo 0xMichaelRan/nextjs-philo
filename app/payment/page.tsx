@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { ArrowLeft, Shield, Check, CreditCard, User, Calendar, Tag } from "lucide-react"
+import { ArrowLeft, Shield, Check, CreditCard, Calendar, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -18,6 +18,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { useToast } from "@/hooks/use-toast"
 
 const planPrices = {
   vip: {
@@ -92,19 +93,20 @@ export default function PaymentPage() {
   const [promoError, setPromoError] = useState("")
   const [finalPrice, setFinalPrice] = useState(0)
   const [promoDiscount, setPromoDiscount] = useState(0)
+
+  const { toast } = useToast()
+  const { user, updateUser } = useAuth()
+  const { language, t } = useLanguage()
+  const { theme } = useTheme()
+
+  // Set page title
+  usePageTitle("payment")
   const [currentVipStatus, setCurrentVipStatus] = useState<{
     is_vip: boolean
     is_active: boolean
     expiry_date: string | null
     expiry_date_formatted: { zh: string; en: string }
   } | null>(null)
-
-  const { theme } = useTheme()
-  const { language, t } = useLanguage()
-  const { user, updateUser } = useAuth()
-
-  // Set page title
-  usePageTitle('payment')
 
   useEffect(() => {
     // Check if user is logged in
@@ -282,8 +284,8 @@ export default function PaymentPage() {
     try {
       // Prepare payment data
       const paymentData = {
-        plan: selectedPlan,
-        billing_cycle: billingCycle,
+        plan: selectedPlan, // 'vip' or 'svip'
+        billing_cycle: billingCycle, // 'monthly' or 'yearly'
         payment_method: selectedPayment,
         amount: finalPrice,
         promo_code: promoApplied ? promoCode : null
@@ -291,7 +293,7 @@ export default function PaymentPage() {
 
       // Call backend payment API
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.payments.create(),
+        apiConfig.payments.checkout(),
         {
           method: 'POST',
           body: JSON.stringify(paymentData)
@@ -299,38 +301,49 @@ export default function PaymentPage() {
       )
 
       if (response.ok) {
-        if (finalPrice === 0) {
+        const result = await response.json()
+
+        if (!result.requires_payment) {
           // Free payment with promo code - immediate success
           updateUser({
             is_vip: true,
           })
 
+          toast({
+            title: t("payment.paymentSuccess"),
+            description: t("payment.vipActivated"),
+            variant: "success",
+          })
+
           router.push("/payment/success")
         } else {
-          // Regular payment processing
-          if (selectedPayment === "alipay") {
-            console.log("Processing Alipay payment...")
-            await new Promise((resolve) => setTimeout(resolve, 2000))
+          // Regular payment processing - show QR code
+          setShowQRCode(true)
+          // Store payment info for later confirmation
+          localStorage.setItem('pending_payment_id', result.payment_id.toString())
 
+          // Simulate payment completion after 5 seconds
+          setTimeout(() => {
             updateUser({
               is_vip: true,
             })
 
+            toast({
+              title: t("payment.paymentSuccess"),
+              description: t("payment.vipActivated"),
+              variant: "success",
+            })
+
             router.push("/payment/success")
-          } else if (selectedPayment === "wechat") {
-            setShowQRCode(true)
-
-            setTimeout(() => {
-              updateUser({
-                is_vip: true,
-              })
-
-              router.push("/payment/success")
-            }, 5000)
-          }
+          }, 5000)
         }
       } else {
-        throw new Error("Payment initiation failed")
+        const error = await response.json()
+        toast({
+          title: t("payment.paymentFailed"),
+          description: error.detail || t("payment.paymentError"),
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Payment error:", error)

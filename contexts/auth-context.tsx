@@ -5,9 +5,10 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { apiConfig } from "@/lib/api-config"
 
 interface User {
-  id: number
-  email: string
+  id: string
+  phone_number: string
   name: string
+  email?: string
   is_vip: boolean
   vip_expiry_date?: string
   vip_days_remaining?: number
@@ -15,12 +16,13 @@ interface User {
   preferences?: any
   created_at: string
   avatar?: string
+  is_verified: boolean
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (phoneNumber: string, password: string) => Promise<boolean>
   logout: () => void
   updateUser: (userData: Partial<User>) => void
   fetchUserProfile: () => Promise<void>
@@ -100,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (phoneNumber: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true)
 
@@ -109,7 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          phone_number: phoneNumber.replace(/[\s-]/g, ''),
+          password
+        }),
       })
 
       const data = await response.json()

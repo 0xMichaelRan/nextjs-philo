@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Mail, ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { Phone, ArrowLeft, Eye, EyeOff, MessageSquare, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
@@ -23,15 +22,16 @@ export default function AuthPage() {
   const router = useRouter()
   const [redirectPath, setRedirectPath] = useState("/profile")
   const [activeTab, setActiveTab] = useState("login")
-  const [email, setEmail] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
+  const [verificationCode, setVerificationCode] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isVerificationSent, setIsVerificationSent] = useState(false)
+  const [verificationTimer, setVerificationTimer] = useState(0)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [resetEmail, setResetEmail] = useState("")
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -86,17 +86,41 @@ export default function AuthPage() {
     }
   }, [searchParams, user, router, redirectPath])
 
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const validatePhoneNumber = (phone: string) => {
+    // Remove any spaces or dashes
+    const cleanPhone = phone.replace(/[\s-]/g, '')
+    // Check if it matches Chinese phone number pattern (11 digits starting with 1)
+    return /^1[0-9]{10}$/.test(cleanPhone)
   }
 
   const validatePassword = (password: string) => {
     return password.length >= 6
   }
 
+  const validateVerificationCode = (code: string) => {
+    return /^[0-9]{4}$/.test(code)
+  }
+
+  const formatPhoneNumber = (phone: string) => {
+    // Remove any non-digit characters
+    const digits = phone.replace(/\D/g, '')
+    // Format as XXX XXXX XXXX
+    if (digits.length <= 3) return digits
+    if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`
+    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)}`
+  }
+
+  const formatVerificationCode = (code: string) => {
+    // Remove any non-digit characters and limit to 4 digits
+    const digits = code.replace(/\D/g, '').slice(0, 4)
+    // Format as XX XX
+    if (digits.length <= 2) return digits
+    return `${digits.slice(0, 2)} ${digits.slice(2)}`
+  }
+
   const handleLogin = async () => {
-    if (!validateEmail(email)) {
-      setError(t("auth.pleaseEnterValidEmail"))
+    if (!validatePhoneNumber(phoneNumber)) {
+      setError(t("auth.pleaseEnterValidPhoneNumber"))
       return
     }
 
@@ -110,18 +134,72 @@ export default function AuthPage() {
     setSuccess("")
 
     try {
-      // Use the auth context's login method
-      const success = await login(email, password)
+      const response = await fetch(apiConfig.auth.login(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone_number: phoneNumber.replace(/[\s-]/g, ''),
+          password,
+        }),
+      })
 
-      if (success) {
+      const data = await response.json()
+
+      if (response.ok) {
+        // Store token and user data
+        localStorage.setItem('access_token', data.access_token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+
         setSuccess(t("auth.loginSuccess"))
-        // Add a small delay to ensure state is updated
+
+        // Use auth context to update state
+        if (login) {
+          await login(phoneNumber, password)
+        }
+
+        // Redirect after successful login
         setTimeout(() => {
           router.push(redirectPath)
         }, 100)
       } else {
-        setError(t("auth.loginFailed"))
+        setError(data.detail || t("auth.loginFailed"))
       }
+    } catch (error) {
+      setError(t("auth.networkError"))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSendVerificationCode = async () => {
+    if (!validatePhoneNumber(phoneNumber)) {
+      setError(t("auth.pleaseEnterValidPhoneNumber"))
+      return
+    }
+
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // For now, simulate sending verification code
+      // In production, this would call the backend API
+      setIsVerificationSent(true)
+      setVerificationTimer(60) // 60 seconds countdown
+      setSuccess(t("auth.verificationCodeSent"))
+
+      // Start countdown timer
+      const timer = setInterval(() => {
+        setVerificationTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
     } catch (error) {
       setError(t("auth.networkError"))
     } finally {
@@ -135,8 +213,8 @@ export default function AuthPage() {
       return
     }
 
-    if (!validateEmail(email)) {
-      setError(t("auth.pleaseEnterValidEmail"))
+    if (!validatePhoneNumber(phoneNumber)) {
+      setError(t("auth.pleaseEnterValidPhoneNumber"))
       return
     }
 
@@ -145,42 +223,47 @@ export default function AuthPage() {
       return
     }
 
+    // For now, skip verification code validation
+    // In production, you would validate the verification code here
+    // if (!validateVerificationCode(verificationCode)) {
+    //   setError(t("auth.pleaseEnterValidVerificationCode"))
+    //   return
+    // }
+
     setIsLoading(true)
     setError("")
     setSuccess("")
 
     try {
-      // Call your backend API
       const response = await fetch(apiConfig.auth.register(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          phone_number: phoneNumber.replace(/[\s-]/g, ''),
           password,
           name,
+          verification_code: verificationCode.replace(/\s/g, ''),
         }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        // Show toast notification
         toast({
           title: t("auth.registerSuccess"),
           description: "",
           variant: "success",
         })
 
-        // Switch to login tab
+        // Switch to login tab and clear form
         setActiveTab("login")
-
-        // Clear form
         setName("")
         setPassword("")
-
-        // Clear any existing messages
+        setVerificationCode("")
+        setIsVerificationSent(false)
+        setVerificationTimer(0)
         setSuccess("")
         setError("")
       } else {
@@ -193,50 +276,7 @@ export default function AuthPage() {
     }
   }
 
-  const handleForgotPassword = async () => {
-    if (!resetEmail.trim()) {
-      setError(t("auth.pleaseEnterEmail"))
-      return
-    }
 
-    if (!validateEmail(resetEmail)) {
-      setError(t("auth.pleaseEnterValidEmail"))
-      return
-    }
-
-    setIsLoading(true)
-    setError("")
-    setSuccess("")
-
-    try {
-      const response = await fetch(apiConfig.auth.forgotPassword(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: resetEmail,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setSuccess(t("auth.resetEmailSent"))
-        setResetEmail("")
-        setTimeout(() => {
-          setShowForgotPassword(false)
-          setSuccess("")
-        }, 3000)
-      } else {
-        setError(data.detail || t("auth.resetEmailFailed"))
-      }
-    } catch (error) {
-      setError(t("auth.networkError"))
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const getBackgroundClass = () => {
     if (theme === "dark") {
@@ -294,23 +334,27 @@ export default function AuthPage() {
                   </TabsList>
 
                   <TabsContent value="login" className="space-y-4">
-                    {/* Email Input */}
+                    {/* Phone Number Input */}
                     <div className="space-y-2">
-                      <Label htmlFor="email" className={getTextColorClass()}>
-                        {t("auth.email")}
+                      <Label htmlFor="phone" className={getTextColorClass()}>
+                        {t("auth.phoneNumber")}
                       </Label>
                       <Input
-                        id="email"
-                        type="email"
-                        placeholder={t("auth.enterEmail")}
-                        value={email}
+                        id="phone"
+                        type="tel"
+                        placeholder={t("auth.enterPhoneNumber")}
+                        value={formatPhoneNumber(phoneNumber)}
                         onChange={(e) => {
-                          setEmail(e.target.value)
-                          setError("")
-                          setSuccess("")
+                          const value = e.target.value.replace(/\D/g, '')
+                          if (value.length <= 11) {
+                            setPhoneNumber(value)
+                            setError("")
+                            setSuccess("")
+                          }
                         }}
                         className={getInputClass()}
                         disabled={isLoading}
+                        maxLength={13} // Formatted length: XXX XXXX XXXX
                       />
                     </div>
 
@@ -352,11 +396,11 @@ export default function AuthPage() {
                     {/* Login Button */}
                     <Button
                       onClick={handleLogin}
-                      disabled={!email || !password || isLoading}
+                      disabled={!phoneNumber || !password || isLoading}
                       className="w-full bg-purple-600 hover:bg-purple-700"
                       size="lg"
                     >
-                      <Mail className="w-4 h-4 mr-2" />
+                      <Phone className="w-4 h-4 mr-2" />
                       {isLoading ? t("auth.loggingIn") : t("auth.login")}
                     </Button>
                   </TabsContent>
@@ -382,25 +426,72 @@ export default function AuthPage() {
                       />
                     </div>
 
-                    {/* Email Input */}
+                    {/* Phone Number Input */}
                     <div className="space-y-2">
-                      <Label htmlFor="reg-email" className={getTextColorClass()}>
-                        {t("auth.email")}
+                      <Label htmlFor="reg-phone" className={getTextColorClass()}>
+                        {t("auth.phoneNumber")}
                       </Label>
-                      <Input
-                        id="reg-email"
-                        type="email"
-                        placeholder={t("auth.enterEmail")}
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value)
-                          setError("")
-                          setSuccess("")
-                        }}
-                        className={getInputClass()}
-                        disabled={isLoading}
-                      />
+                      <div className="flex space-x-2">
+                        <Input
+                          id="reg-phone"
+                          type="tel"
+                          placeholder={t("auth.enterPhoneNumber")}
+                          value={formatPhoneNumber(phoneNumber)}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '')
+                            if (value.length <= 11) {
+                              setPhoneNumber(value)
+                              setError("")
+                              setSuccess("")
+                            }
+                          }}
+                          className={getInputClass()}
+                          disabled={isLoading}
+                          maxLength={13}
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleSendVerificationCode}
+                          disabled={!validatePhoneNumber(phoneNumber) || isLoading || verificationTimer > 0}
+                          variant="outline"
+                          className="whitespace-nowrap"
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          {verificationTimer > 0 ? `${verificationTimer}s` : t("auth.sendCode")}
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* Verification Code Input */}
+                    {isVerificationSent && (
+                      <div className="space-y-2">
+                        <Label htmlFor="verification-code" className={getTextColorClass()}>
+                          {t("auth.verificationCode")}
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="verification-code"
+                            type="text"
+                            placeholder={t("auth.enterVerificationCode")}
+                            value={formatVerificationCode(verificationCode)}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '')
+                              if (value.length <= 4) {
+                                setVerificationCode(value)
+                                setError("")
+                                setSuccess("")
+                              }
+                            }}
+                            className={`${getInputClass()} text-center text-lg tracking-widest`}
+                            disabled={isLoading}
+                            maxLength={5} // Formatted length: XX XX
+                          />
+                          {validateVerificationCode(verificationCode) && (
+                            <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Password Input */}
                     <div className="space-y-2">
@@ -440,11 +531,11 @@ export default function AuthPage() {
                     {/* Register Button */}
                     <Button
                       onClick={handleRegister}
-                      disabled={!name || !email || !password || isLoading}
+                      disabled={!name || !phoneNumber || !password || isLoading}
                       className="w-full bg-purple-600 hover:bg-purple-700"
                       size="lg"
                     >
-                      <Mail className="w-4 h-4 mr-2" />
+                      <Phone className="w-4 h-4 mr-2" />
                       {isLoading ? t("auth.creatingAccount") : t("auth.createAccount")}
                     </Button>
                   </TabsContent>
@@ -456,24 +547,15 @@ export default function AuthPage() {
                 {/* Success Message */}
                 {success && <div className="text-green-500 text-sm text-center mt-4">{success}</div>}
 
-                {/* Skip Login Option and Forgot Password */}
-                <div className="mt-6 text-center space-y-2">
-                  <div className="flex justify-center space-x-4">
-                    <Button
-                      onClick={() => router.push(redirectPath)}
-                      variant="ghost"
-                      className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
-                    >
-                      {t("auth.continueAsGuest")}
-                    </Button>
-                    <Button
-                      onClick={() => setShowForgotPassword(true)}
-                      variant="ghost"
-                      className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
-                    >
-                      {t("auth.forgotPassword")}
-                    </Button>
-                  </div>
+                {/* Skip Login Option */}
+                <div className="mt-6 text-center">
+                  <Button
+                    onClick={() => router.push(redirectPath)}
+                    variant="ghost"
+                    className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
+                  >
+                    {t("auth.continueAsGuest")}
+                  </Button>
                 </div>
 
                 {/* Terms */}
@@ -494,54 +576,7 @@ export default function AuthPage() {
           </div>
         </div>
 
-        {/* Forgot Password Dialog */}
-        <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
-          <DialogContent className={`${getCardBackgroundClass()} ${getTextColorClass()}`}>
-            <DialogHeader>
-              <DialogTitle className={getTextColorClass()}>{t("auth.resetPassword")}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="reset-email" className={getTextColorClass()}>
-                  {t("auth.enterEmailForReset")}
-                </Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder={t("auth.enterEmailForReset")}
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className={getInputClass()}
-                />
-              </div>
 
-              {error && <div className="text-red-500 text-sm">{error}</div>}
-              {success && <div className="text-green-500 text-sm">{success}</div>}
-
-              <div className="flex space-x-2">
-                <Button
-                  onClick={handleForgotPassword}
-                  disabled={isLoading}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700"
-                >
-                  {isLoading ? t("common.loading") : t("auth.sendResetEmail")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowForgotPassword(false)
-                    setResetEmail("")
-                    setError("")
-                    setSuccess("")
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  {t("common.cancel")}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </AppLayout>
   )

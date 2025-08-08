@@ -7,7 +7,7 @@ class ApiConfig {
   private baseUrl: string
 
   private constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8009'
   }
 
   public static getInstance(): ApiConfig {
@@ -29,8 +29,12 @@ class ApiConfig {
     logout: () => `${this.baseUrl}/auth/logout`,
     user: () => `${this.baseUrl}/auth/user`,
     updateUser: () => `${this.baseUrl}/auth/user`,
-    uploadAvatar: () => `${this.baseUrl}/auth/avatar`,
+    uploadAvatar: () => `${this.baseUrl}/auth/upload-avatar`,
     paymentHistory: () => `${this.baseUrl}/auth/payment-history`,
+    changePassword: () => `${this.baseUrl}/auth/change-password`,
+    sendVerificationCode: () => `${this.baseUrl}/auth/send-verification-code`,
+    verifyPhoneNumber: () => `${this.baseUrl}/auth/verify-phone-number`,
+    // Legacy endpoints (deprecated)
     forgotPassword: () => `${this.baseUrl}/auth/forgot-password`,
     resetPassword: () => `${this.baseUrl}/auth/reset-password`,
   }
@@ -38,8 +42,8 @@ class ApiConfig {
   // Notification endpoints
   public notifications = {
     list: () => `${this.baseUrl}/notifications`,
-    markRead: (id: number) => `${this.baseUrl}/notifications/${id}/read`,
-    markAllRead: () => `${this.baseUrl}/notifications/read`,
+    markRead: (id: number) => `${this.baseUrl}/notifications/${id}`,
+    markAllRead: () => `${this.baseUrl}/notifications/mark-all-read`,
   }
 
   // Movie endpoints
@@ -49,14 +53,6 @@ class ApiConfig {
     details: (id: string) => `${this.baseUrl}/movies/${id}`,
   }
 
-  // Script endpoints
-  public scripts = {
-    generate: () => `${this.baseUrl}/scripts/generate`,
-    list: () => `${this.baseUrl}/scripts`,
-    details: (id: number) => `${this.baseUrl}/scripts/${id}`,
-    update: (id: number) => `${this.baseUrl}/scripts/${id}`,
-  }
-
   // Voice endpoints
   public voices = {
     list: () => `${this.baseUrl}/voices`,
@@ -64,7 +60,15 @@ class ApiConfig {
     details: (id: number) => `${this.baseUrl}/voices/${id}`,
   }
 
-  // Video endpoints
+  // Script endpoints (to be implemented)
+  public scripts = {
+    generate: () => `${this.baseUrl}/scripts/generate`,
+    list: () => `${this.baseUrl}/scripts`,
+    details: (id: number) => `${this.baseUrl}/scripts/${id}`,
+    update: (id: number) => `${this.baseUrl}/scripts/${id}`,
+  }
+
+  // Video endpoints (to be implemented)
   public videos = {
     generate: () => `${this.baseUrl}/videos/generate`,
     list: () => `${this.baseUrl}/videos`,
@@ -74,12 +78,11 @@ class ApiConfig {
 
   // Payment endpoints
   public payments = {
-    create: () => `${this.baseUrl}/payments/create`,
     checkout: () => `${this.baseUrl}/payments/checkout`,
-    validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
-    verify: () => `${this.baseUrl}/payments/verify`,
+    confirm: (paymentId: number) => `${this.baseUrl}/payments/confirm/${paymentId}`,
     history: () => `${this.baseUrl}/payments/history`,
-    denounceVip: () => `${this.baseUrl}/payments/denounce-vip`,
+    subscription: () => `${this.baseUrl}/payments/subscription`,
+    validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
   }
 
   // Utility method to get authorization headers

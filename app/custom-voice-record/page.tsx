@@ -71,46 +71,83 @@ export default function CustomVoiceRecordPage() {
 
   const startRecording = async () => {
     try {
-      // Check if browser supports media recording
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      // Enhanced browser compatibility checks
+      const getUserMedia = navigator.mediaDevices?.getUserMedia ||
+                          (navigator as any).webkitGetUserMedia ||
+                          (navigator as any).mozGetUserMedia ||
+                          (navigator as any).msGetUserMedia
+
+      if (!getUserMedia) {
         alert(language === "zh" ? "您的浏览器不支持录音功能" : "Your browser doesn't support audio recording")
         return
       }
 
-      if (!MediaRecorder) {
+      if (!window.MediaRecorder) {
         alert(language === "zh" ? "您的浏览器不支持MediaRecorder" : "Your browser doesn't support MediaRecorder")
         return
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // More compatible audio constraints for mobile and PC
+      const constraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 44100
+          autoGainControl: true,
+          // More conservative settings for mobile compatibility
+          sampleRate: { ideal: 44100, min: 8000 },
+          channelCount: { ideal: 1 }, // Mono for better compatibility
+          latency: { ideal: 0.01 }
         }
-      })
+      }
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
-      })
+      let stream: MediaStream
+      if (navigator.mediaDevices?.getUserMedia) {
+        stream = await navigator.mediaDevices.getUserMedia(constraints)
+      } else {
+        // Fallback for older browsers
+        stream = await new Promise((resolve, reject) => {
+          (getUserMedia as any).call(navigator, constraints.audio, resolve, reject)
+        })
+      }
+
+      // Determine best supported MIME type for cross-platform compatibility
+      let mimeType = 'audio/webm'
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus'
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4'
+      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+        mimeType = 'audio/ogg;codecs=opus'
+      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav'
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
 
       const chunks: BlobPart[] = []
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           chunks.push(event.data)
         }
       }
 
       mediaRecorder.onstop = () => {
-        const mimeType = mediaRecorder.mimeType || 'audio/webm'
         const blob = new Blob(chunks, { type: mimeType })
         setAudioBlob(blob)
         setStep("review")
         stream.getTracks().forEach(track => track.stop())
       }
 
-      mediaRecorder.start(100) // Collect data every 100ms
+      mediaRecorder.onerror = (event) => {
+        console.error("MediaRecorder error:", event)
+        alert(language === "zh" ? "录音过程中出现错误" : "Error during recording")
+        stream.getTracks().forEach(track => track.stop())
+        setIsRecording(false)
+      }
+
+      // Start recording with smaller time slices for better mobile performance
+      mediaRecorder.start(250)
       setIsRecording(true)
       setRecordingTime(0)
 
@@ -131,6 +168,8 @@ export default function CustomVoiceRecordPage() {
           alert(language === "zh" ? "请允许访问麦克风权限" : "Please allow microphone access")
         } else if (error.name === 'NotFoundError') {
           alert(language === "zh" ? "未找到麦克风设备" : "No microphone found")
+        } else if (error.name === 'NotSupportedError') {
+          alert(language === "zh" ? "您的设备不支持录音功能" : "Your device doesn't support recording")
         } else {
           alert(language === "zh" ? "录音启动失败，请检查麦克风设置" : "Failed to start recording, please check microphone settings")
         }
@@ -178,10 +217,17 @@ export default function CustomVoiceRecordPage() {
     try {
       // Create FormData for file upload
       const formData = new FormData()
-      formData.append('audio', audioBlob, `${recordingName}.webm`)
+
+      // Determine file extension based on blob type
+      const fileExtension = audioBlob.type.includes('webm') ? 'webm' :
+                           audioBlob.type.includes('mp4') ? 'mp4' :
+                           audioBlob.type.includes('ogg') ? 'ogg' : 'webm'
+
+      formData.append('audio', audioBlob, `${recordingName}.${fileExtension}`)
       formData.append('name', recordingName)
       formData.append('language', recordLanguage)
       formData.append('user_id', user.id.toString())
+      formData.append('username', (user as any).username || user.email || `user_${user.id}`)
 
       // Upload to backend API
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voices/custom`, {

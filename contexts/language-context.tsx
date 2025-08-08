@@ -80,6 +80,15 @@ const translations = {
     "auth.createAccount": "创建账户",
     "auth.continueAsGuest": "以访客身份继续",
     "auth.termsText": "继续即表示您同意我们的",
+    "auth.enterPhoneNumber": "请输入手机号码",
+    "auth.pleaseEnterValidPhoneNumber": "请输入有效的手机号码",
+    "auth.enterVerificationCode": "请输入验证码",
+    "auth.pleaseEnterValidVerificationCode": "请输入有效的验证码",
+    "auth.verificationCodeSent": "验证码已发送",
+    "auth.register": "注册",
+    "auth.email": "邮箱",
+    "auth.enterEmail": "请输入邮箱",
+    "auth.password": "密码",
 
     // Reset Password
     "resetPassword.title": "重置密码",
@@ -149,6 +158,10 @@ const translations = {
     "payment.free": "免费",
     "payment.getVipFree": "免费获取VIP",
     "payment.vipPeriod": "VIP期限",
+    "payment.paymentSuccess": "支付成功",
+    "payment.vipActivated": "VIP已激活",
+    "payment.paymentFailed": "支付失败",
+    "payment.paymentError": "支付处理失败",
 
     // Movie Selection
     "movieSelection.title": "选个电影吧",
@@ -388,6 +401,15 @@ const translations = {
     "auth.createAccount": "Create Account",
     "auth.continueAsGuest": "Continue as Guest",
     "auth.termsText": "By continuing, you agree to our",
+    "auth.enterPhoneNumber": "Enter phone number",
+    "auth.pleaseEnterValidPhoneNumber": "Please enter a valid phone number",
+    "auth.enterVerificationCode": "Enter verification code",
+    "auth.pleaseEnterValidVerificationCode": "Please enter a valid verification code",
+    "auth.verificationCodeSent": "Verification code sent",
+    "auth.register": "Register",
+    "auth.email": "Email",
+    "auth.enterEmail": "Enter email",
+    "auth.password": "Password",
 
     // Reset Password
     "resetPassword.title": "Reset Password",
@@ -457,6 +479,10 @@ const translations = {
     "payment.free": "FREE",
     "payment.getVipFree": "Get VIP for Free",
     "payment.vipPeriod": "VIP Period",
+    "payment.paymentSuccess": "Payment Successful",
+    "payment.vipActivated": "VIP Activated",
+    "payment.paymentFailed": "Payment Failed",
+    "payment.paymentError": "Payment processing failed",
 
     // Movie Selection
     "movieSelection.title": "Pick a Movie",
