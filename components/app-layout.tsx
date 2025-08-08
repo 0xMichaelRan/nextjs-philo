@@ -253,7 +253,11 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                     {/* Profile Photo */}
                     <div className="w-10 h-10 mr-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                       {user.avatar ? (
-                        <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8009'}${user.avatar}`}
+                          alt={user.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
                       ) : (
                         <span className="text-sm">{user.name.charAt(0).toUpperCase()}</span>
                       )}

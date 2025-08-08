@@ -564,7 +564,10 @@ export default function ProfilePage() {
                     <div className="flex items-center space-x-6">
                       <div className="relative">
                         <Avatar className="w-24 h-24">
-                          <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                          <AvatarImage
+                            src={user.avatar ? `${apiConfig.getBaseUrl()}${user.avatar}` : "/placeholder.svg"}
+                            alt={user.name}
+                          />
                           <AvatarFallback
                             className={`text-2xl bg-gradient-to-br ${getAvatarGradient(user.name)} text-white`}
                           >

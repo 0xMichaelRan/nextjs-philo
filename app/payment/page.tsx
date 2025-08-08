@@ -540,7 +540,10 @@ export default function PaymentPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center space-x-4">
                       <Avatar className="w-16 h-16">
-                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                        <AvatarImage
+                          src={user.avatar ? `${apiConfig.getBaseUrl()}${user.avatar}` : "/placeholder.svg"}
+                          alt={user.name}
+                        />
                         <AvatarFallback className={`bg-gradient-to-br ${getAvatarGradient(user.name)} text-white text-lg`}>
                           {user.name.charAt(0)}
                         </AvatarFallback>
