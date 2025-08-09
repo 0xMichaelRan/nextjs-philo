@@ -17,6 +17,7 @@ const translations = {
     // Navigation
     "nav.home": "首页",
     "nav.movieSelection": "选择电影",
+    "nav.jobPending": "任务队列",
     "nav.myVideos": "我的视频",
     "nav.myVoices": "我的声音",
     "nav.profile": "个人中心",
@@ -363,6 +364,7 @@ const translations = {
     // Navigation
     "nav.home": "Home",
     "nav.movieSelection": "Select Movie",
+    "nav.jobPending": "Job Queue",
     "nav.myVideos": "My Videos",
     "nav.myVoices": "My Voices",
     "nav.profile": "Profile",

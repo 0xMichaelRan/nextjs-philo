@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Film, User, Play, Search, Menu, X, Bell, Mic } from "lucide-react"
+import { Clock, Film, User, Play, Search, Menu, X, Bell, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -84,6 +84,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
   const navItems = [
     { href: "/movie-selection", icon: Search, label: t("nav.movieSelection") },
+    { href: "/job-pending", icon: Clock, label: t("nav.jobPending") },
     { href: "/video-generation", icon: Film, label: t("nav.myVideos") },
     ...(user?.is_vip ? [{ href: "/my-voices", icon: Mic, label: t("nav.myVoices") }] : []),
   ]
