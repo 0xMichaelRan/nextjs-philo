@@ -90,6 +90,9 @@ const translations = {
     "auth.email": "邮箱",
     "auth.enterEmail": "请输入邮箱",
     "auth.password": "密码",
+    "auth.nameRequired": "请输入姓名",
+    "auth.nameTooLong": "姓名不能超过100个字符",
+    "auth.phoneNumberAlreadyExists": "该手机号已被注册，请更换手机号或直接登录",
 
     // Reset Password
     "resetPassword.title": "重置密码",
@@ -433,6 +436,9 @@ const translations = {
     "auth.email": "Email",
     "auth.enterEmail": "Enter email",
     "auth.password": "Password",
+    "auth.nameRequired": "Please enter your name",
+    "auth.nameTooLong": "Name cannot exceed 100 characters",
+    "auth.phoneNumberAlreadyExists": "This phone number is already registered. Please use a different number or login directly.",
 
     // Reset Password
     "resetPassword.title": "Reset Password",

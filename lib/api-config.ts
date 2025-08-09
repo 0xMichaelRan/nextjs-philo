@@ -34,6 +34,7 @@ class ApiConfig {
     changePassword: () => `${this.baseUrl}/auth/change-password`,
     sendVerificationCode: () => `${this.baseUrl}/auth/send-verification-code`,
     verifyPhoneNumber: () => `${this.baseUrl}/auth/verify-phone-number`,
+    checkPhone: () => `${this.baseUrl}/auth/check-phone`,
     // Legacy endpoints (deprecated)
     forgotPassword: () => `${this.baseUrl}/auth/forgot-password`,
     resetPassword: () => `${this.baseUrl}/auth/reset-password`,
@@ -90,10 +91,13 @@ class ApiConfig {
 
   // Job endpoints
   public jobs = {
+    base: () => `${this.baseUrl}/jobs`,
     create: () => `${this.baseUrl}/jobs`,
     list: () => `${this.baseUrl}/jobs`,
     details: (id: string) => `${this.baseUrl}/jobs/${id}`,
     update: (id: string) => `${this.baseUrl}/jobs/${id}`,
+    submitToQueue: (id: string) => `${this.baseUrl}/jobs/${id}/submit-to-queue`,
+    limits: () => `${this.baseUrl}/jobs/limits`,
   }
 
   // Utility method to get authorization headers

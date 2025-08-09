@@ -119,7 +119,7 @@ export default function PaymentSuccessPage() {
                 )}
 
                 <div className="space-y-3">
-                  <Link href="/video-generation">
+                  <Link href="/movie-selection">
                     <Button className="w-full bg-green-600 hover:bg-green-700">
                       <ArrowRight className="w-4 h-4 mr-2" />
                       {language === "zh" ? "开始创作吧！" : "Start Creating"}

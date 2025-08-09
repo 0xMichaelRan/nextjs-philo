@@ -8,6 +8,8 @@ import { Progress } from "@/components/ui/progress"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { apiConfig } from "@/lib/api-config"
 
 interface SubmissionStep {
   id: string
@@ -26,8 +28,10 @@ export default function JobSubmissionPage() {
   const [progress, setProgress] = useState(0)
   const [submissionComplete, setSubmissionComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
   const { theme } = useTheme()
   const { language } = useLanguage()
+  const { user } = useAuth()
 
   const steps: SubmissionStep[] = [
     {
@@ -67,27 +71,93 @@ export default function JobSubmissionPage() {
 
   const startSubmissionProcess = async () => {
     try {
+      setError(null)
+
+      // Get job data from URL params
+      const movieId = searchParams.get('movieId')
+      const movieTitle = searchParams.get('movieTitle')
+      const movieTitleEn = searchParams.get('movieTitleEn')
+
+      if (!movieId || !movieTitle) {
+        throw new Error('Missing movie information')
+      }
+
       // Step 1: Compose user configuration
       await processStep(0, 1000)
-      
+
       // Step 2: Compose data
       await processStep(1, 1500)
-      
+
       // Step 3: Submit to server
-      await processStep(2, 2000)
-      
+      setCurrentStep(2)
+      setProgress(75)
+
+      // Create job
+      const jobData = {
+        movie_id: movieId,
+        movie_title: movieTitle,
+        movie_title_en: movieTitleEn || movieTitle,
+        analysis_options: {
+          include_themes: true,
+          include_characters: true,
+          analysis_depth: "detailed"
+        },
+        voice_options: {
+          voice_id: "zh-CN-XiaoxiaoNeural",
+          language: "zh",
+          speed: 1.0
+        },
+        script_options: {
+          max_length: 2000,
+          style: "narrative"
+        },
+        status: "draft"
+      }
+
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.jobs.create(),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(jobData),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to create job')
+      }
+
+      const job = await response.json()
+      setJobId(job.id)
+
+      // Submit job to queue
+      const submitResponse = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.jobs.submitToQueue(job.id),
+        {
+          method: 'POST',
+        }
+      )
+
+      if (!submitResponse.ok) {
+        const errorData = await submitResponse.json()
+        throw new Error(errorData.detail || 'Failed to submit job to queue')
+      }
+
       // Complete submission
       setSubmissionComplete(true)
       setProgress(100)
-      
+
       // Wait a moment then navigate to job-pending
       setTimeout(() => {
-        router.push(`/job-pending?${searchParams.toString()}`)
+        router.push(`/job-pending?jobId=${job.id}`)
       }, 1500)
-      
+
     } catch (error) {
       console.error("Submission error:", error)
-      setError(language === "zh" ? "提交失败，请重试" : "Submission failed, please try again")
+      setError(language === "zh" ? `提交失败: ${error.message}` : `Submission failed: ${error.message}`)
     }
   }
 

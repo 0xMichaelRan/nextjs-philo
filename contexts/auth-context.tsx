@@ -69,14 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // Only logout if it's an authentication error (401)
         if (response.status === 401) {
+          console.warn("Authentication failed, logging out user")
           logout()
         } else {
           console.error("Failed to fetch user profile:", response.status, response.statusText)
+          // Don't logout for other errors, just log them
         }
       }
     } catch (error) {
       console.error("Error fetching user profile:", error)
-      throw error
+      // Don't logout on network errors, just log them
+      // throw error
     }
   }, [logout])
 

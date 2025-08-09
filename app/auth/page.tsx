@@ -32,6 +32,7 @@ export default function AuthPage() {
   const [verificationTimer, setVerificationTimer] = useState(0)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [nameError, setNameError] = useState("")
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -99,6 +100,30 @@ export default function AuthPage() {
 
   const validateVerificationCode = (code: string) => {
     return /^[0-9]{4}$/.test(code)
+  }
+
+  const validateName = (name: string) => {
+    return name.trim().length > 0 && name.trim().length <= 100
+  }
+
+  const checkPhoneNumberExists = async (phoneNumber: string) => {
+    try {
+      const response = await fetch(apiConfig.auth.checkPhone(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone_number: phoneNumber.replace(/[\s-]/g, ''),
+        }),
+      })
+
+      const data = await response.json()
+      return data.exists || false
+    } catch (error) {
+      console.error('Error checking phone number:', error)
+      return false
+    }
   }
 
   const formatPhoneNumber = (phone: string) => {
@@ -179,10 +204,24 @@ export default function AuthPage() {
       return
     }
 
+    if (!validateName(name)) {
+      setNameError(t("auth.nameRequired"))
+      return
+    }
+
     setIsLoading(true)
     setError("")
+    setNameError("")
 
     try {
+      // Check if phone number already exists
+      const phoneExists = await checkPhoneNumberExists(phoneNumber)
+      if (phoneExists) {
+        setError(t("auth.phoneNumberAlreadyExists"))
+        setIsLoading(false)
+        return
+      }
+
       // For now, simulate sending verification code
       // In production, this would call the backend API
       setIsVerificationSent(true)
@@ -374,6 +413,11 @@ export default function AuthPage() {
                             setError("")
                             setSuccess("")
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isLoading && phoneNumber && password) {
+                              handleLogin()
+                            }
+                          }}
                           className={getInputClass()}
                           disabled={isLoading}
                         />
@@ -417,13 +461,24 @@ export default function AuthPage() {
                         placeholder={t("auth.enterFullName")}
                         value={name}
                         onChange={(e) => {
-                          setName(e.target.value)
+                          const value = e.target.value
+                          setName(value)
                           setError("")
                           setSuccess("")
+                          setNameError("")
+
+                          // Validate name length
+                          if (value.length > 100) {
+                            setNameError(t("auth.nameTooLong"))
+                          }
                         }}
-                        className={getInputClass()}
+                        className={`${getInputClass()} ${nameError ? 'border-red-500' : ''}`}
                         disabled={isLoading}
+                        maxLength={100}
                       />
+                      {nameError && (
+                        <div className="text-red-500 text-xs mt-1">{nameError}</div>
+                      )}
                     </div>
 
                     {/* Phone Number Input */}
@@ -443,6 +498,13 @@ export default function AuthPage() {
                               setPhoneNumber(value)
                               setError("")
                               setSuccess("")
+
+                              // Clear registration state when phone number changes
+                              if (isVerificationSent) {
+                                setIsVerificationSent(false)
+                                setVerificationTimer(0)
+                                setVerificationCode("")
+                              }
                             }
                           }}
                           className={getInputClass()}
@@ -452,7 +514,7 @@ export default function AuthPage() {
                         <Button
                           type="button"
                           onClick={handleSendVerificationCode}
-                          disabled={!validatePhoneNumber(phoneNumber) || isLoading || verificationTimer > 0}
+                          disabled={!validatePhoneNumber(phoneNumber) || !validateName(name) || nameError !== "" || isLoading || verificationTimer > 0}
                           variant="outline"
                           className="whitespace-nowrap"
                         >
@@ -550,7 +612,7 @@ export default function AuthPage() {
                 {/* Skip Login Option */}
                 <div className="mt-6 text-center">
                   <Button
-                    onClick={() => router.push(redirectPath)}
+                    onClick={() => router.push("/movie-selection")}
                     variant="ghost"
                     className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
                   >

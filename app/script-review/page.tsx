@@ -194,14 +194,37 @@ export default function ScriptReviewPage() {
 
         if (response.ok) {
           const result = await response.json()
-          toast({
-            title: "Job Created",
-            description: "Your video analysis job has been created successfully.",
-            variant: "success",
-          })
 
-          // Navigate to job submission with job ID
-          router.push(`/job-submission?jobId=${result.id}&${searchParams.toString()}`)
+          // Submit job to AMQP queue
+          const submitResponse = await apiConfig.makeAuthenticatedRequest(
+            `${apiConfig.jobs.base()}/${result.id}/submit-to-queue`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          )
+
+          if (submitResponse.ok) {
+            const submitResult = await submitResponse.json()
+            toast({
+              title: "Job Submitted",
+              description: "Your video generation job has been submitted to the processing queue.",
+              variant: "success",
+            })
+
+            // Navigate to job pending page
+            router.push(`/job-pending?jobId=${result.id}`)
+          } else {
+            toast({
+              title: "Job Created",
+              description: "Job created but failed to submit to queue. You can retry from the job list.",
+              variant: "warning",
+            })
+            // Navigate to job submission with job ID
+            router.push(`/job-submission?jobId=${result.id}&${searchParams.toString()}`)
+          }
         } else {
           throw new Error("Failed to create job")
         }
