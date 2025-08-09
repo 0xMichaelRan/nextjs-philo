@@ -292,7 +292,7 @@ export default function AuthPage() {
       if (response.ok) {
         toast({
           title: t("auth.registerSuccess"),
-          description: "",
+          description: language === "zh" ? "欢迎加入！您现在可以开始使用所有功能。" : "Welcome! You can now start using all features.",
           variant: "success",
         })
 

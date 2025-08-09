@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Search, Clock, TrendingUp } from "lucide-react"
+import { Search, Clock, TrendingUp, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
@@ -224,8 +225,22 @@ export default function MovieSelectionPage() {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={handleSearchFocus}
-              className={`pl-10 ${getInputClasses()}`}
+              className={`pl-10 pr-10 ${getInputClasses()}`}
             />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("")
+                  setFilteredMovies(movies)
+                  setShowSearchSuggestions(false)
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-200/50"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
 
           {/* Search Suggestions */}
