@@ -16,11 +16,11 @@ Frontend runs on port 3000 with hot reload enabled.
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
-- **State Management**: React Context API
+- **State Management**: React Context API + Zustand (preferred for complex state)
 
 ### Key Contexts
 - `LanguageContext` - Bilingual support (zh/en) with translations
-- `ThemeContext` - Light/dark mode switching  
+- `ThemeContext` - Light/dark mode switching
 - `AuthContext` - User authentication and VIP status
 
 ### File Structure
@@ -30,6 +30,7 @@ app/
 ├── components/        # Reusable components
 ├── contexts/          # React contexts
 ├── lib/              # Utilities
+├── hooks/            # Custom hooks
 └── globals.css       # Global styles
 ```
 
@@ -45,6 +46,8 @@ app/
 - **VIP features**: Proper VIP/SVIP gating for premium features
 - **Audio handling**: Voice selection and custom voice recording
 - **Real-time updates**: Job status and video generation progress
+- **Phone number authentication**: Primary auth method with verification codes
+- **Password reset**: Phone-based password reset with verification
 
 ### Development Guidelines
 1. Always test both language modes (zh/en)
@@ -53,12 +56,16 @@ app/
 4. Use TypeScript strictly - no `any` types
 5. Follow existing naming conventions for translations keys
 6. Test responsive design on mobile devices
+7. Prefer Zustand + localStorage over React Context for complex state
+8. Only clear flowState when selecting new movie (not on every navigation)
+9. Redirect to auth page on 401 errors then return to previous page
 
 ### API Integration
-- Backend API runs on `localhost:8000`
+- **Backend API**: `localhost:8009` (main API)
 - Use proper error handling for API calls
 - Implement loading states for async operations
 - Handle authentication tokens properly
+- Use `apiConfig.makeAuthenticatedRequest()` for authenticated calls
 
 ### Common Patterns
 ```typescript
