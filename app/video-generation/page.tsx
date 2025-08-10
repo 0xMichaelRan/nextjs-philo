@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Play, Download, CheckCircle, AlertCircle, Plus, Crown, User, Clock } from "lucide-react"
+import { Clock, Play, Download, CheckCircle, AlertCircle, Plus, Crown, User, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { VideoPlayer } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
@@ -65,6 +66,7 @@ export default function VideoGenerationPage() {
   const [jobs, setJobs] = useState(mockJobs)
   const [userInfo, setUserInfo] = useState(userStats)
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
+  const router = useRouter()
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user } = useAuth()
@@ -135,14 +137,27 @@ export default function VideoGenerationPage() {
     <div className={themeClasses.background}>
       <AppLayout title={t("videoGeneration.title")}>
         <div className="container mx-auto px-6 py-8">
-          {/* Action Buttons */}
-            <div className="flex space-x-4 mb-12">
-            <Link href="/job-pending">
-              <Button variant="outline" className="bg-transparent" size="lg">
-                <Clock className="w-5 h-5 mr-2" />
-                {t("videoGeneration.processingQueue")}
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
+                  {language === "zh" ? "我的视频" : "My Videos"}
+                </h1>
+                <p className={`${themeClasses.text} opacity-80`}>
+                  {language === "zh" ? "查看和管理您的已完成视频" : "View and manage your completed videos"}
+                </p>
+              </div>
+              <Button
+                onClick={() => router.push('/job-pending')}
+                variant="outline"
+                className="flex items-center gap-2 bg-transparent"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {language === "zh" ? "任务队列" : "Job Queue"}
+                <Clock className="h-4 w-4" />
               </Button>
-            </Link>
+            </div>
           </div>
 
           {!canCreateNew && !userInfo.isVip && (
@@ -259,7 +274,14 @@ export default function VideoGenerationPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <h3 className={`${themeClasses.text} font-semibold`}>{user?.is_vip ? t("videoGeneration.vipUser") : t("videoGeneration.freeUser")}</h3>
+                    <h3 className={`${themeClasses.text} font-semibold`}>
+                      {user?.is_vip
+                        ? user.subscription_status === "svip"
+                          ? (language === "zh" ? "SVIP用户" : "SVIP User")
+                          : t("videoGeneration.vipUser")
+                        : t("videoGeneration.freeUser")
+                      }
+                    </h3>
                     {user?.is_vip && <Crown className="w-4 h-4 text-yellow-500" />}
                   </div>
                   <div className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>

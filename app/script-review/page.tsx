@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Play, Pause, Edit, RefreshCw, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { useToast } from "@/hooks/use-toast"
+import { useFlow } from "@/hooks/use-flow"
 
 
 
@@ -32,8 +33,8 @@ interface ContentBlock {
 }
 
 export default function ScriptReviewPage() {
-  const searchParams = useSearchParams()
   const router = useRouter()
+  const { flowState } = useFlow()
   const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,12 +48,25 @@ export default function ScriptReviewPage() {
   const { user } = useAuth()
   const { toast } = useToast()
 
+  // Redirect if no movie selected or load movie data from flow state
   useEffect(() => {
-    const movieId = searchParams.get("movieId")
-    if (movieId) {
-      fetchMovieData(movieId)
+    if (!flowState.movieId) {
+      router.push('/movie-selection')
+      return
     }
-  }, [searchParams])
+
+    // Set movie data from flow state
+    setMovieData({
+      id: flowState.movieId,
+      title: flowState.movieTitle || '',
+      title_zh: flowState.movieTitle,
+      title_en: flowState.movieTitleEn,
+      tagline: flowState.movieTagline
+    })
+
+    // Fetch script content if we have movie data
+    fetchMovieData(flowState.movieId)
+  }, [flowState, router])
 
   const fetchMovieData = async (movieId: string) => {
     setLoading(true)
@@ -126,7 +140,8 @@ export default function ScriptReviewPage() {
   }
 
   const handleEditSection = (sectionId: number) => {
-    router.push(`/script-edit?sectionId=${sectionId}&${searchParams.toString()}`)
+    // Navigate to script edit with section ID (flow state will be preserved)
+    router.push(`/script-edit?sectionId=${sectionId}`)
   }
 
   const handleRegenerate = () => {
@@ -139,110 +154,8 @@ export default function ScriptReviewPage() {
   }
 
   const handleNext = async () => {
-    try {
-      // Extract user choices from URL parameters
-      const movieId = searchParams.get("movieId") || ""
-      const movieTitle = searchParams.get("movieTitle") || movieData?.title || ""
-      const movieTitleEn = searchParams.get("movieTitleEn") || movieData?.title_en || ""
-      const analysisStyle = searchParams.get("analysisStyle") || "philosophical"
-      const analysisDepth = searchParams.get("analysisDepth") || "deep"
-      const analysisCharacter = searchParams.get("analysisCharacter") || "philosopher"
-      const analysisTheme = searchParams.get("analysisTheme") || "general"
-      const voiceId = searchParams.get("voiceId") || ""
-      const voiceName = searchParams.get("voiceName") || ""
-      const voiceLanguage = searchParams.get("voiceLanguage") || "zh"
-      const customVoiceId = searchParams.get("customVoiceId") || ""
-      const scriptLength = searchParams.get("scriptLength") || "medium"
-      const scriptTone = searchParams.get("scriptTone") || "analytical"
-
-      // Create job data
-      const jobData = {
-        movie_id: movieId,
-        movie_title: movieTitle,
-        movie_title_en: movieTitleEn,
-        analysis_options: {
-          style: analysisStyle,
-          depth: analysisDepth,
-          character: analysisCharacter,
-          theme: analysisTheme
-        },
-        voice_options: {
-          voice_id: voiceId,
-          voice_name: voiceName,
-          language: voiceLanguage,
-          custom_voice_id: customVoiceId
-        },
-        script_options: {
-          length: scriptLength,
-          tone: scriptTone
-        },
-        status: "pending"
-      }
-
-      // Only create job if user is logged in
-      if (user) {
-        const response = await apiConfig.makeAuthenticatedRequest(
-          apiConfig.jobs.create(),
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(jobData)
-          }
-        )
-
-        if (response.ok) {
-          const result = await response.json()
-
-          // Submit job to AMQP queue
-          const submitResponse = await apiConfig.makeAuthenticatedRequest(
-            `${apiConfig.jobs.base()}/${result.id}/submit-to-queue`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            }
-          )
-
-          if (submitResponse.ok) {
-            const submitResult = await submitResponse.json()
-            toast({
-              title: "Job Submitted",
-              description: "Your video generation job has been submitted to the processing queue.",
-              variant: "success",
-            })
-
-            // Navigate to job pending page
-            router.push(`/job-pending?jobId=${result.id}`)
-          } else {
-            toast({
-              title: "Job Created",
-              description: "Job created but failed to submit to queue. You can retry from the job list.",
-              variant: "warning",
-            })
-            // Navigate to job submission with job ID
-            router.push(`/job-submission?jobId=${result.id}&${searchParams.toString()}`)
-          }
-        } else {
-          throw new Error("Failed to create job")
-        }
-      } else {
-        // For non-logged users, just navigate to job submission
-        router.push(`/job-submission?${searchParams.toString()}`)
-      }
-    } catch (error) {
-      console.error("Error creating job:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create job. Please try again.",
-        variant: "destructive",
-      })
-
-      // Still navigate to job submission even if job creation fails
-      router.push(`/job-submission?${searchParams.toString()}`)
-    }
+    // Navigate to job submission (flow state will be preserved)
+    router.push('/job-submission')
   }
 
   const getThemeClasses = () => {

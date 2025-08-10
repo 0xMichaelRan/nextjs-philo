@@ -188,16 +188,19 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                       <Badge
                         className={`text-xs ${
                           user.is_vip
-                            ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
+                            ? user.subscription_status === "svip"
+                              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                              : "bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
                             : "bg-gray-500 text-white"
                         }`}
                       >
                         {user.is_vip ? (() => {
                           // Use backend-calculated days remaining
                           const daysLeft = user.vip_days_remaining
-                          if (daysLeft === null || daysLeft === undefined) return "VIP"
+                          const tierLabel = user.subscription_status === "svip" ? "SVIP" : "VIP"
+                          if (daysLeft === null || daysLeft === undefined) return tierLabel
                           if (daysLeft === 0) return language === "zh" ? "今日到期" : "Expires today"
-                          return `${daysLeft} ${language === "zh" ? "天剩余" : "days left"}`
+                          return `${tierLabel} ${daysLeft} ${language === "zh" ? "天剩余" : "days left"}`
                         })() : t("nav.freeUser")}
                       </Badge>
                     </div>
@@ -255,7 +258,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                     <div className="w-10 h-10 mr-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                       {user.avatar ? (
                         <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8009'}${user.avatar}`}
+                          src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
                           alt={user.name}
                           className="w-full h-full rounded-full object-cover"
                         />

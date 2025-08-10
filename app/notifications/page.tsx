@@ -11,6 +11,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { Button } from "@/components/ui/button"
 
 // Types for notifications from backend API
 interface Notification {
@@ -169,6 +170,38 @@ export default function NotificationsPage() {
     }
   }
 
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    // First update the UI immediately for better UX
+    setNotifications(prev =>
+      prev.map(notification => ({ ...notification, is_read: true }))
+    )
+    setUnreadCount(0)
+
+    // Then update the backend asynchronously
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.notifications.markAllRead(),
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) {
+        // If backend update fails, reload notifications to get correct state
+        fetchNotifications()
+        console.error("Failed to mark all notifications as read")
+      }
+    } catch (error) {
+      // If network error, reload notifications to get correct state
+      fetchNotifications()
+      console.error("Error marking all notifications as read:", error)
+    }
+  }
+
   // Load notifications on component mount and when user changes
   useEffect(() => {
     if (user) {
@@ -280,6 +313,25 @@ export default function NotificationsPage() {
 
             {/* Notifications Tab */}
             <TabsContent value="notifications">
+              {/* Notifications Header with Mark All as Read */}
+              {!isLoading && !error && notifications.length > 0 && (
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className={`${themeClasses.text} text-lg font-semibold`}>
+                    {language === "zh" ? "通知列表" : "Notifications"}
+                  </h2>
+                  {unreadCount > 0 && (
+                    <Button
+                      onClick={markAllAsRead}
+                      variant="outline"
+                      size="sm"
+                      className={`${themeClasses.text} border-gray-300 dark:border-gray-600`}
+                    >
+                      {language === "zh" ? "全部标记为已读" : "Mark All as Read"}
+                    </Button>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-4">
                 {isLoading ? (
                   <Card className={`${themeClasses.card} text-center`}>

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { CheckCircle, Clock, Upload, Settings, Video } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -10,6 +10,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
+import { useFlow } from "@/hooks/use-flow"
 
 interface SubmissionStep {
   id: string
@@ -22,8 +23,8 @@ interface SubmissionStep {
 }
 
 export default function JobSubmissionPage() {
-  const searchParams = useSearchParams()
   const router = useRouter()
+  const { flowState, saveFlowToDatabase } = useFlow()
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
   const [submissionComplete, setSubmissionComplete] = useState(false)
@@ -64,21 +65,30 @@ export default function JobSubmissionPage() {
   ]
 
   const [submissionSteps, setSubmissionSteps] = useState(steps)
+  const [hasStarted, setHasStarted] = useState(false)
+  const submissionInProgress = useRef(false)
+
+  // Redirect if no movie data in flow state
+  useEffect(() => {
+    if (!flowState.movieId) {
+      router.push('/movie-selection')
+    }
+  }, [flowState.movieId, router])
 
   useEffect(() => {
-    startSubmissionProcess()
-  }, [])
+    if (!hasStarted && user && flowState.movieId && !submissionInProgress.current) {
+      setHasStarted(true)
+      submissionInProgress.current = true
+      startSubmissionProcess()
+    }
+  }, [hasStarted, user]) // Remove flowState.movieId to prevent duplicate calls
 
   const startSubmissionProcess = async () => {
     try {
       setError(null)
 
-      // Get job data from URL params
-      const movieId = searchParams.get('movieId')
-      const movieTitle = searchParams.get('movieTitle')
-      const movieTitleEn = searchParams.get('movieTitleEn')
-
-      if (!movieId || !movieTitle) {
+      // Check if we have movie data in flow state
+      if (!flowState.movieId || !flowState.movieTitle) {
         throw new Error('Missing movie information')
       }
 
@@ -92,26 +102,28 @@ export default function JobSubmissionPage() {
       setCurrentStep(2)
       setProgress(75)
 
-      // Create job
+      // Create job using flow state data
       const jobData = {
-        movie_id: movieId,
-        movie_title: movieTitle,
-        movie_title_en: movieTitleEn || movieTitle,
+        movie_id: flowState.movieId,
+        movie_title: flowState.movieTitle,
+        movie_title_en: flowState.movieTitleEn || flowState.movieTitle,
         analysis_options: {
-          include_themes: true,
-          include_characters: true,
-          analysis_depth: "detailed"
+          style: flowState.analysisStyle || "philosophical",
+          depth: flowState.analysisDepth || "deep",
+          character: flowState.analysisCharacter || "philosopher",
+          theme: flowState.analysisTheme || "general"
         },
         voice_options: {
-          voice_id: "zh-CN-XiaoxiaoNeural",
-          language: "zh",
-          speed: 1.0
+          voice_id: flowState.voiceId || "zh-CN-XiaoxiaoNeural",
+          voice_name: flowState.voiceName,
+          language: flowState.voiceLanguage || "zh",
+          custom_voice_id: flowState.customVoiceId
         },
         script_options: {
-          max_length: 2000,
-          style: "narrative"
+          length: flowState.scriptLength || "medium",
+          tone: flowState.scriptTone || "analytical"
         },
-        status: "draft"
+        status: "pending"
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(
@@ -127,6 +139,15 @@ export default function JobSubmissionPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
+
+        // Handle 401 Unauthorized - redirect to auth
+        if (response.status === 401) {
+          // Store current path for redirect after login
+          localStorage.setItem('redirectAfterAuth', '/job-submission')
+          router.push('/auth')
+          return
+        }
+
         throw new Error(errorData.detail || 'Failed to create job')
       }
 
@@ -143,6 +164,15 @@ export default function JobSubmissionPage() {
 
       if (!submitResponse.ok) {
         const errorData = await submitResponse.json()
+
+        // Handle 401 Unauthorized - redirect to auth
+        if (submitResponse.status === 401) {
+          // Store current path for redirect after login
+          localStorage.setItem('redirectAfterAuth', '/job-submission')
+          router.push('/auth')
+          return
+        }
+
         throw new Error(errorData.detail || 'Failed to submit job to queue')
       }
 
@@ -157,7 +187,16 @@ export default function JobSubmissionPage() {
 
     } catch (error) {
       console.error("Submission error:", error)
-      setError(language === "zh" ? `提交失败: ${error.message}` : `Submission failed: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      setError(language === "zh" ? `提交失败: ${errorMessage}` : `Submission failed: ${errorMessage}`)
+
+      // Navigate to job-pending with error
+      setTimeout(() => {
+        router.push(`/job-pending?error=${encodeURIComponent(errorMessage)}`)
+      }, 2000)
+    } finally {
+      // Reset submission flag
+      submissionInProgress.current = false
     }
   }
 

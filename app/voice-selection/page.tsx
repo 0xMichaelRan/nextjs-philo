@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Play, Pause, ArrowRight, ArrowLeft, Mic } from "lucide-react"
+import { Play, Pause, ArrowRight, ArrowLeft, Mic, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -29,6 +29,17 @@ interface VoiceOption {
   voice_url: string
 }
 
+interface CustomVoice {
+  id: number
+  name: string
+  display_name: string
+  language: string
+  created_at: string
+  file_size_mb: number
+  audio_url: string
+  duration?: string
+}
+
 // Hardcoded voice entries
 const hardcodedVoices: VoiceOption[] = [
   // Chinese voices
@@ -42,7 +53,7 @@ const hardcodedVoices: VoiceOption[] = [
     voice_file: "09_happy_3.aac",
     is_active: true,
     is_premium: false,
-    voice_url: "/static/voices/xiaoli_sample.mp3"
+    voice_url: "/static/voices/09_happy_3.aac"
   },
   {
     id: 1002,
@@ -51,10 +62,10 @@ const hardcodedVoices: VoiceOption[] = [
     description: "清晰明亮的年轻男声，适合讲述青春励志类电影",
     language: "zh",
     gender: "male",
-    voice_file: "xiaoming_sample.mp3",
+    voice_file: "02_fear_3.aac",
     is_active: true,
     is_premium: true,
-    voice_url: "/static/voices/xiaoming_sample.mp3"
+    voice_url: "/static/voices/02_fear_3.aac"
   },
   // English voices
   {
@@ -64,10 +75,10 @@ const hardcodedVoices: VoiceOption[] = [
     description: "Professional and warm female voice, perfect for dramatic storytelling",
     language: "en",
     gender: "female",
-    voice_file: "sarah_sample.mp3",
+    voice_file: "f5_943_gt0.75.aac",
     is_active: true,
     is_premium: false,
-    voice_url: "/static/voices/sarah_sample.mp3"
+    voice_url: "/static/voices/f5_943_gt0.75.aac"
   },
   {
     id: 1004,
@@ -76,10 +87,10 @@ const hardcodedVoices: VoiceOption[] = [
     description: "Deep and authoritative male voice, ideal for action and thriller films",
     language: "en",
     gender: "male",
-    voice_file: "david_sample.mp3",
+    voice_file: "indextts2_1037_gt0.75.aac",
     is_active: true,
     is_premium: true,
-    voice_url: "/static/voices/david_sample.mp3"
+    voice_url: "/static/voices/indextts2_1037_gt0.75.aac"
   }
 ]
 
@@ -97,7 +108,7 @@ export default function VoiceSelectionPage() {
   const [audioProgress, setAudioProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
   const [voiceLanguage, setVoiceLanguage] = useState<"zh" | "en">("zh")
-  const [customVoices, setCustomVoices] = useState<any[]>([])
+  const [customVoices, setCustomVoices] = useState<CustomVoice[]>([])
   const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
   const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -123,7 +134,7 @@ export default function VoiceSelectionPage() {
         setCustomVoices(data.voices || [])
         setVoiceBalance({
           used: data.voices?.length || 0,
-          limit: data.limits?.vip_limit || 1
+          limit: data.limits?.custom_voices || 1
         })
       }
     } catch (error) {
@@ -138,6 +149,7 @@ export default function VoiceSelectionPage() {
     const titleEn = searchParams.get("titleEn")
     const tagline = searchParams.get("tagline")
     const id = searchParams.get("id")
+    const newVoiceId = searchParams.get("newVoiceId")
 
     if (title) setMovieTitle(title)
     if (titleEn) setMovieTitleEn(titleEn)
@@ -150,6 +162,21 @@ export default function VoiceSelectionPage() {
     // Fetch custom voices if user is VIP
     if (user?.is_vip) {
       fetchCustomVoices()
+    }
+
+    // If a new voice was just recorded, select it
+    if (newVoiceId) {
+      if (newVoiceId === 'latest') {
+        // Select the latest custom voice after fetching
+        setTimeout(() => {
+          if (customVoices.length > 0) {
+            const latestVoice = customVoices[0] // Assuming voices are sorted by creation date desc
+            setSelectedVoice(`custom_${latestVoice.id}`)
+          }
+        }, 500)
+      } else {
+        setSelectedVoice(`custom_${newVoiceId}`)
+      }
     }
   }, [searchParams, language, user])
 
@@ -187,6 +214,31 @@ export default function VoiceSelectionPage() {
     }
   }
 
+
+
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date()
+    const createdAt = new Date(dateString)
+    const diffMs = now.getTime() - createdAt.getTime()
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffHours / 24)
+    const diffWeeks = Math.floor(diffDays / 7)
+
+    if (diffHours < 24) {
+      return language === "zh"
+        ? `${diffHours} 小时前添加`
+        : `added ${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    } else if (diffDays < 7) {
+      return language === "zh"
+        ? `${diffDays} 天前添加`
+        : `added ${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+    } else {
+      return language === "zh"
+        ? `${diffWeeks} 周前添加`
+        : `added ${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`
+    }
+  }
+
   const handlePlayAudio = (voiceId: string, audioUrl: string) => {
     if (playingVoice === voiceId) {
       // Stop current audio
@@ -199,7 +251,9 @@ export default function VoiceSelectionPage() {
     } else {
       // Play new audio
       if (audioRef.current) {
-        audioRef.current.src = audioUrl
+        // Ensure the audio URL is absolute
+        const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${apiConfig.getBaseUrl()}${audioUrl}`
+        audioRef.current.src = fullAudioUrl
         audioRef.current.play().catch(error => {
           console.error("Error playing audio:", error)
           setPlayingVoice(null)
@@ -457,86 +511,172 @@ export default function VoiceSelectionPage() {
           {/* Custom Voices Section */}
           {user?.is_vip && customVoices.length > 0 && (
             <div className="mt-8 max-w-4xl mx-auto">
-              <h3 className={`text-xl font-bold ${themeClasses.text} mb-4 text-center`}>
-                {language === "zh" ? "我的专属声音" : "My Custom Voices"}
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-xl font-bold ${themeClasses.text}`}>
+                  {t("voiceSelection.myCustomVoices")}
+                </h3>
+                <span className={`text-sm px-3 py-1 rounded-full ${themeClasses.secondaryText} bg-gray-100 dark:bg-gray-800`}>
+                  {voiceBalance.used} / {voiceBalance.limit} {t("voiceSelection.voicesUsed")}
+                </span>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {customVoices.map((voice) => (
                   <Card
                     key={voice.id}
                     className={`${themeClasses.card} ${themeClasses.cardHover} border-2 transition-all duration-300 cursor-pointer ${
                       selectedVoice === `custom_${voice.id}`
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                        : "border-gray-200 dark:border-gray-700"
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/50 ring-2 ring-purple-500/50 dark:ring-purple-400/60"
+                        : "border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500"
                     }`}
-                    onClick={() => setSelectedVoice(`custom_${voice.id}`)}
+                    onClick={() => {
+                      if (selectedVoice === `custom_${voice.id}`) {
+                        setSelectedVoice("")
+                      } else {
+                        setSelectedVoice(`custom_${voice.id}`)
+                      }
+                    }}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                            <Mic className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <h4 className={`font-semibold ${themeClasses.text}`}>
-                              {voice.display_name}
-                            </h4>
-                            <p className={`text-sm ${themeClasses.secondaryText}`}>
-                              {voice.language === "zh" ? "中文" : "English"} • {voice.file_size_mb}MB
-                            </p>
+                        <div className="flex-1">
+                          <h4 className={`font-semibold ${themeClasses.text} mb-1`}>
+                            {`"${voice.display_name}"${t("myVoices.voiceName")}`}
+                          </h4>
+                          <div className="flex items-center space-x-4 text-sm">
+                            <span className={themeClasses.secondaryText}>
+                              {voice.language === "zh" ? "中文" : "English"}
+                            </span>
+                            <span className={themeClasses.secondaryText}>
+                              {t("myVoices.duration")}: {voice.duration || "0:00"}
+                            </span>
                           </div>
                         </div>
-                        <Button
-                          variant={selectedVoice === `custom_${voice.id}` ? "default" : "outline"}
-                          size="sm"
-                          className={selectedVoice === `custom_${voice.id}` ?
-                            "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white" :
-                            ""
-                          }
-                        >
-                          {selectedVoice === `custom_${voice.id}` ? t("voiceSelection.selected") : t("voiceSelection.select")}
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              // Add play functionality here
+                            }}
+                            className="w-10 h-10 p-0"
+                          >
+                            <Play className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant={selectedVoice === `custom_${voice.id}` ? "default" : "outline"}
+                            size="sm"
+                            className={selectedVoice === `custom_${voice.id}` ?
+                              "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0" :
+                              "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }
+                          >
+                            {selectedVoice === `custom_${voice.id}` ? t("voiceSelection.selected") : t("voiceSelection.select")}
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            </div>
-          )}
 
-          {/* Custom Voice Recording Option */}
-          <div className="mt-8 max-w-4xl mx-auto">
-            {user && user.is_vip && voiceBalance.used < voiceBalance.limit ? (
-              // VIP User - Show Custom Voice Button
-              <Link href={`/custom-voice-record?${searchParams.toString()}`}>
+              {/* Custom Voice Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Add New Voice Button - Show if under limit */}
+                {voiceBalance.used < voiceBalance.limit && (
+                  <Card
+                    className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-green-400 transition-all duration-300 hover:border-green-500 cursor-pointer`}
+                    onClick={() => router.push(`/custom-voice-record?returnTo=voice-selection&${searchParams.toString()}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                          <Plus className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className={`font-semibold ${themeClasses.text}`}>
+                            {t("voiceSelection.recordNewVoice")}
+                          </h4>
+                          <p className={`text-sm ${themeClasses.secondaryText}`}>
+                            {t("voiceSelection.addNewVoice")}
+                          </p>
+                        </div>
+                        <ArrowRight className={`w-5 h-5 ${themeClasses.secondaryText}`} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Manage All Voices Button */}
                 <Card
                   className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-purple-400 transition-all duration-300 hover:border-purple-500 cursor-pointer`}
+                  onClick={() => router.push('/my-voices?returnTo=voice-selection')}
                 >
-                  <CardContent className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 text-center md:text-left">
-                      <Mic className="w-12 h-12 md:w-16 md:h-16 text-purple-500 flex-shrink-0" />
-                      <div className="flex-1">
-                        <h3 className={`${themeClasses.text} font-semibold text-lg md:text-xl mb-2`}>
-                          {language === "zh" ? "录制专属声音" : "Record Custom Voice"}
-                        </h3>
-                        <p className={`${themeClasses.secondaryText} text-sm md:text-base mb-3`}>
-                          {language === "zh"
-                            ? "录制您的专属声音，让AI用您的声音讲述电影故事"
-                            : "Record your personal voice for AI narration"}
-                        </p>
-                        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                          <Badge className="bg-yellow-500 text-black">VIP</Badge>
-                          <Badge variant="outline" className="text-purple-600 border-purple-600">
-                            {language === "zh" ? "点击录制" : "Click to Record"}
-                          </Badge>
-                        </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <Mic className="w-5 h-5 text-white" />
                       </div>
+                      <div className="flex-1">
+                        <h4 className={`font-semibold ${themeClasses.text}`}>
+                          {t("voiceSelection.manageAllVoices")}
+                        </h4>
+                        <p className={`text-sm ${themeClasses.secondaryText}`}>
+                          {t("voiceSelection.manageVoicesDesc")}
+                        </p>
+                      </div>
+                      <ArrowRight className={`w-5 h-5 ${themeClasses.secondaryText}`} />
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
-            ) : (
-              // Non-VIP User - Show clickable upgrade/login card
+              </div>
+            </div>
+          )}
+
+          {/* Custom Voice Recording Option - Show only if VIP but no custom voices */}
+          {user?.is_vip && customVoices.length === 0 && (
+            <div className="mt-8 max-w-4xl mx-auto">
+              <div className="text-center mb-4">
+                <h3 className={`text-xl font-bold ${themeClasses.text}`}>
+                  {t("voiceSelection.customVoices")}
+                </h3>
+                <p className={`text-sm ${themeClasses.secondaryText}`}>
+                  {t("voiceSelection.customVoicesDesc")}
+                </p>
+              </div>
+
+              <Card
+                className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-green-400 transition-all duration-300 hover:border-green-500 cursor-pointer`}
+                onClick={() => router.push(`/custom-voice-record?returnTo=voice-selection&${searchParams.toString()}`)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                      <Plus className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
+                        {t("voiceSelection.recordFirstVoice")}
+                      </h4>
+                      <p className={`${themeClasses.secondaryText} text-sm mb-3`}>
+                        {t("voiceSelection.buildVoiceLibrary")}
+                      </p>
+                      <div className="flex gap-2 justify-center">
+                        <Badge className="bg-yellow-500 text-black">VIP</Badge>
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          {t("voiceSelection.clickToRecord")}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Non-VIP User - Show upgrade prompt */}
+          {!user?.is_vip && (
+            <div className="mt-8 max-w-4xl mx-auto">
               <Card
                 className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-gray-400 transition-all duration-300 hover:border-gray-500 cursor-pointer`}
                 onClick={() => {
@@ -573,8 +713,8 @@ export default function VoiceSelectionPage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Audio Element */}
           <audio ref={audioRef} onEnded={() => setPlayingVoice(null)} onError={() => setPlayingVoice(null)} />

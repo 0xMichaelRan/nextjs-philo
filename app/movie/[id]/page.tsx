@@ -11,6 +11,7 @@ import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { apiConfig } from "@/lib/api-config"
+import { useFlow } from "@/hooks/use-flow"
 
 interface MovieData {
   id: string
@@ -126,6 +127,7 @@ export default function MovieHomePage() {
   const [error, setError] = useState<string | null>(null)
   const [currentLanguage, setCurrentLanguage] = useState<"zh" | "en">("zh")
   const { theme } = useTheme()
+  const { flowState, updateFlowState, clearFlowState } = useFlow()
 
   useEffect(() => {
     const movieId = params.id as string
@@ -194,9 +196,22 @@ export default function MovieHomePage() {
 
   const handleGenerateVideo = () => {
     if (movieData) {
-      router.push(
-        `/analysis-options?movieId=${movieData.id}&titleCn=${encodeURIComponent(movieData.title_zh || movieData.title)}&titleEn=${encodeURIComponent(movieData.title_en)}`,
-      )
+      // Only clear flow state if this is a different movie or no movie was selected
+      const currentMovieId = flowState?.movieId
+      if (!currentMovieId || currentMovieId !== movieData.id) {
+        clearFlowState()
+      }
+
+      // Save new movie data to flow state
+      updateFlowState({
+        movieId: movieData.id,
+        movieTitle: movieData.title_zh || movieData.title,
+        movieTitleEn: movieData.title_en,
+        movieTagline: movieData.tagline
+      })
+
+      // Navigate to analysis options
+      router.push('/analysis-options')
     }
   }
 

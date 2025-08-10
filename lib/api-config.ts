@@ -98,6 +98,7 @@ class ApiConfig {
     update: (id: string) => `${this.baseUrl}/jobs/${id}`,
     submitToQueue: (id: string) => `${this.baseUrl}/jobs/${id}/submit-to-queue`,
     limits: () => `${this.baseUrl}/jobs/limits`,
+    vipStatus: () => `${this.baseUrl}/jobs/vip-status`,
   }
 
   // Utility method to get authorization headers

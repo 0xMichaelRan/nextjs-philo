@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { Clock, Play, Download, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { Clock, Play, Download, CheckCircle, AlertCircle, RefreshCw, Film, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,12 +22,15 @@ interface Job {
   estimatedTime?: number
   queuePosition?: number
   createdAt: string
+  updatedAt: string
   completedAt?: string
   downloadUrl?: string
   video_url?: string
   thumbnail_url?: string
   error_message?: string
   external_job_id?: string
+  poster_url?: string
+  backdrop_url?: string
 }
 
 interface JobLimits {
@@ -45,46 +48,19 @@ interface JobLimits {
   can_create_job: boolean
 }
 
-// Simple mock data
-const mockJobs: Job[] = [
-  {
-    id: "1",
-    movieTitle: "The Shawshank Redemption",
-    status: "processing",
-    progress: 65,
-    estimatedTime: 120,
-    createdAt: "2024-01-21 15:30",
-  },
-  {
-    id: "2",
-    movieTitle: "Forrest Gump",
-    status: "queued",
-    progress: 0,
-    queuePosition: 2,
-    estimatedTime: 300,
-    createdAt: "2024-01-21 15:45",
-  },
-  {
-    id: "3",
-    movieTitle: "The Godfather",
-    status: "completed",
-    progress: 100,
-    createdAt: "2024-01-20 14:30",
-    completedAt: "2024-01-20 15:45",
-    downloadUrl: "/download/video-3.mp4",
-  },
-]
+
 
 export default function JobPendingPage() {
   const searchParams = useSearchParams()
-  const [jobs, setJobs] = useState(mockJobs)
+  const router = useRouter()
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [jobLimits, setJobLimits] = useState<JobLimits | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
 
-  // Fetch jobs from API
   const fetchJobs = async () => {
     if (!user) return
 
@@ -96,16 +72,27 @@ export default function JobPendingPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setJobs(data.jobs || [])
+        // Map backend job data to frontend Job interface
+        const mappedJobs = (data.jobs || []).map((job: any) => ({
+          ...job,
+          movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',
+          createdAt: job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown time',
+          updatedAt: job.updated_at ? new Date(job.updated_at).toLocaleString() : 'Unknown time',
+          poster_url: job.poster_url,
+          backdrop_url: job.backdrop_url
+        }))
+        setJobs(mappedJobs)
+      } else {
+        setError("Failed to fetch jobs")
       }
     } catch (error) {
       console.error("Error fetching jobs:", error)
+      setError("Error fetching jobs")
     } finally {
       setLoading(false)
     }
   }
 
-  // Fetch job limits
   const fetchJobLimits = async () => {
     if (!user) return
 
@@ -123,13 +110,39 @@ export default function JobPendingPage() {
     }
   }
 
+  useEffect(() => {
+    if (user) {
+      fetchJobs()
+      fetchJobLimits()
+    }
+  }, [user])
+
+  // Auto-refresh jobs every 30 seconds for pending/processing jobs
+  useEffect(() => {
+    if (!user) return
+
+    const hasPendingJobs = jobs.some(job =>
+      job.status === 'pending' || job.status === 'processing' || job.status === 'queued'
+    )
+
+    if (hasPendingJobs) {
+      const interval = setInterval(fetchJobs, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [jobs, user])
+
+  // Check for error from URL params
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam))
+    }
+  }, [searchParams])
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
       window.location.href = "/auth?redirect=job-pending"
-    } else {
-      fetchJobs()
-      fetchJobLimits()
     }
   }, [user])
 
@@ -220,8 +233,18 @@ export default function JobPendingPage() {
   }
 
   const calculateWaitingTime = (createdAt: string) => {
+    if (!createdAt) {
+      return language === "zh" ? "时间未知" : "Unknown time"
+    }
+
     const created = new Date(createdAt)
     const now = new Date()
+
+    // Check if date is valid
+    if (isNaN(created.getTime())) {
+      return language === "zh" ? "时间格式错误" : "Invalid time format"
+    }
+
     const diffMs = now.getTime() - created.getTime()
     const diffMins = Math.floor(diffMs / (1000 * 60))
 
@@ -244,13 +267,51 @@ export default function JobPendingPage() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
-              {language === "zh" ? "视频任务" : "Video Jobs"}
-            </h1>
-            <p className={themeClasses.secondaryText}>
-              {language === "zh" ? "查看您的视频生成进度" : "Track your video generation progress"}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
+                  {language === "zh" ? "任务队列" : "Job Queue"}
+                </h1>
+                <p className={themeClasses.secondaryText}>
+                  {language === "zh" ? "查看您的视频生成进度" : "Track your video generation progress"}
+                </p>
+              </div>
+              <Button
+                onClick={() => router.push('/video-generation')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Film className="h-4 w-4" />
+                {language === "zh" ? "已完成视频" : "Completed Videos"}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <Card className={`${themeClasses.card} mb-6 border-red-500`}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  <div>
+                    <h3 className="font-semibold text-red-600">
+                      {language === "zh" ? "提交失败" : "Submission Failed"}
+                    </h3>
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setError(null)}
+                    className="ml-auto"
+                  >
+                    ×
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* VIP Limits Display */}
           {jobLimits && (
@@ -306,23 +367,53 @@ export default function JobPendingPage() {
                 </CardContent>
               </Card>
             ) : jobs.map((job) => (
-              <Card key={job.id} className={`${themeClasses.card} ${themeClasses.cardHover} shadow-sm transition-all duration-200`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className={`text-lg font-semibold ${themeClasses.text}`}>
-                        {job.movieTitle}
-                      </h3>
-                      <p className={`text-sm ${themeClasses.secondaryText}`}>
-                        {language === "zh" ? "创建于" : "Created"} {job.createdAt}
-                      </p>
-                      {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
-                        <p className={`text-sm ${themeClasses.secondaryText} font-medium`}>
-                          {calculateWaitingTime(job.createdAt)}
-                        </p>
-                      )}
+              <Card
+                key={job.id}
+                className={`${themeClasses.card} ${themeClasses.cardHover} shadow-sm transition-all duration-200 relative overflow-hidden`}
+                style={{
+                  backgroundImage: job.backdrop_url ? `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${job.backdrop_url})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                <CardContent className="p-6 relative z-10">
+                  <div className="flex items-start space-x-4 mb-4">
+                    {/* Poster Image */}
+                    {job.poster_url && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={job.poster_url}
+                          alt={job.movieTitle}
+                          className="w-16 h-24 object-cover rounded-md shadow-md"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Job Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className={`text-lg font-semibold ${job.backdrop_url ? 'text-white' : themeClasses.text}`}>
+                            {job.movieTitle}
+                          </h3>
+                          <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
+                            {language === "zh" ? "创建于" : "Created"} {job.createdAt}
+                          </p>
+                          <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
+                            {language === "zh" ? "更新于" : "Updated"} {job.updatedAt}
+                          </p>
+                          {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
+                            <p className={`text-sm ${job.backdrop_url ? 'text-gray-100 font-medium' : `${themeClasses.secondaryText} font-medium`}`}>
+                              {calculateWaitingTime(job.createdAt)}
+                            </p>
+                          )}
+                        </div>
+                        {getStatusBadge(job.status)}
+                      </div>
                     </div>
-                    {getStatusBadge(job.status)}
                   </div>
 
                   {/* Progress for processing jobs */}

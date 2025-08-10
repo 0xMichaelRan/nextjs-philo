@@ -12,6 +12,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
+import { useFlow } from "@/hooks/use-flow"
 
 interface Movie {
   id: string
@@ -70,6 +71,12 @@ export default function MovieSelectionPage() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
+  const { clearFlowState } = useFlow()
+
+  // Clear flow state when user comes to movie selection (start fresh)
+  useEffect(() => {
+    clearFlowState()
+  }, [clearFlowState])
 
   // Fetch popular movies on component mount
   useEffect(() => {

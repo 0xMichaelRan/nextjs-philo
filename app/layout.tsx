@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/contexts/theme-context"
 import { LanguageProvider } from "@/contexts/language-context"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Toaster } from "@/components/ui/toaster"
+import { FlowCleanupWrapper } from "@/components/flow-cleanup-wrapper"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -26,8 +27,10 @@ export default function RootLayout({
         <LanguageProvider>
           <ThemeProvider>
             <AuthProvider>
-              {children}
-              <Toaster />
+              <FlowCleanupWrapper>
+                {children}
+                <Toaster />
+              </FlowCleanupWrapper>
             </AuthProvider>
           </ThemeProvider>
         </LanguageProvider>

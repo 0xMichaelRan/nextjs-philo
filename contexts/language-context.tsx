@@ -188,6 +188,10 @@ const translations = {
     "myVoices.voiceDeleted": "声音已成功删除",
     "myVoices.deleteError": "删除失败",
     "myVoices.fetchError": "获取声音列表失败",
+    "myVoices.select": "选择",
+    "myVoices.duration": "时长",
+    "myVoices.voiceName": "的声音",
+    "myVoices.addVoice": "添加声音",
 
     // Movie Selection
     "movieSelection.title": "选个电影吧",
@@ -232,6 +236,17 @@ const translations = {
     "voiceSelection.selected": "已选择",
     "voiceSelection.customVoice": "自定义声音",
     "voiceSelection.generateScript": "生成分析脚本",
+    "voiceSelection.myCustomVoices": "我的专属声音",
+    "voiceSelection.voicesUsed": "声音已使用",
+    "voiceSelection.recordNewVoice": "录制新声音",
+    "voiceSelection.addNewVoice": "添加新的专属声音",
+    "voiceSelection.manageAllVoices": "管理所有声音",
+    "voiceSelection.manageVoicesDesc": "查看、编辑和删除声音",
+    "voiceSelection.recordFirstVoice": "录制第一个专属声音",
+    "voiceSelection.buildVoiceLibrary": "开始创建您的专属声音库",
+    "voiceSelection.clickToRecord": "点击录制",
+    "voiceSelection.customVoices": "专属声音",
+    "voiceSelection.customVoicesDesc": "录制您的专属声音，让AI用您的声音讲述电影故事",
 
     // Custom Voice
     "customVoice.title": "自定义声音",
@@ -251,6 +266,8 @@ const translations = {
       "在这个充满可能性的世界里，每一部电影都是一扇通往不同人生的窗户。通过深入的分析和思考，我们能够发现隐藏在镜头背后的深层含义，感受导演想要传达的情感和思想。",
     "customVoice.recordingInProgress": "录制中...",
     "customVoice.recordingComplete": "录制完成",
+    "customVoice.timeLimit": "录制时长限制20秒",
+    "customVoice.timeRemaining": "剩余时间",
 
     // Script Review
     "scriptReview.title": "脚本预览",
@@ -535,6 +552,10 @@ const translations = {
     "myVoices.voiceDeleted": "Voice successfully deleted",
     "myVoices.deleteError": "Delete failed",
     "myVoices.fetchError": "Failed to fetch voices",
+    "myVoices.select": "Select",
+    "myVoices.duration": "Duration",
+    "myVoices.voiceName": "'s Voice",
+    "myVoices.addVoice": "Add Voice",
 
     // Movie Selection
     "movieSelection.title": "Pick a Movie",
@@ -579,6 +600,17 @@ const translations = {
     "voiceSelection.selected": "Selected",
     "voiceSelection.customVoice": "Custom Voice",
     "voiceSelection.generateScript": "Generate Script",
+    "voiceSelection.myCustomVoices": "My Custom Voices",
+    "voiceSelection.voicesUsed": "Voices Used",
+    "voiceSelection.recordNewVoice": "Record New Voice",
+    "voiceSelection.addNewVoice": "Add a new custom voice",
+    "voiceSelection.manageAllVoices": "Manage All Voices",
+    "voiceSelection.manageVoicesDesc": "View, edit and delete voices",
+    "voiceSelection.recordFirstVoice": "Record Your First Custom Voice",
+    "voiceSelection.buildVoiceLibrary": "Start building your custom voice library",
+    "voiceSelection.clickToRecord": "Click to Record",
+    "voiceSelection.customVoices": "Custom Voices",
+    "voiceSelection.customVoicesDesc": "Record your personal voice for AI narration",
 
     // Custom Voice
     "customVoice.title": "Custom Voice",
@@ -598,6 +630,8 @@ const translations = {
       "In this world full of possibilities, every movie is a window to different lives. Through deep analysis and reflection, we can discover the hidden meanings behind the lens and feel the emotions and thoughts the director wants to convey.",
     "customVoice.recordingInProgress": "Recording...",
     "customVoice.recordingComplete": "Recording Complete",
+    "customVoice.timeLimit": "Recording time limit: 20 seconds",
+    "customVoice.timeRemaining": "Time remaining",
 
     // Script Review
     "scriptReview.title": "Script Preview",

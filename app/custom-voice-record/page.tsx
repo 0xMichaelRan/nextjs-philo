@@ -23,6 +23,8 @@ export default function CustomVoiceRecordPage() {
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [playProgress, setPlayProgress] = useState(0)
+  const [audioDuration, setAudioDuration] = useState(0)
   const [step, setStep] = useState<"record" | "review" | "save">("record")
   const [isSaving, setIsSaving] = useState(false)
   const [recordLanguage, setRecordLanguage] = useState<"zh" | "en">("zh")
@@ -35,9 +37,28 @@ export default function CustomVoiceRecordPage() {
   const { language, t } = useLanguage()
   const { user } = useAuth()
 
-  const sampleText = {
-    zh: "电影是艺术与技术的完美结合，每一帧画面都承载着导演的情感与思考。",
-    en: "Movies are the perfect blend of art and technology, with every frame carrying the director's emotions and thoughts.",
+  // Recording time limit in seconds
+  const RECORDING_TIME_LIMIT = 20
+
+  // Use translations for sample text
+  const getSampleText = () => {
+    return t("customVoice.sampleText")
+  }
+
+  // Generate random voice name
+  const generateRandomName = () => {
+    const adjectives = language === "zh"
+      ? ["温暖", "清澈", "优雅", "动听", "甜美", "磁性", "柔和", "明亮"]
+      : ["Warm", "Clear", "Elegant", "Melodic", "Sweet", "Magnetic", "Gentle", "Bright"]
+
+    const nouns = language === "zh"
+      ? ["声音", "嗓音", "音色", "语调"]
+      : ["Voice", "Tone", "Sound", "Vocal"]
+
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)]
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)]
+
+    return language === "zh" ? `${randomAdjective}的${randomNoun}` : `${randomAdjective} ${randomNoun}`
   }
 
   // Check VIP status
@@ -156,9 +177,14 @@ export default function CustomVoiceRecordPage() {
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => {
           const newTime = prev + 1
-          // Auto-stop at 12 seconds
-          if (newTime >= 12) {
+          // Auto-stop at time limit
+          if (newTime >= RECORDING_TIME_LIMIT) {
             stopRecording()
+            // Auto-generate a random name and advance to review step
+            setTimeout(() => {
+              setRecordingName(generateRandomName())
+              setStep("review")
+            }, 500)
           }
           return newTime
         })
@@ -186,6 +212,11 @@ export default function CustomVoiceRecordPage() {
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current)
       }
+      // Auto-generate a random name and advance to review step
+      setTimeout(() => {
+        setRecordingName(generateRandomName())
+        setStep("review")
+      }, 500)
     }
   }
 
@@ -204,6 +235,38 @@ export default function CustomVoiceRecordPage() {
       setIsPlaying(false)
     }
   }
+
+  // Update play progress
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const updateProgress = () => {
+      if (audio.duration && audio.currentTime) {
+        const progress = (audio.currentTime / audio.duration) * 100
+        setPlayProgress(progress)
+      }
+    }
+
+    const handleLoadedMetadata = () => {
+      setAudioDuration(audio.duration)
+    }
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      setPlayProgress(0)
+    }
+
+    audio.addEventListener('timeupdate', updateProgress)
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+    audio.addEventListener('ended', handleEnded)
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress)
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.removeEventListener('ended', handleEnded)
+    }
+  }, [audioBlob])
 
   const discardRecording = () => {
     setAudioBlob(null)
@@ -241,8 +304,21 @@ export default function CustomVoiceRecordPage() {
       if (response.ok) {
         setStep("save")
         setTimeout(() => {
-          const returnTo = searchParams.get("returnTo") || "voice-selection"
-          router.push(`/${returnTo}?${searchParams.toString()}`)
+          const returnTo = searchParams.get("returnTo") || "my-voices"
+
+          if (returnTo === "voice-selection") {
+            // Return to voice-selection with the new voice selected
+            const currentParams = new URLSearchParams(searchParams.toString())
+            currentParams.delete('returnTo')
+            currentParams.set('newVoiceId', 'latest') // Signal to select the latest voice
+            router.push(`/voice-selection?${currentParams.toString()}`)
+          } else if (returnTo === "my-voices") {
+            // Return to my-voices
+            router.push('/my-voices')
+          } else {
+            // Default fallback
+            router.push(`/${returnTo}`)
+          }
         }, 2000)
       } else {
         const errorData = await response.json()
@@ -267,7 +343,7 @@ export default function CustomVoiceRecordPage() {
   }
 
   return (
-    <AppLayout title={language === "zh" ? "录制专属声音" : "Record Custom Voice"}>
+    <AppLayout title={t("customVoice.title")}>
       <div className={`min-h-screen ${themeClasses.background}`}>
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
@@ -319,19 +395,19 @@ export default function CustomVoiceRecordPage() {
               <Card className={themeClasses.card}>
                 <CardHeader>
                   <CardTitle className={`${themeClasses.text} text-center`}>
-                    {language === "zh" ? "录制您的声音" : "Record Your Voice"}
+                    {t("customVoice.subtitle")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Sample Text */}
                   <div>
                     <Label className={`${themeClasses.text} text-lg font-semibold`}>
-                      {language === "zh" ? "请朗读以下文本：" : "Please read the following text:"}
+                      {t("customVoice.recordingTip")}
                     </Label>
                     <Card className={`${themeClasses.card} mt-3`}>
                       <CardContent className="p-4">
                         <p className={`${themeClasses.text} leading-relaxed text-base`}>
-                          {sampleText[recordLanguage]}
+                          {getSampleText()}
                         </p>
                       </CardContent>
                     </Card>
@@ -339,12 +415,20 @@ export default function CustomVoiceRecordPage() {
 
                   {/* Recording Controls */}
                   <div className="text-center space-y-4">
+                    {/* Time limit info */}
+                    <div className={`text-sm ${themeClasses.secondaryText}`}>
+                      {t("customVoice.timeLimit")}
+                    </div>
+
                     {isRecording && (
                       <div className="space-y-2">
                         <div className={`${themeClasses.text} text-2xl font-mono`}>
                           {formatTime(recordingTime)}
                         </div>
-                        <Progress value={(recordingTime / 12) * 100} className="w-full" />
+                        <div className={`text-sm ${themeClasses.secondaryText}`}>
+                          {t("customVoice.timeRemaining")}: {formatTime(RECORDING_TIME_LIMIT - recordingTime)}
+                        </div>
+                        <Progress value={(recordingTime / RECORDING_TIME_LIMIT) * 100} className="w-full" />
                       </div>
                     )}
 
@@ -361,9 +445,9 @@ export default function CustomVoiceRecordPage() {
                     </Button>
 
                     <p className={`${themeClasses.secondaryText} text-sm`}>
-                      {isRecording 
-                        ? (language === "zh" ? "点击停止录制" : "Click to stop recording")
-                        : (language === "zh" ? "点击开始录制" : "Click to start recording")
+                      {isRecording
+                        ? t("customVoice.stopRecording")
+                        : t("customVoice.startRecording")
                       }
                     </p>
                   </div>
@@ -387,30 +471,49 @@ export default function CustomVoiceRecordPage() {
                   </div>
 
                   {/* Playback Controls */}
-                  <div className="flex justify-center space-x-4">
+                  <div className="flex justify-center">
                     <Button
                       onClick={isPlaying ? pauseRecording : playRecording}
                       size="lg"
-                      className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+                      className="w-20 h-20 rounded-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-lg"
                     >
-                      {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                      {isPlaying 
-                        ? (language === "zh" ? "暂停" : "Pause")
-                        : (language === "zh" ? "播放" : "Play")
-                      }
+                      {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8" />}
                     </Button>
                   </div>
+                  <div className="text-center">
+                    <p className={`${themeClasses.secondaryText} text-sm`}>
+                      {isPlaying
+                        ? (language === "zh" ? "点击暂停播放" : "Click to pause playback")
+                        : (language === "zh" ? "点击播放录音" : "Click to play recording")
+                      }
+                    </p>
+                  </div>
+
+                  {/* Play Progress Bar */}
+                  {(isPlaying || playProgress > 0) && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className={themeClasses.secondaryText}>
+                          {Math.floor((playProgress / 100) * audioDuration)}s
+                        </span>
+                        <span className={themeClasses.secondaryText}>
+                          {Math.floor(audioDuration)}s
+                        </span>
+                      </div>
+                      <Progress value={playProgress} className="w-full" />
+                    </div>
+                  )}
 
                   {/* Voice Name Input */}
                   <div className="space-y-2">
                     <Label htmlFor="voiceName" className={`${themeClasses.text} font-semibold`}>
-                      {language === "zh" ? "声音名称" : "Voice Name"}
+                      {t("customVoice.recordingName")}
                     </Label>
                     <Input
                       id="voiceName"
                       value={recordingName}
                       onChange={(e) => setRecordingName(e.target.value)}
-                      placeholder={language === "zh" ? "例如：我的声音" : "e.g., My Voice"}
+                      placeholder={t("customVoice.namePlaceholder")}
                       className={`${themeClasses.card} ${themeClasses.text}`}
                     />
                   </div>
@@ -423,7 +526,7 @@ export default function CustomVoiceRecordPage() {
                       className="flex-1"
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      {language === "zh" ? "重新录制" : "Re-record"}
+                      {t("customVoice.reRecord")}
                     </Button>
                     <Button
                       onClick={saveRecording}
@@ -433,12 +536,12 @@ export default function CustomVoiceRecordPage() {
                       {isSaving ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          {language === "zh" ? "保存中..." : "Saving..."}
+                          {t("customVoice.recordingInProgress")}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          {language === "zh" ? "保存" : "Save"}
+                          {t("customVoice.saveVoice")}
                         </>
                       )}
                     </Button>
@@ -455,7 +558,7 @@ export default function CustomVoiceRecordPage() {
                       <Check className="w-8 h-8 text-white" />
                     </div>
                     <h3 className={`${themeClasses.text} text-xl font-semibold`}>
-                      {language === "zh" ? "保存成功！" : "Saved Successfully!"}
+                      {t("customVoice.recordingComplete")}
                     </h3>
                     <p className={`${themeClasses.secondaryText}`}>
                       {language === "zh" 

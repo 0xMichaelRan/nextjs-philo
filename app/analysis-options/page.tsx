@@ -15,6 +15,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/contexts/language-context"
+import { useFlow } from "@/hooks/use-flow"
 
 const analysisOptions = {
   character: [
@@ -77,22 +78,27 @@ const explanations = {
 }
 
 export default function AnalysisOptionsPage() {
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const [movieTitle, setMovieTitle] = useState("")
-  const [movieTitleEn, setMovieTitleEn] = useState("")
-  const [movieId, setMovieId] = useState("")
+  const { flowState, updateFlowState } = useFlow()
+  const { language, t } = useLanguage()
   const [selectedOptions, setSelectedOptions] = useState({
-    character: "",
-    tone: "",
-    style: "",
-    length: "",
+    character: flowState.analysisCharacter || "",
+    tone: flowState.scriptTone || "",
+    style: flowState.analysisStyle || "",
+    length: flowState.scriptLength || "",
     focus: "",
     customRequest: "",
   })
   const [selectedExplanations, setSelectedExplanations] = useState<{ [key: string]: string }>({})
 
   const { theme } = useTheme()
+
+  // Redirect if no movie selected
+  useEffect(() => {
+    if (!flowState.movieId) {
+      router.push('/movie-selection')
+    }
+  }, [flowState.movieId, router])
 
   const getTextClasses = () => {
     if (theme === "light") {
@@ -115,15 +121,7 @@ export default function AnalysisOptionsPage() {
     return "bg-gradient-to-br from-rose-900 via-pink-900 to-purple-900"
   }
 
-  useEffect(() => {
-    const title = searchParams.get("titleCn")
-    const titleEn = searchParams.get("titleEn")
-    const id = searchParams.get("movieId")
 
-    if (title) setMovieTitle(decodeURIComponent(title))
-    if (titleEn) setMovieTitleEn(decodeURIComponent(titleEn))
-    if (id) setMovieId(id)
-  }, [searchParams])
 
   const handleOptionChange = (category: string, value: string) => {
     setSelectedOptions((prev) => ({
@@ -140,18 +138,19 @@ export default function AnalysisOptionsPage() {
       length: analysisOptions.length[Math.floor(Math.random() * analysisOptions.length.length)].id,
     }
 
-    setSelectedOptions(randomOptions)
+    setSelectedOptions(prev => ({ ...prev, ...randomOptions }))
+
+    // Update flow state
+    updateFlowState({
+      analysisCharacter: randomOptions.character,
+      scriptTone: randomOptions.tone,
+      analysisStyle: randomOptions.style,
+      scriptLength: randomOptions.length,
+    })
 
     // Navigate to voice selection after a brief delay
     setTimeout(() => {
-      const params = new URLSearchParams()
-      params.set("movieId", movieId)
-      params.set("titleCn", movieTitle)
-      params.set("titleEn", movieTitleEn)
-      Object.entries(randomOptions).forEach(([key, value]) => {
-        params.set(key, value)
-      })
-      router.push(`/voice-selection?${params.toString()}`)
+      router.push('/voice-selection')
     }, 1000)
   }
 
@@ -162,14 +161,15 @@ export default function AnalysisOptionsPage() {
   })
 
   const handleNext = () => {
-    const params = new URLSearchParams()
-    params.set("movieId", movieId)
-    params.set("titleCn", movieTitle)
-    params.set("titleEn", movieTitleEn)
-    Object.entries(selectedOptions).forEach(([key, value]) => {
-      params.set(key, value)
+    // Update flow state with selected options
+    updateFlowState({
+      analysisCharacter: selectedOptions.character,
+      scriptTone: selectedOptions.tone,
+      analysisStyle: selectedOptions.style,
+      scriptLength: selectedOptions.length,
     })
-    router.push(`/voice-selection?${params.toString()}`)
+
+    router.push('/voice-selection')
   }
 
   return (
@@ -178,9 +178,9 @@ export default function AnalysisOptionsPage() {
         <div className="container mx-auto px-6 py-8 pb-24">
           {/* Movie Info */}
           <MovieHeader
-            movieId={movieId}
-            movieTitle={movieTitle}
-            movieTitleEn={movieTitleEn}
+            movieId={flowState.movieId || ""}
+            movieTitle={flowState.movieTitle || ""}
+            movieTitleEn={flowState.movieTitleEn || ""}
             subtitle="请选择您的分析偏好"
             className="mb-12 max-w-2xl mx-auto"
           />

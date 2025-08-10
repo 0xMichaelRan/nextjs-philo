@@ -55,13 +55,20 @@ export default function AuthPage() {
     if (redirect) {
       setRedirectPath(`/${redirect}`)
     } else {
-      // Try to get the previous page from referrer
-      const referrer = document.referrer
-      if (referrer && referrer.includes(window.location.origin)) {
-        const referrerPath = new URL(referrer).pathname
-        // Don't redirect back to auth page
-        if (referrerPath !== "/auth") {
-          setRedirectPath(referrerPath)
+      // Check localStorage for redirect path (set by 401 handlers)
+      const storedRedirect = localStorage.getItem('redirectAfterAuth')
+      if (storedRedirect) {
+        setRedirectPath(storedRedirect)
+        localStorage.removeItem('redirectAfterAuth') // Clean up
+      } else {
+        // Try to get the previous page from referrer
+        const referrer = document.referrer
+        if (referrer && referrer.includes(window.location.origin)) {
+          const referrerPath = new URL(referrer).pathname
+          // Don't redirect back to auth page
+          if (referrerPath !== "/auth") {
+            setRedirectPath(referrerPath)
+          }
         }
       }
     }

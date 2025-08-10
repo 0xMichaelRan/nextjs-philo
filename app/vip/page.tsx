@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Crown, Check, Star, ChevronDown, ChevronUp } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Crown, Check, Star, ChevronDown, ChevronUp, Calendar, Mic, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,43 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { apiConfig } from "@/lib/api-config"
+
+interface VipStatus {
+  plan: string
+  plan_code: string
+  is_vip: boolean
+  vip_expiry_date: string | null
+  limits: {
+    pending_jobs: number
+    monthly_jobs: number
+    custom_voices: number
+    price_monthly: number
+    price_yearly: number
+  }
+  usage: {
+    pending_jobs: {
+      current: number
+      limit: number
+      remaining: number
+    }
+    monthly_jobs: {
+      current: number
+      limit: number | null
+      remaining: number | null
+    }
+    custom_voices: {
+      current: number
+      limit: number
+      remaining: number
+    }
+  }
+  next_reset_date: string
+  pricing: {
+    vip: any
+    svip: any
+  }
+}
 
 const plans = [
   {
@@ -148,14 +185,75 @@ const comparisonFeatures = [
 export default function VipPage() {
   const [selectedPlan, setSelectedPlan] = useState("vip")
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const [vipStatus, setVipStatus] = useState<VipStatus | null>(null)
+  const [showPricing, setShowPricing] = useState(false)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user } = useAuth()
 
+  const fetchVipStatus = async () => {
+    if (!user) return
+
+    setLoading(true)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.jobs.vipStatus()
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setVipStatus(data)
+      }
+    } catch (error) {
+      console.error("Error fetching VIP status:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchVipStatus()
+    }
+  }, [user])
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return language === "zh"
+      ? date.toLocaleDateString('zh-CN')
+      : date.toLocaleDateString('en-US')
+  }
+
   const getThemeClass = (lightClass: string, darkClass: string) => {
     return theme === "light" ? lightClass : darkClass
   }
+
+  const getThemeClasses = () => {
+    if (theme === "light") {
+      return {
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        text: "text-gray-800",
+        secondaryText: "text-gray-600",
+        card: "bg-white/80 border-gray-200/50",
+        cardHover: "hover:bg-white/90 hover:shadow-lg",
+        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        accent: "text-purple-600",
+      }
+    }
+    return {
+      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
+      text: "text-white",
+      secondaryText: "text-gray-300",
+      card: "bg-white/10 border-white/20",
+      cardHover: "hover:bg-white/15 hover:shadow-xl",
+      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      accent: "text-purple-400",
+    }
+  }
+
+  const themeClasses = getThemeClasses()
 
   const handleSubscribe = (planId: string) => {
     if (planId === "free") return
@@ -164,112 +262,281 @@ export default function VipPage() {
     router.push(`/payment?plan=${planId}`)
   }
 
+  // Determine which plans to show based on current VIP status
+  const getAvailablePlans = () => {
+    if (!user) {
+      // Non-logged in users see all paid plans
+      return plans.filter(plan => plan.id !== "free")
+    }
+
+    if (!user.is_vip) {
+      // Logged in non-VIP users can see all paid plans
+      return plans.filter(plan => plan.id !== "free")
+    }
+
+    const currentPlan = vipStatus?.plan_code || "free"
+
+    if (currentPlan === "vip") {
+      // VIP users can extend VIP or upgrade to SVIP
+      return plans.filter(plan => plan.id === "vip" || plan.id === "svip")
+    } else if (currentPlan === "svip") {
+      // SVIP users can only extend SVIP (no downgrade)
+      return plans.filter(plan => plan.id === "svip")
+    }
+
+    return plans.filter(plan => plan.id !== "free")
+  }
+
+  const shouldShowPricing = !user || !user.is_vip || showPricing // Show pricing for non-logged in, non-VIP, or when explicitly requested
+
   return (
-    <div
-      className={`${getThemeClass("bg-gradient-to-br from-emerald-100 via-green-100 to-teal-100", "bg-gradient-to-br from-emerald-900 via-green-900 to-teal-900")} min-h-screen`}
-    >
-      <AppLayout >
+    <div className={`${themeClasses.background} min-h-screen`}>
+      <AppLayout>
         <div className="container mx-auto px-4 py-8">
           {/* Hero Section */}
           <div className="text-center mb-12">
             <div className="flex justify-center">
               <Crown className="w-12 h-12 text-yellow-500" />
             </div>
-            <p className={`${getThemeClass("text-gray-700", "text-gray-300")} text-xl mb-6`}>{t("vip.title")}</p>
+            <p className={`${themeClasses.secondaryText} text-xl mb-6`}>{t("vip.title")}</p>
           </div>
 
-          {/* Pricing Plans - 3 Column Layout */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
-            {plans.map((plan) => (
-              <Card
-                key={plan.id}
-                className={`relative ${getThemeClass("bg-white/80 border-gray-300", "bg-white/10 border-white/20")} ${
-                  plan.popular ? "ring-2 ring-purple-500 scale-105" : ""
-                } transition-all duration-300`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-purple-600 text-white px-4 py-1">
-                      <Star className="w-3 h-3 mr-1" />
-                      {t("vip.mostPopular")}
-                    </Badge>
+          {/* Non-logged in user notice */}
+          {!user && (
+            <div className="max-w-4xl mx-auto mb-12">
+              <Card className={`${themeClasses.card} border-2 border-blue-500 ${themeClasses.cardHover} transition-all duration-300`}>
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Crown className="w-8 h-8 text-white" />
                   </div>
-                )}
-
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className={`${getThemeClass("text-black", "text-white")} text-2xl mb-2`}>
-                    {language === "zh" ? plan.name : plan.nameEn}
-                  </CardTitle>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className={`${getThemeClass("text-black", "text-white")} text-3xl font-bold`}>
-                        {`¥${plan.price}`}
-                      </span>
-                        <span className={getThemeClass("text-gray-500", "text-gray-400")}>
-                          /{language === "zh" ? plan.period : plan.periodEn}
-                        </span>
-                      
-                    </div>
-                    {plan.originalPrice > plan.price && plan.price > 0 && (
-                      <div className="flex items-center justify-center space-x-2">
-                        <span className={getThemeClass("text-gray-500 line-through", "text-gray-400 line-through")}>
-                          {language === "zh" ? "原价" : "Was"} ¥{plan.originalPrice}
-                        </span>
-                        <Badge variant="secondary" className="text-xs">
-                          {t("vip.save")}
-                          {Math.round((1 - plan.price / plan.originalPrice) * 100)}%
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
-                  <ul className="space-y-3">
-                    {(language === "zh" ? plan.features : plan.featuresEn).map((feature, index) => (
-                      <li
-                        key={index}
-                        className={`flex items-center ${getThemeClass("text-gray-600", "text-gray-300")}`}
-                      >
-                        <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
+                  <h3 className={`${themeClasses.text} text-xl font-bold mb-2`}>
+                    {language === "zh" ? "登录查看您的VIP状态" : "Login to View Your VIP Status"}
+                  </h3>
+                  <p className={`${themeClasses.secondaryText} mb-4`}>
+                    {language === "zh"
+                      ? "登录后可查看当前会员状态、使用情况和管理订阅"
+                      : "Login to view your current membership status, usage, and manage subscriptions"
+                    }
+                  </p>
                   <Button
-                    onClick={() => handleSubscribe(plan.id)}
-                    className={`w-full ${
-                      plan.id === "free"
-                        ? "bg-gray-500 hover:bg-gray-600"
-                        : plan.popular
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                          : plan.id === "svip"
-                            ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                            : "bg-purple-600 hover:bg-purple-700"
-                    } text-white`}
-                    size="lg"
-                    disabled={plan.id === "free" || (user?.isVip && plan.id !== "svip")}
+                    onClick={() => router.push('/auth')}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
-                    {plan.id === "free" ? (
-                      t("vip.currentPlan")
-                    ) : user?.isVip && plan.id !== "svip" ? (
-                      language === "zh" ? (
-                        "已订阅"
-                      ) : (
-                        "Subscribed"
-                      )
-                    ) : (
-                      <>
-                        <Crown className="w-4 h-4 mr-2" />
-                        {t("vip.subscribe")}
-                      </>
-                    )}
+                    {language === "zh" ? "立即登录" : "Login Now"}
                   </Button>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* VIP Status Section - Show if user is VIP */}
+          {user?.is_vip && vipStatus && (
+            <div className="max-w-4xl mx-auto mb-12">
+              <Card className={`${themeClasses.card} border-2 border-purple-500 ${themeClasses.cardHover} transition-all duration-300`}>
+                <CardHeader>
+                  <CardTitle className={`${themeClasses.text} text-2xl flex items-center gap-2`}>
+                    <Crown className="w-6 h-6 text-yellow-500" />
+                    {language === "zh"
+                      ? `我的${vipStatus.plan === "SVIP" ? "SVIP" : "VIP"}状态`
+                      : `My ${vipStatus.plan} Status`}
+                    <Badge className={`text-white ${
+                      vipStatus.plan === "SVIP"
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600"
+                        : "bg-purple-600"
+                    }`}>{vipStatus.plan}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    {/* Expiry Date */}
+                    <div className="text-center">
+                      <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                      <h4 className={`${themeClasses.text} font-semibold mb-1`}>
+                        {language === "zh" ? "到期时间" : "Expiry Date"}
+                      </h4>
+                      <p className={`${themeClasses.secondaryText} text-sm`}>
+                        {vipStatus.vip_expiry_date ? formatDate(vipStatus.vip_expiry_date) : "N/A"}
+                      </p>
+                    </div>
+
+                    {/* Custom Voices */}
+                    <div className="text-center">
+                      <Mic className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                      <h4 className={`${themeClasses.text} font-semibold mb-1`}>
+                        {language === "zh" ? "专属声音" : "Custom Voices"}
+                      </h4>
+                      <p className={`${themeClasses.secondaryText} text-sm`}>
+                        {vipStatus.usage.custom_voices.current} / {vipStatus.usage.custom_voices.limit}
+                      </p>
+                      <p className={`${themeClasses.secondaryText} text-xs opacity-75`}>
+                        {language === "zh" ? `剩余 ${vipStatus.usage.custom_voices.remaining}` : `${vipStatus.usage.custom_voices.remaining} remaining`}
+                      </p>
+                    </div>
+
+                    {/* Video Jobs */}
+                    <div className="text-center">
+                      <Video className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+                      <h4 className={`${themeClasses.text} font-semibold mb-1`}>
+                        {language === "zh" ? "视频任务" : "Video Jobs"}
+                      </h4>
+                      <p className={`${themeClasses.secondaryText} text-sm`}>
+                        {vipStatus.usage.monthly_jobs.current} / {vipStatus.usage.monthly_jobs.limit || "∞"}
+                      </p>
+                      <p className={`${themeClasses.secondaryText} text-xs opacity-75`}>
+                        {vipStatus.usage.monthly_jobs.remaining !== null
+                          ? (language === "zh" ? `剩余 ${vipStatus.usage.monthly_jobs.remaining}` : `${vipStatus.usage.monthly_jobs.remaining} remaining`)
+                          : (language === "zh" ? "无限制" : "Unlimited")
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Next Reset Date */}
+                  <div className="text-center">
+                    <p className={`${themeClasses.secondaryText} text-sm`}>
+                      {language === "zh" ? "下次重置时间: " : "Next reset: "}
+                      {formatDate(vipStatus.next_reset_date)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* View Pricing Button - Outside VIP Status Box */}
+          {user?.is_vip && (
+            <div className="text-center mb-12">
+              <Button
+                variant="outline"
+                onClick={() => setShowPricing(!showPricing)}
+                className={`${themeClasses.card} border-2 border-purple-400 ${themeClasses.text} hover:border-purple-500 transition-all duration-300`}
+              >
+                {language === "zh" ? "查看价格表" : "View Pricing"}
+                {showPricing ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
+              </Button>
+            </div>
+          )}
+
+          {/* Pricing Plans */}
+          {shouldShowPricing && (
+            <>
+              <h2 className={`${themeClasses.text} text-2xl font-bold text-center mb-4`}>
+                {!user
+                  ? (language === "zh" ? "选择您的会员计划" : "Choose Your Membership Plan")
+                  : user.is_vip
+                    ? (language === "zh" ? "升级或续费您的会员" : "Upgrade or Renew Your Membership")
+                    : (language === "zh" ? "升级到VIP会员" : "Upgrade to VIP Membership")
+                }
+              </h2>
+              {user?.is_vip && vipStatus && (
+                <p className={`${themeClasses.secondaryText} text-center mb-8`}>
+                  {language === "zh"
+                    ? `当前计划: ${vipStatus.plan} | 到期时间: ${vipStatus.vip_expiry_date ? new Date(vipStatus.vip_expiry_date).toLocaleDateString() : '永久'}`
+                    : `Current Plan: ${vipStatus.plan} | Expires: ${vipStatus.vip_expiry_date ? new Date(vipStatus.vip_expiry_date).toLocaleDateString() : 'Lifetime'}`
+                  }
+                </p>
+              )}
+              <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
+                {getAvailablePlans().map((plan) => (
+                  <Card
+                    key={plan.id}
+                    className={`relative ${themeClasses.card} ${themeClasses.cardHover} ${
+                      plan.popular ? "ring-2 ring-purple-500 scale-105" : ""
+                    } transition-all duration-300`}
+                  >
+                    {plan.popular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-purple-600 text-white px-4 py-1">
+                          <Star className="w-3 h-3 mr-1" />
+                          {t("vip.mostPopular")}
+                        </Badge>
+                      </div>
+                    )}
+
+                    <CardHeader className="text-center pb-4">
+                      <CardTitle className={`${getThemeClass("text-black", "text-white")} text-2xl mb-2`}>
+                        {language === "zh" ? plan.name : plan.nameEn}
+                      </CardTitle>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center space-x-2">
+                          <span className={`${getThemeClass("text-black", "text-white")} text-3xl font-bold`}>
+                            {`¥${plan.price}`}
+                          </span>
+                          <span className={getThemeClass("text-gray-500", "text-gray-400")}>
+                            /{language === "zh" ? plan.period : plan.periodEn}
+                          </span>
+                        </div>
+                        {plan.originalPrice > plan.price && plan.price > 0 && (
+                          <div className="flex items-center justify-center space-x-2">
+                            <span className={getThemeClass("text-gray-500 line-through", "text-gray-400 line-through")}>
+                              {language === "zh" ? "原价" : "Was"} ¥{plan.originalPrice}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {t("vip.save")}
+                              {Math.round((1 - plan.price / plan.originalPrice) * 100)}%
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6">
+                      <ul className="space-y-3">
+                        {(language === "zh" ? plan.features : plan.featuresEn).map((feature, index) => (
+                          <li
+                            key={index}
+                            className={`flex items-center ${getThemeClass("text-gray-600", "text-gray-300")}`}
+                          >
+                            <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <Button
+                        onClick={() => handleSubscribe(plan.id)}
+                        className={`w-full ${
+                          plan.id === "free"
+                            ? "bg-gray-500 hover:bg-gray-600"
+                            : plan.popular
+                              ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                              : plan.id === "svip"
+                                ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                                : "bg-purple-600 hover:bg-purple-700"
+                        } text-white`}
+                        size="lg"
+                        disabled={plan.id === "free"}
+                      >
+                        {plan.id === "free" ? (
+                          t("vip.currentPlan")
+                        ) : !user ? (
+                          <>
+                            <Crown className="w-4 h-4 mr-2" />
+                            {language === "zh" ? "选择此计划" : "Choose Plan"}
+                          </>
+                        ) : user.is_vip && plan.id === vipStatus?.plan_code.toLowerCase() ? (
+                          <>
+                            <Crown className="w-4 h-4 mr-2" />
+                            {language === "zh" ? "续费" : "Renew"}
+                          </>
+                        ) : user.is_vip && vipStatus?.plan_code === "vip" && plan.id === "svip" ? (
+                          <>
+                            <Crown className="w-4 h-4 mr-2" />
+                            {language === "zh" ? "升级到SVIP" : "Upgrade to SVIP"}
+                          </>
+                        ) : (
+                          <>
+                            <Crown className="w-4 h-4 mr-2" />
+                            {t("vip.subscribe")}
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* FAQ Section */}
           <div className="max-w-4xl mx-auto mb-16">
