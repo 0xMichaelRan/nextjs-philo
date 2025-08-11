@@ -454,6 +454,17 @@ export default function AuthPage() {
                       <Phone className="w-4 h-4 mr-2" />
                       {isLoading ? t("auth.loggingIn") : t("auth.login")}
                     </Button>
+
+                    {/* Forgot Password Link */}
+                    <div className="text-center">
+                      <Button
+                        onClick={() => router.push('/forgot-password')}
+                        variant="ghost"
+                        className="text-purple-400 hover:text-purple-300 hover:bg-white/5"
+                      >
+                        {t("auth.forgotPassword")}
+                      </Button>
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="register" className="space-y-4">

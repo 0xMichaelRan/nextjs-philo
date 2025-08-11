@@ -20,16 +20,7 @@ import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useToast } from "@/hooks/use-toast"
 
-const planPrices = {
-  vip: {
-    monthly: { price: 29, originalPrice: 39 },
-    yearly: { price: 261, originalPrice: 468 }, // 29 * 12 * 0.75 = 261
-  },
-  svip: {
-    monthly: { price: 59, originalPrice: 79 },
-    yearly: { price: 531, originalPrice: 948 }, // 59 * 12 * 0.75 = 531
-  },
-}
+// Dynamic pricing will be fetched from backend
 
 const planDetails = {
   vip: {
@@ -93,6 +84,8 @@ export default function PaymentPage() {
   const [promoError, setPromoError] = useState("")
   const [finalPrice, setFinalPrice] = useState(0)
   const [promoDiscount, setPromoDiscount] = useState(0)
+  const [pricingData, setPricingData] = useState<any>(null)
+  const [loadingPricing, setLoadingPricing] = useState(true)
 
   const { toast } = useToast()
   const { user, updateUser } = useAuth()
@@ -136,6 +129,58 @@ export default function PaymentPage() {
     }
   }, [user])
 
+  // Fetch pricing data from backend
+  useEffect(() => {
+    const fetchPricing = async () => {
+      if (!user) return
+
+      try {
+        setLoadingPricing(true)
+        const response = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.payments.pricing()
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          setPricingData(data)
+        } else {
+          console.error("Failed to fetch pricing data")
+        }
+      } catch (error) {
+        console.error("Error fetching pricing:", error)
+      } finally {
+        setLoadingPricing(false)
+      }
+    }
+
+    fetchPricing()
+  }, [user])
+
+  const getPrice = (plan: string, cycle: string) => {
+    if (!pricingData?.pricing?.[plan]?.[cycle]) {
+      return { price: 0, originalPrice: 0 }
+    }
+
+    const planData = pricingData.pricing[plan][cycle]
+
+    // If user is VIP upgrading to SVIP, use upgrade price
+    if (plan === "svip" && pricingData.current_plan === "vip" && planData.upgrade_price !== undefined) {
+      return {
+        price: planData.upgrade_price,
+        originalPrice: planData.original_price,
+        isUpgrade: true,
+        proratedAmount: planData.prorated_amount,
+        remainingDays: pricingData.pricing.svip.remaining_days
+      }
+    }
+
+    return {
+      price: planData.price,
+      originalPrice: planData.original_price,
+      isUpgrade: false
+    }
+  }
+
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
@@ -155,7 +200,7 @@ export default function PaymentPage() {
 
   const themeClasses = getThemeClasses()
 
-  const currentPlanPricing = planPrices[selectedPlan as keyof typeof planPrices][billingCycle as keyof typeof planPrices.vip]
+  const currentPlanPricing = getPrice(selectedPlan, billingCycle)
   const currentPlanDetails = planDetails[selectedPlan as keyof typeof planDetails]
   const savings = currentPlanPricing.originalPrice - currentPlanPricing.price
   const yearlyDiscount = billingCycle === "yearly" ? 25 : 0
@@ -405,6 +450,25 @@ export default function PaymentPage() {
     )
   }
 
+  if (loadingPricing) {
+    return (
+      <AppLayout>
+        <div className={themeClasses.background}>
+          <div className="container mx-auto px-4 py-8">
+            <Card className={`${themeClasses.card} max-w-md mx-auto text-center`}>
+              <CardContent className="p-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <h2 className={`${themeClasses.text} text-xl font-bold mb-4`}>
+                  {language === "zh" ? "加载价格信息..." : "Loading pricing..."}
+                </h2>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
   if (showQRCode) {
     return (
       <AppLayout>
@@ -535,7 +599,7 @@ export default function PaymentPage() {
                           </div>
                           <div className="text-right">
                             <div className={`${themeClasses.text} font-semibold`}>
-                              ¥{planPrices[selectedPlan as keyof typeof planPrices].monthly.price}/{t("payment.month")}
+                              ¥{getPrice(selectedPlan, "monthly").price}/{t("payment.month")}
                             </div>
                           </div>
                         </div>
@@ -556,10 +620,10 @@ export default function PaymentPage() {
                           </div>
                           <div className="text-right">
                             <div className={`${themeClasses.text} font-semibold`}>
-                              ¥{planPrices[selectedPlan as keyof typeof planPrices].yearly.price}/{t("payment.year")}
+                              ¥{getPrice(selectedPlan, "yearly").price}/{t("payment.year")}
                             </div>
                             <div className={`${themeClasses.secondaryText} text-sm line-through`}>
-                              ¥{planPrices[selectedPlan as keyof typeof planPrices].yearly.originalPrice}
+                              ¥{getPrice(selectedPlan, "yearly").originalPrice}
                             </div>
                           </div>
                         </div>
@@ -706,9 +770,34 @@ export default function PaymentPage() {
                             : "1 month"}
                       </span>
                     </div>
+                    {currentPlanPricing.isUpgrade && (
+                      <div className="flex justify-between">
+                        <span className={themeClasses.secondaryText}>
+                          {language === "zh" ? "剩余VIP天数:" : "Remaining VIP days:"}
+                        </span>
+                        <span className={themeClasses.text}>
+                          {currentPlanPricing.remainingDays} {language === "zh" ? "天" : "days"}
+                        </span>
+                      </div>
+                    )}
+                    {currentPlanPricing.isUpgrade && (
+                      <div className="flex justify-between">
+                        <span className={themeClasses.secondaryText}>
+                          {language === "zh" ? "按比例升级费用:" : "Prorated upgrade:"}
+                        </span>
+                        <span className={themeClasses.text}>
+                          ¥{currentPlanPricing.proratedAmount?.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
-                      <span className={themeClasses.secondaryText}>{t("payment.originalPrice")}:</span>
-                      <span className={`${themeClasses.secondaryText} line-through`}>
+                      <span className={themeClasses.secondaryText}>
+                        {currentPlanPricing.isUpgrade
+                          ? (language === "zh" ? "升级后价格:" : "After upgrade:")
+                          : t("payment.originalPrice") + ":"
+                        }
+                      </span>
+                      <span className={`${themeClasses.secondaryText} ${!currentPlanPricing.isUpgrade ? 'line-through' : ''}`}>
                         ¥{currentPlanPricing.originalPrice}
                       </span>
                     </div>

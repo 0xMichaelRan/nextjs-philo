@@ -15,6 +15,8 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
+import { VoiceAudioPlayer } from "@/components/voice-audio-player"
 
 interface VoiceOption {
   id: number
@@ -111,6 +113,7 @@ export default function VoiceSelectionPage() {
   const [customVoices, setCustomVoices] = useState<CustomVoice[]>([])
   const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
   const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
+  const [showVipModal, setShowVipModal] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -337,27 +340,35 @@ export default function VoiceSelectionPage() {
         background: "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50",
         text: "text-gray-800",
         secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        cardHover: "hover:bg-white/90",
+        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
+        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        selectedCard: "border-purple-500 bg-purple-50 ring-2 ring-purple-500/20",
+        hoverCard: "hover:border-purple-300",
+        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        accent: "text-purple-600",
       }
     }
     return {
       background: "bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-      cardHover: "hover:bg-white/20",
+      card: "bg-white/10 border-white/20 backdrop-blur-md",
+      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      selectedCard: "border-purple-400 bg-purple-900/50 ring-2 ring-purple-400/60",
+      hoverCard: "hover:border-purple-500",
+      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      accent: "text-purple-400",
     }
   }
 
   const themeClasses = getThemeClasses()
 
   const getCardStyle = (voiceId: string) => {
-    const baseStyle = `border-2 transition-all duration-300 ${themeClasses.card} ${themeClasses.cardHover}`
+    const baseStyle = `border-2 ${themeClasses.card} ${themeClasses.cardHover}`
     if (selectedVoice === voiceId) {
-      return `${baseStyle} border-pink-500 ring-2 ring-pink-500/20`
+      return `${baseStyle} ${themeClasses.selectedCard}`
     }
-    return `${baseStyle} border-transparent hover:border-pink-300`
+    return `${baseStyle} border-transparent ${themeClasses.hoverCard}`
   }
 
 
@@ -491,8 +502,8 @@ export default function VoiceSelectionPage() {
                                   variant={selectedVoice === voice.id.toString() ? "default" : "outline"}
                                   size="sm"
                                   className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${selectedVoice === voice.id.toString() ?
-                                    "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white" :
-                                    ""}`}
+                                    `${themeClasses.button} text-white` :
+                                    `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}`}
                                 >
                                   {selectedVoice === voice.id.toString() ? t("voiceSelection.selected") : t("voiceSelection.select")}
                                 </Button>
@@ -523,10 +534,10 @@ export default function VoiceSelectionPage() {
                 {customVoices.map((voice) => (
                   <Card
                     key={voice.id}
-                    className={`${themeClasses.card} ${themeClasses.cardHover} border-2 transition-all duration-300 cursor-pointer ${
+                    className={`border-2 cursor-pointer ${themeClasses.card} ${themeClasses.cardHover} ${
                       selectedVoice === `custom_${voice.id}`
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/50 ring-2 ring-purple-500/50 dark:ring-purple-400/60"
-                        : "border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500"
+                        ? themeClasses.selectedCard
+                        : `border-transparent ${themeClasses.hoverCard}`
                     }`}
                     onClick={() => {
                       if (selectedVoice === `custom_${voice.id}`) {
@@ -552,23 +563,21 @@ export default function VoiceSelectionPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // Add play functionality here
-                            }}
-                            className="w-10 h-10 p-0"
-                          >
-                            <Play className="w-4 h-4" />
-                          </Button>
+                          <VoiceAudioPlayer
+                            voiceId={`custom_${voice.id}`}
+                            audioUrl={voice.audio_url}
+                            isPlaying={playingVoice === `custom_${voice.id}`}
+                            onPlay={handlePlayAudio}
+                            showProgressBar={playingVoice === `custom_${voice.id}`}
+                            audioProgress={audioProgress}
+                            audioDuration={audioDuration}
+                          />
                           <Button
                             variant={selectedVoice === `custom_${voice.id}` ? "default" : "outline"}
                             size="sm"
                             className={selectedVoice === `custom_${voice.id}` ?
-                              "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0" :
-                              "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              `${themeClasses.button} text-white border-0` :
+                              `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
                             }
                           >
                             {selectedVoice === `custom_${voice.id}` ? t("voiceSelection.selected") : t("voiceSelection.select")}
@@ -585,7 +594,7 @@ export default function VoiceSelectionPage() {
                 {/* Add New Voice Button - Show if under limit */}
                 {voiceBalance.used < voiceBalance.limit && (
                   <Card
-                    className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-green-400 transition-all duration-300 hover:border-green-500 cursor-pointer`}
+                    className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-green-400 hover:border-green-500 cursor-pointer`}
                     onClick={() => router.push(`/custom-voice-record?returnTo=voice-selection&${searchParams.toString()}`)}
                   >
                     <CardContent className="p-4">
@@ -609,7 +618,7 @@ export default function VoiceSelectionPage() {
 
                 {/* Manage All Voices Button */}
                 <Card
-                  className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-purple-400 transition-all duration-300 hover:border-purple-500 cursor-pointer`}
+                  className={`${themeClasses.card} ${themeClasses.cardHover} border-2 border-dashed border-purple-400 hover:border-purple-500 cursor-pointer`}
                   onClick={() => router.push('/my-voices?returnTo=voice-selection')}
                 >
                   <CardContent className="p-4">
@@ -683,7 +692,7 @@ export default function VoiceSelectionPage() {
                   if (!user) {
                     router.push('/auth')
                   } else {
-                    router.push('/vip')
+                    setShowVipModal(true)
                   }
                 }}
               >
@@ -743,6 +752,14 @@ export default function VoiceSelectionPage() {
           </div>
         </div>
       </AppLayout>
+
+      {/* VIP Upgrade Modal */}
+      <VipUpgradeModal
+        isOpen={showVipModal}
+        onClose={() => setShowVipModal(false)}
+        feature="custom-voice"
+        onUpgrade={() => router.push('/vip')}
+      />
     </div>
   )
 }

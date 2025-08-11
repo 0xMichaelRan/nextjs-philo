@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Mic, Plus, Trash2, Play, Pause, Calendar, HardDrive, Check } from "lucide-react"
+import { Mic, Plus, Trash2, Play, Pause, Calendar, HardDrive, Check, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -215,6 +215,20 @@ export default function MyVoicesPage() {
     <div className={themeClasses.background}>
       <AppLayout title={t("myVoices.title")}>
         <div className="container mx-auto px-6 py-8">
+          {/* Back button when in selection mode */}
+          {showSelectButton && (
+            <div className="mb-4">
+              <Button
+                onClick={() => router.push('/voice-selection')}
+                variant="ghost"
+                className={`${themeClasses.text} hover:bg-white/10`}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {t("common.back")}
+              </Button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
@@ -229,15 +243,6 @@ export default function MyVoicesPage() {
                 </span>
               </div>
             </div>
-
-            {canAddMore && (
-              <Link href={`/custom-voice-record?returnTo=${returnTo || 'my-voices'}`}>
-                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t("myVoices.addNew")}
-                </Button>
-              </Link>
-            )}
           </div>
 
           {loading ? (
@@ -257,12 +262,12 @@ export default function MyVoicesPage() {
                 <p className={`${themeClasses.textSecondary} mb-6`}>
                   {t("myVoices.noVoicesDesc")}
                 </p>
-                <Link href="/custom-voice-record?returnTo=my-voices">
+                {/* <Link href="/custom-voice-record?returnTo=my-voices">
                   <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                     <Plus className="w-4 h-4 mr-2" />
                     {t("myVoices.createFirstVoice")}
                   </Button>
-                </Link>
+                </Link> */}
               </CardContent>
             </Card>
           ) : (
@@ -344,7 +349,7 @@ export default function MyVoicesPage() {
             </div>
           )}
 
-          {canAddMore && voicesData && voicesData.voices.length > 0 && (
+          {canAddMore && voicesData && (
             <div className="text-center mt-8">
               <Link href={`/custom-voice-record?returnTo=${returnTo || 'my-voices'}`}>
                 <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">

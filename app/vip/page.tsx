@@ -233,23 +233,23 @@ export default function VipPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        background: "bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50",
         text: "text-gray-800",
         secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        cardHover: "hover:bg-white/90 hover:shadow-lg",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-        accent: "text-purple-600",
+        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
+        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        button: "bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700",
+        accent: "text-yellow-600",
       }
     }
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
+      background: "bg-gradient-to-br from-yellow-900 via-orange-900 to-red-900",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-      cardHover: "hover:bg-white/15 hover:shadow-xl",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-      accent: "text-purple-400",
+      card: "bg-white/10 border-white/20 backdrop-blur-md",
+      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      button: "bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700",
+      accent: "text-yellow-400",
     }
   }
 
@@ -264,49 +264,35 @@ export default function VipPage() {
 
   // Determine which plans to show based on current VIP status
   const getAvailablePlans = () => {
-    if (!user) {
-      // Non-logged in users see all paid plans
-      return plans.filter(plan => plan.id !== "free")
-    }
-
-    if (!user.is_vip) {
-      // Logged in non-VIP users can see all paid plans
-      return plans.filter(plan => plan.id !== "free")
-    }
-
-    const currentPlan = vipStatus?.plan_code || "free"
-
-    if (currentPlan === "vip") {
-      // VIP users can extend VIP or upgrade to SVIP
-      return plans.filter(plan => plan.id === "vip" || plan.id === "svip")
-    } else if (currentPlan === "svip") {
-      // SVIP users can only extend SVIP (no downgrade)
-      return plans.filter(plan => plan.id === "svip")
-    }
-
-    return plans.filter(plan => plan.id !== "free")
+    // Always show all plans including free tier for comparison
+    return plans
   }
 
   const shouldShowPricing = !user || !user.is_vip || showPricing // Show pricing for non-logged in, non-VIP, or when explicitly requested
 
   return (
-    <div className={`${themeClasses.background} min-h-screen`}>
-      <AppLayout>
-        <div className="container mx-auto px-4 py-8">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="flex justify-center">
-              <Crown className="w-12 h-12 text-yellow-500" />
+    <div className={themeClasses.background}>
+      <AppLayout title={t("vip.title")}>
+        <div className="container mx-auto px-6 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="text-center mb-6">
+              <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2 flex items-center justify-center gap-3`}>
+                <Crown className="w-8 h-8 text-yellow-500" />
+                {t("vip.title")}
+              </h1>
+              <p className={`${themeClasses.secondaryText} text-lg`}>
+                {language === "zh" ? "解锁所有高级功能，享受无限创作体验" : "Unlock all premium features and enjoy unlimited creative experience"}
+              </p>
             </div>
-            <p className={`${themeClasses.secondaryText} text-xl mb-6`}>{t("vip.title")}</p>
           </div>
 
           {/* Non-logged in user notice */}
           {!user && (
-            <div className="max-w-4xl mx-auto mb-12">
-              <Card className={`${themeClasses.card} border-2 border-blue-500 ${themeClasses.cardHover} transition-all duration-300`}>
+            <div className="mb-8">
+              <Card className={`${themeClasses.card} ${themeClasses.cardHover} border-l-4 border-yellow-500`}>
                 <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Crown className="w-8 h-8 text-white" />
                   </div>
                   <h3 className={`${themeClasses.text} text-xl font-bold mb-2`}>
@@ -320,7 +306,7 @@ export default function VipPage() {
                   </p>
                   <Button
                     onClick={() => router.push('/auth')}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className={themeClasses.button}
                   >
                     {language === "zh" ? "立即登录" : "Login Now"}
                   </Button>
@@ -331,8 +317,8 @@ export default function VipPage() {
 
           {/* VIP Status Section - Show if user is VIP */}
           {user?.is_vip && vipStatus && (
-            <div className="max-w-4xl mx-auto mb-12">
-              <Card className={`${themeClasses.card} border-2 border-purple-500 ${themeClasses.cardHover} transition-all duration-300`}>
+            <div className="mb-8">
+              <Card className={`${themeClasses.card} ${themeClasses.cardHover} border-l-4 border-purple-500`}>
                 <CardHeader>
                   <CardTitle className={`${themeClasses.text} text-2xl flex items-center gap-2`}>
                     <Crown className="w-6 h-6 text-yellow-500" />
@@ -436,13 +422,13 @@ export default function VipPage() {
                   }
                 </p>
               )}
-              <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
                 {getAvailablePlans().map((plan) => (
                   <Card
                     key={plan.id}
                     className={`relative ${themeClasses.card} ${themeClasses.cardHover} ${
-                      plan.popular ? "ring-2 ring-purple-500 scale-105" : ""
-                    } transition-all duration-300`}
+                      plan.popular ? "ring-2 ring-yellow-500 border-l-4 border-yellow-500" : "border-l-4 border-gray-300"
+                    }`}
                   >
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">

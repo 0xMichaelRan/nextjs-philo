@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Play, Pause, Edit, RefreshCw, ArrowRight } from "lucide-react"
+import { Play, Pause, Edit, RefreshCw, ArrowRight, AlertTriangle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +42,8 @@ export default function ScriptReviewPage() {
   const [currentSection, setCurrentSection] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
   const [audioProgress, setAudioProgress] = useState(0)
+  const [showLimitsModal, setShowLimitsModal] = useState(false)
+  const [jobLimits, setJobLimits] = useState<any>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -153,7 +155,38 @@ export default function ScriptReviewPage() {
     }, 3000)
   }
 
+  const fetchJobLimits = async () => {
+    if (!user) return null
+
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.jobs.limits()
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        return data
+      }
+    } catch (error) {
+      console.error("Error fetching job limits:", error)
+    }
+    return null
+  }
+
   const handleNext = async () => {
+    if (!user) {
+      router.push('/auth')
+      return
+    }
+
+    // Check job limits before proceeding
+    const limits = await fetchJobLimits()
+    if (limits && !limits.can_create_job) {
+      setJobLimits(limits)
+      setShowLimitsModal(true)
+      return
+    }
+
     // Navigate to job submission (flow state will be preserved)
     router.push('/job-submission')
   }
@@ -350,6 +383,89 @@ export default function ScriptReviewPage() {
           </div>
         </div>
       </AppLayout>
+
+      {/* Job Limits Modal */}
+      {showLimitsModal && jobLimits && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <Card className="w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl">
+            <CardHeader className="relative">
+              <Button
+                onClick={() => setShowLimitsModal(false)}
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-2 w-8 h-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+
+              <div className="text-center">
+                <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                <CardTitle className="text-xl font-bold text-gray-800 dark:text-white">
+                  {language === "zh" ? "任务队列已满" : "Job Queue Full"}
+                </CardTitle>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <div className="text-center space-y-3">
+                <p className="text-gray-600 dark:text-gray-300">
+                  {language === "zh"
+                    ? `您当前有 ${jobLimits.pending_jobs.current} 个待处理任务，已达到 ${jobLimits.plan} 计划的上限。`
+                    : `You currently have ${jobLimits.pending_jobs.current} pending jobs, which has reached your ${jobLimits.plan} plan limit.`
+                  }
+                </p>
+
+                <p className="text-gray-600 dark:text-gray-300">
+                  {language === "zh"
+                    ? "请等待当前任务完成后再创建新任务。"
+                    : "Please wait for current jobs to complete before creating new ones."
+                  }
+                </p>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    {language === "zh" ? "当前计划限制" : "Current Plan Limits"}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-orange-600">
+                      {jobLimits.plan}
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {jobLimits.pending_jobs.current}/{jobLimits.pending_jobs.limit} {language === "zh" ? "待处理任务" : "pending jobs"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => setShowLimitsModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {language === "zh" ? "我知道了" : "I Understand"}
+                </Button>
+                {(jobLimits.plan === "Free" || jobLimits.plan === "VIP") && (
+                  <Button
+                    onClick={() => {
+                      setShowLimitsModal(false)
+                      router.push('/vip')
+                    }}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    {jobLimits.plan === "Free"
+                      ? (language === "zh" ? "升级VIP" : "Upgrade to VIP")
+                      : (language === "zh" ? "升级SVIP" : "Upgrade to SVIP")
+                    }
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

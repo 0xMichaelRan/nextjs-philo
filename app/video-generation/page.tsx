@@ -151,7 +151,7 @@ export default function VideoGenerationPage() {
               <Button
                 onClick={() => router.push('/job-pending')}
                 variant="outline"
-                className="flex items-center gap-2 bg-transparent"
+                className="flex items-center gap-2 bg-transparent border-white/20 text-white hover:bg-white/10"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {language === "zh" ? "任务队列" : "Job Queue"}

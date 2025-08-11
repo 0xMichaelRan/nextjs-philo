@@ -6,6 +6,7 @@ import { Clock, Film, User, Play, Search, Menu, X, Bell, Mic } from "lucide-reac
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { VipBadge } from "@/components/vip-badge"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
@@ -185,24 +186,19 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                     </div>
                     <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                       <span>{t("nav.memberStatus")}</span>
-                      <Badge
-                        className={`text-xs ${
-                          user.is_vip
-                            ? user.subscription_status === "svip"
-                              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                              : "bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
-                            : "bg-gray-500 text-white"
-                        }`}
-                      >
-                        {user.is_vip ? (() => {
-                          // Use backend-calculated days remaining
-                          const daysLeft = user.vip_days_remaining
-                          const tierLabel = user.subscription_status === "svip" ? "SVIP" : "VIP"
-                          if (daysLeft === null || daysLeft === undefined) return tierLabel
-                          if (daysLeft === 0) return language === "zh" ? "今日到期" : "Expires today"
-                          return `${tierLabel} ${daysLeft} ${language === "zh" ? "天剩余" : "days left"}`
-                        })() : t("nav.freeUser")}
-                      </Badge>
+                      {user.is_vip ? (
+                        <VipBadge
+                          isVip={user.is_vip}
+                          subscriptionStatus={user.subscription_status}
+                          daysRemaining={user.vip_days_remaining}
+                          showDaysRemaining={true}
+                          size="sm"
+                        />
+                      ) : (
+                        <Badge className="bg-gray-500 text-white text-xs">
+                          {t("nav.freeUser")}
+                        </Badge>
+                      )}
                     </div>
 
                   </div>
@@ -272,11 +268,12 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                         {user.email}
                       </p>
                     </div>
-                    {user.is_vip && (
-                      <Badge className="bg-yellow-500 text-black text-xs flex-shrink-0">
-                        VIP
-                      </Badge>
-                    )}
+                    <VipBadge
+                      isVip={user.is_vip}
+                      subscriptionStatus={user.subscription_status}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
                   </Button>
                 </Link>
               </div>

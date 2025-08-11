@@ -228,6 +228,7 @@ const translations = {
     "analysisOptions.selectVoice": "选择配音",
 
     // Voice Selection
+    // "myVoices.createFirstVoice": "录一个声音",
     "voiceSelection.title": "选择配音",
     "voiceSelection.subtitle": "选择您喜欢的配音风格",
     "voiceSelection.tryAudio": "试听样本",
@@ -592,6 +593,7 @@ const translations = {
     "analysisOptions.selectVoice": "Select Voice",
 
     // Voice Selection
+    // "myVoices.createFirstVoice": "Add A Voice",
     "voiceSelection.title": "Select Voice",
     "voiceSelection.subtitle": "Choose your preferred voice style",
     "voiceSelection.tryAudio": "Try Sample",

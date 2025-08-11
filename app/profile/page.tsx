@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { VipBadge } from "@/components/vip-badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -598,18 +599,11 @@ export default function ProfilePage() {
                           <h3 className={`${getThemeClass("text-gray-900", "text-white")} text-xl font-semibold`}>
                             {user.name}
                           </h3>
-                          {user.is_vip && (
-                            <Link href="/vip">
-                              <Badge className={`cursor-pointer transition-colors ${
-                                user.subscription_status === "svip"
-                                  ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                                  : "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-                              }`}>
-                                <Crown className="w-3 h-3 mr-1" />
-                                {user.subscription_status === "svip" ? "SVIP" : "VIP"}
-                              </Badge>
-                            </Link>
-                          )}
+                          <VipBadge
+                            isVip={user.is_vip}
+                            subscriptionStatus={user.subscription_status}
+                            size="md"
+                          />
                         </div>
                         <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
                           {t("profile.joinDate")}: {user.created_at.split("T")[0]}

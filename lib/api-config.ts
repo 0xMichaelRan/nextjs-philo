@@ -35,6 +35,9 @@ class ApiConfig {
     sendVerificationCode: () => `${this.baseUrl}/auth/send-verification-code`,
     verifyPhoneNumber: () => `${this.baseUrl}/auth/verify-phone-number`,
     checkPhone: () => `${this.baseUrl}/auth/check-phone`,
+    // Password reset endpoints
+    resetPasswordRequest: () => `${this.baseUrl}/auth/reset-password-request`,
+    resetPasswordConfirm: () => `${this.baseUrl}/auth/reset-password-confirm`,
     // Legacy endpoints (deprecated)
     forgotPassword: () => `${this.baseUrl}/auth/forgot-password`,
     resetPassword: () => `${this.baseUrl}/auth/reset-password`,
@@ -87,6 +90,8 @@ class ApiConfig {
     history: () => `${this.baseUrl}/payments/history`,
     subscription: () => `${this.baseUrl}/payments/subscription`,
     validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
+    denounceVip: () => `${this.baseUrl}/payments/denounce-vip`,
+    pricing: () => `${this.baseUrl}/payments/pricing`,
   }
 
   // Job endpoints
