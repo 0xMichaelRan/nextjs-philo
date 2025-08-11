@@ -72,14 +72,22 @@ export default function JobPendingPage() {
 
       if (response.ok) {
         const data = await response.json()
-        // Map backend job data to frontend Job interface
-        const mappedJobs = (data.jobs || []).map((job: any) => ({
-          ...job,
-          movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',
-          createdAt: job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown time',
-          updatedAt: job.updated_at ? new Date(job.updated_at).toLocaleString() : 'Unknown time',
-          poster_url: job.poster_url,
-          backdrop_url: job.backdrop_url
+        // Map backend job data to frontend Job interface and add movie images
+        const mappedJobs = await Promise.all((data.jobs || []).map(async (job: any) => {
+          const baseJob = {
+            ...job,
+            movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',
+            createdAt: job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown time',
+            updatedAt: job.updated_at ? new Date(job.updated_at).toLocaleString() : 'Unknown time',
+          }
+
+          // Add movie images if movie_id exists
+          if (job.movie_id) {
+            baseJob.poster_url = `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=poster`
+            baseJob.backdrop_url = `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=backdrop`
+          }
+
+          return baseJob
         }))
         setJobs(mappedJobs)
       } else {
@@ -149,19 +157,23 @@ export default function JobPendingPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        background: "bg-gradient-to-br from-orange-50 via-red-50 to-pink-50",
         text: "text-gray-800",
         secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        cardHover: "hover:bg-white/90",
+        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
+        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        accent: "text-orange-600",
+        button: "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700",
       }
     }
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
+      background: "bg-gradient-to-br from-orange-900 via-red-900 to-pink-900",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-      cardHover: "hover:bg-white/20",
+      card: "bg-white/10 border-white/20 backdrop-blur-md",
+      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      accent: "text-orange-400",
+      button: "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700",
     }
   }
 
@@ -262,9 +274,9 @@ export default function JobPendingPage() {
   }
 
   return (
-    <AppLayout title={language === "zh" ? "视频任务" : "Video Jobs"}>
-      <div className={`min-h-screen ${themeClasses.background}`}>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className={themeClasses.background}>
+      <AppLayout title={language === "zh" ? "视频任务" : "Video Jobs"}>
+        <div className="container mx-auto px-6 py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -272,17 +284,17 @@ export default function JobPendingPage() {
                 <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2`}>
                   {language === "zh" ? "任务队列" : "Job Queue"}
                 </h1>
-                <p className={themeClasses.secondaryText}>
+                <p className={`${themeClasses.text} opacity-80`}>
                   {language === "zh" ? "查看您的视频生成进度" : "Track your video generation progress"}
                 </p>
               </div>
               <Button
                 onClick={() => router.push('/video-generation')}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-transparent border-white/20 text-white hover:bg-white/10"
               >
                 <Film className="h-4 w-4" />
-                {language === "zh" ? "已完成视频" : "Completed Videos"}
+                {language === "zh" ? "我的视频" : "My Videos"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -315,14 +327,14 @@ export default function JobPendingPage() {
 
           {/* VIP Limits Display */}
           {jobLimits && (
-            <Card className={`${themeClasses.card} mb-6`}>
+            <Card className={`${themeClasses.card} ${themeClasses.cardHover} mb-6`}>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
                     <h3 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
                       {language === "zh" ? "当前计划" : "Current Plan"}
                     </h3>
-                    <div className={`text-2xl font-bold ${jobLimits.plan === 'SVIP' ? 'text-purple-600' : jobLimits.plan === 'VIP' ? 'text-blue-600' : 'text-gray-600'}`}>
+                    <div className={`text-2xl font-bold ${themeClasses.accent}`}>
                       {jobLimits.plan}
                     </div>
                   </div>
@@ -356,11 +368,11 @@ export default function JobPendingPage() {
           )}
 
           {/* Jobs List */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {loading ? (
-              <Card className={themeClasses.card}>
+              <Card className={`${themeClasses.card} ${themeClasses.cardHover}`}>
                 <CardContent className="p-12 text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
                   <p className={themeClasses.secondaryText}>
                     {language === "zh" ? "加载中..." : "Loading jobs..."}
                   </p>
@@ -369,7 +381,7 @@ export default function JobPendingPage() {
             ) : jobs.map((job) => (
               <Card
                 key={job.id}
-                className={`${themeClasses.card} ${themeClasses.cardHover} shadow-sm transition-all duration-200 relative overflow-hidden`}
+                className={`${themeClasses.card} ${themeClasses.cardHover} shadow-lg relative overflow-hidden border-l-4 border-orange-500`}
                 style={{
                   backgroundImage: job.backdrop_url ? `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${job.backdrop_url})` : undefined,
                   backgroundSize: 'cover',
@@ -379,18 +391,33 @@ export default function JobPendingPage() {
                 <CardContent className="p-6 relative z-10">
                   <div className="flex items-start space-x-4 mb-4">
                     {/* Poster Image */}
-                    {job.poster_url && (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={job.poster_url}
-                          alt={job.movieTitle}
-                          className="w-16 h-24 object-cover rounded-md shadow-md"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-24 bg-gray-200 dark:bg-gray-700 rounded-md shadow-md overflow-hidden flex items-center justify-center">
+                        {job.poster_url ? (
+                          <img
+                            src={job.poster_url}
+                            alt={job.movieTitle}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                              e.currentTarget.parentElement!.innerHTML = `
+                                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                  <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                  </svg>
+                                </div>
+                              `
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
 
                     {/* Job Info */}
                     <div className="flex-1 min-w-0">
@@ -492,17 +519,17 @@ export default function JobPendingPage() {
             ))}
 
             {jobs.length === 0 && (
-              <Card className={themeClasses.card}>
+              <Card className={`${themeClasses.card} ${themeClasses.cardHover}`}>
                 <CardContent className="p-12 text-center">
-                  <Clock className={`w-12 h-12 ${themeClasses.secondaryText} mx-auto mb-4`} />
-                  <h3 className={`text-lg font-medium ${themeClasses.text} mb-2`}>
+                  <Clock className={`w-16 h-16 ${themeClasses.accent} mx-auto mb-6`} />
+                  <h3 className={`text-xl font-semibold ${themeClasses.text} mb-3`}>
                     {language === "zh" ? "暂无任务" : "No jobs yet"}
                   </h3>
-                  <p className={themeClasses.secondaryText}>
+                  <p className={`${themeClasses.secondaryText} mb-6`}>
                     {language === "zh" ? "您还没有创建任何视频任务" : "You haven't created any video jobs yet"}
                   </p>
                   <Link href="/movie-selection">
-                    <Button className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Button className={`${themeClasses.button} text-white px-8 py-3 rounded-lg font-semibold`}>
                       {language === "zh" ? "创建视频" : "Create Video"}
                     </Button>
                   </Link>
@@ -512,7 +539,7 @@ export default function JobPendingPage() {
           </div>
 
         </div>
-      </div>
-    </AppLayout>
+      </AppLayout>
+    </div>
   )
 }
