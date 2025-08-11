@@ -16,17 +16,18 @@ import { apiConfig } from "@/lib/api-config"
 
 interface AnalysisJob {
   id: number
+  user_id: string
   movie_id: string
+  prompt_library_id: number
+  system_instruction_input?: any
+  user_prompt_input?: any
   status: string
   progress: number
-  character_type: string
-  tone_type: string
-  style_type: string
-  length_type: string
-  focus_area?: string
-  custom_request?: string
-  analysis_result?: string
   error_message?: string
+  analysis_result?: string
+  system_instruction_combined?: string
+  user_prompt_combined?: string
+  model_used?: string
   language: string
   created_at: string
   updated_at: string
@@ -44,6 +45,7 @@ export default function AnalysisResultsPage() {
   const [analysisJob, setAnalysisJob] = useState<AnalysisJob | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -73,22 +75,34 @@ export default function AnalysisResultsPage() {
     }
 
     if (!jobId) {
-      setError("No job ID provided")
+      setError(language === "zh" ? "未提供任务ID" : "No job ID provided")
       setLoading(false)
       return
     }
 
     fetchAnalysisJob()
-    
-    // Poll for updates if job is still processing
-    const interval = setInterval(() => {
-      if (analysisJob?.status === 'processing' || analysisJob?.status === 'pending') {
-        fetchAnalysisJob()
-      }
-    }, 3000)
+  }, [user, jobId, language])
 
-    return () => clearInterval(interval)
-  }, [user, jobId, analysisJob?.status])
+  useEffect(() => {
+    // Set up polling for jobs that are still processing
+    if (analysisJob && (analysisJob.status === 'processing' || analysisJob.status === 'pending')) {
+      const interval = setInterval(() => {
+        fetchAnalysisJob()
+      }, 3000)
+      setPollingInterval(interval)
+
+      return () => {
+        clearInterval(interval)
+        setPollingInterval(null)
+      }
+    } else {
+      // Clear polling if job is completed or failed
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+        setPollingInterval(null)
+      }
+    }
+  }, [analysisJob?.status])
 
   const fetchAnalysisJob = async () => {
     if (!jobId) return
@@ -102,11 +116,16 @@ export default function AnalysisResultsPage() {
         const job = await response.json()
         setAnalysisJob(job)
         setError(null)
+      } else if (response.status === 404) {
+        setError(language === "zh" ? "未找到分析任务" : "Analysis job not found")
+      } else if (response.status === 401) {
+        router.push('/auth')
+        return
       } else {
-        setError("Failed to fetch analysis job")
+        setError(language === "zh" ? "获取分析任务失败" : "Failed to fetch analysis job")
       }
     } catch (err) {
-      setError("Error fetching analysis job")
+      setError(language === "zh" ? "网络错误，请稍后重试" : "Network error, please try again later")
       console.error("Error:", err)
     } finally {
       setLoading(false)
@@ -222,19 +241,61 @@ export default function AnalysisResultsPage() {
                 {getStatusBadge(analysisJob.status)}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {(analysisJob.status === 'processing' || analysisJob.status === 'pending') && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Progress value={analysisJob.progress} className="w-full" />
-                  <p className={`${themeClasses.secondaryText} text-sm`}>
-                    {language === "zh" ? `进度: ${analysisJob.progress}%` : `Progress: ${analysisJob.progress}%`}
-                  </p>
+                  <div className="flex justify-between items-center">
+                    <p className={`${themeClasses.secondaryText} text-sm`}>
+                      {language === "zh" ? `进度: ${analysisJob.progress}%` : `Progress: ${analysisJob.progress}%`}
+                    </p>
+                    <p className={`${themeClasses.secondaryText} text-xs`}>
+                      {language === "zh" ? "正在分析中，请稍候..." : "Analysis in progress, please wait..."}
+                    </p>
+                  </div>
                 </div>
               )}
-              
-              {analysisJob.status === 'failed' && analysisJob.error_message && (
-                <p className="text-red-500 text-sm">{analysisJob.error_message}</p>
+
+              {analysisJob.status === 'failed' && (
+                <div className="space-y-2">
+                  <p className="text-red-500 text-sm font-medium">
+                    {language === "zh" ? "分析失败" : "Analysis Failed"}
+                  </p>
+                  {analysisJob.error_message && (
+                    <p className="text-red-400 text-sm">{analysisJob.error_message}</p>
+                  )}
+                  <Button
+                    onClick={() => router.push('/analysis-config')}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    {language === "zh" ? "重新开始" : "Start Over"}
+                  </Button>
+                </div>
               )}
+
+              {/* Job Details */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/10">
+                <div>
+                  <p className={`${themeClasses.secondaryText} text-xs`}>
+                    {language === "zh" ? "创建时间" : "Created"}
+                  </p>
+                  <p className={`${themeClasses.text} text-sm`}>
+                    {new Date(analysisJob.created_at).toLocaleString()}
+                  </p>
+                </div>
+                {analysisJob.model_used && (
+                  <div>
+                    <p className={`${themeClasses.secondaryText} text-xs`}>
+                      {language === "zh" ? "使用模型" : "Model Used"}
+                    </p>
+                    <p className={`${themeClasses.text} text-sm`}>
+                      {analysisJob.model_used}
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -242,24 +303,28 @@ export default function AnalysisResultsPage() {
           {analysisJob.status === 'completed' && analysisJob.analysis_result && (
             <Card className={`${themeClasses.card} ${themeClasses.cardHover}`}>
               <CardHeader>
-                <CardTitle className={`${themeClasses.text} flex items-center justify-between`}>
+                <CardTitle className={`${themeClasses.text} flex items-center justify-between flex-wrap gap-2`}>
                   <span>{language === "zh" ? "分析结果" : "Analysis Result"}</span>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 flex-wrap">
                     <Button
                       onClick={handleShare}
                       variant="outline"
                       size="sm"
                       className="border-gray-300 dark:border-gray-600"
+                      title={language === "zh" ? "复制到剪贴板" : "Copy to clipboard"}
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-4 h-4 mr-1" />
+                      {language === "zh" ? "复制" : "Copy"}
                     </Button>
                     <Button
                       onClick={handleDownload}
                       variant="outline"
                       size="sm"
                       className="border-gray-300 dark:border-gray-600"
+                      title={language === "zh" ? "下载文本文件" : "Download text file"}
                     >
-                      <Download className="w-4 h-4" />
+                      <Download className="w-4 h-4 mr-1" />
+                      {language === "zh" ? "下载" : "Download"}
                     </Button>
                     <Button
                       onClick={() => router.push('/voice-selection')}
@@ -272,10 +337,22 @@ export default function AnalysisResultsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`${themeClasses.text} prose prose-gray dark:prose-invert max-w-none`}>
-                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                    {analysisJob.analysis_result}
-                  </pre>
+                <div className={`${themeClasses.text} max-w-none`}>
+                  <div className={`p-4 rounded-lg ${theme === "light" ? "bg-gray-50" : "bg-gray-800/50"} border`}>
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed overflow-x-auto">
+                      {analysisJob.analysis_result}
+                    </pre>
+                  </div>
+
+                  {/* Analysis metadata */}
+                  {analysisJob.completed_at && (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className={`${themeClasses.secondaryText} text-xs`}>
+                        {language === "zh" ? "完成时间: " : "Completed at: "}
+                        {new Date(analysisJob.completed_at).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

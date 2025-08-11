@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 
+import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
-import { MovieHeader } from "@/components/movie-header"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useFlow } from "@/hooks/use-flow"
@@ -45,12 +46,15 @@ export default function AnalysisConfigPage() {
   const searchParams = useSearchParams()
   const { language } = useLanguage()
   const { theme } = useTheme()
+  const { flowState, updateFlowState } = useFlow()
 
   const movieId = searchParams.get('movieId')
   const [promptTemplates, setPromptTemplates] = useState<PromptTemplate[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null)
   const [systemInputs, setSystemInputs] = useState<Record<string, any>>({})
+  const [movieData, setMovieData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [movieLoading, setMovieLoading] = useState(true)
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -75,19 +79,38 @@ export default function AnalysisConfigPage() {
 
   useEffect(() => {
     fetchPromptTemplates()
-  }, [])
+    if (movieId) {
+      fetchMovieData()
+    }
+  }, [language, movieId])
+
+  // This logic is now handled in fetchPromptTemplates
 
   const fetchPromptTemplates = async () => {
     try {
-      const response = await fetch(apiConfig.analysis.listPrompts(undefined, language))
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.analysis.listPrompts(undefined, language)
+      )
       if (response.ok) {
         const templates = await response.json()
         setPromptTemplates(templates)
-        
-        // Auto-select first template if available
-        if (templates.length > 0) {
+
+        // Check if we have a saved template in flow state
+        if (flowState?.analysisPromptId) {
+          const savedTemplate = templates.find((t: any) => t.id === flowState.analysisPromptId)
+          if (savedTemplate) {
+            setSelectedTemplate(savedTemplate)
+            setSystemInputs(flowState.analysisSystemInputs || savedTemplate.system_instruction_defaults || {})
+          } else if (templates.length > 0) {
+            // Fallback to first template if saved template not found
+            selectTemplate(templates[0])
+          }
+        } else if (templates.length > 0) {
+          // Auto-select first template if no saved state
           selectTemplate(templates[0])
         }
+      } else {
+        console.error("Failed to fetch prompt templates:", response.status)
       }
     } catch (error) {
       console.error("Error fetching prompt templates:", error)
@@ -96,30 +119,70 @@ export default function AnalysisConfigPage() {
     }
   }
 
+  const fetchMovieData = async () => {
+    if (!movieId) return
+
+    setMovieLoading(true)
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.movies.details(movieId) + `?language=${language}`
+      )
+      if (response.ok) {
+        const movie = await response.json()
+        setMovieData(movie)
+      } else {
+        console.error("Failed to fetch movie data:", response.status)
+      }
+    } catch (error) {
+      console.error("Error fetching movie data:", error)
+    } finally {
+      setMovieLoading(false)
+    }
+  }
+
   const selectTemplate = (template: PromptTemplate) => {
     setSelectedTemplate(template)
     // Initialize with default values
-    setSystemInputs(template.system_instruction_defaults || {})
+    const defaultInputs = template.system_instruction_defaults || {}
+    setSystemInputs(defaultInputs)
+
+    // Save to flow state
+    updateFlowState({
+      analysisPromptId: template.id,
+      analysisSystemInputs: defaultInputs
+    })
   }
 
   const handleInputChange = (fieldName: string, value: any) => {
-    setSystemInputs(prev => ({
-      ...prev,
+    const newInputs = {
+      ...systemInputs,
       [fieldName]: value
-    }))
+    }
+    setSystemInputs(newInputs)
+
+    // Save to flow state
+    updateFlowState({
+      analysisSystemInputs: newInputs
+    })
   }
 
   const renderFormField = (fieldName: string, field: FormField) => {
     const value = systemInputs[fieldName] || ""
+    const isRequired = field.required
+    const isEmpty = !value || (Array.isArray(value) && value.length === 0)
+    const hasError = isRequired && isEmpty
 
     switch (field.type) {
       case "select":
         return (
           <div key={fieldName} className="space-y-2">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {isRequired && <span className="text-red-500">*</span>}
+            </Label>
             <Select value={value} onValueChange={(val) => handleInputChange(fieldName, val)}>
-              <SelectTrigger className={`${themeClasses.card} border-white/30`}>
-                <SelectValue placeholder={`请选择${field.label}`} />
+              <SelectTrigger className={`${themeClasses.card} border-white/30 ${hasError ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder={language === "zh" ? `请选择${field.label}` : `Select ${field.label}`} />
               </SelectTrigger>
               <SelectContent>
                 {field.options?.map((option) => (
@@ -129,13 +192,21 @@ export default function AnalysisConfigPage() {
                 ))}
               </SelectContent>
             </Select>
+            {hasError && (
+              <p className="text-red-500 text-sm">
+                {language === "zh" ? "此字段为必填项" : "This field is required"}
+              </p>
+            )}
           </div>
         )
 
       case "textarea":
         return (
           <div key={fieldName} className="space-y-2">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
             <Textarea
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
@@ -148,7 +219,10 @@ export default function AnalysisConfigPage() {
       case "text":
         return (
           <div key={fieldName} className="space-y-2">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
             <input
               type="text"
               value={value}
@@ -156,6 +230,44 @@ export default function AnalysisConfigPage() {
               placeholder={field.placeholder}
               className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border`}
             />
+          </div>
+        )
+
+      case "checkbox":
+        return (
+          <div key={fieldName} className="space-y-2">
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
+            <div className="space-y-2">
+              {field.options?.map((option) => {
+                const isChecked = Array.isArray(value) ? value.includes(option.value) : false
+                return (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`${fieldName}-${option.value}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        const currentValues = Array.isArray(value) ? value : []
+                        if (checked) {
+                          handleInputChange(fieldName, [...currentValues, option.value])
+                        } else {
+                          handleInputChange(fieldName, currentValues.filter(v => v !== option.value))
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor={`${fieldName}-${option.value}`}
+                      className={`${themeClasses.text} text-sm cursor-pointer`}
+                    >
+                      {option.label}
+                    </Label>
+                  </div>
+                )
+              })}
+            </div>
+
           </div>
         )
 
@@ -180,15 +292,48 @@ export default function AnalysisConfigPage() {
   }
 
   const handleNext = () => {
-    if (!selectedTemplate || !isFormValid() || !movieId) return
-
-    // Navigate to user prompt configuration with parameters
-    const params = new URLSearchParams({
-      movieId: movieId,
-      promptId: selectedTemplate.id.toString(),
-      systemInputs: JSON.stringify(systemInputs)
+    console.log('Analysis Config - handleNext Debug:', {
+      selectedTemplate: selectedTemplate?.id,
+      movieId,
+      systemInputs
     })
-    router.push(`/analysis-prompt-config?${params.toString()}`)
+
+    if (!selectedTemplate || !movieId) {
+      console.log('Missing required data, not proceeding')
+      return
+    }
+
+    // Validate form and show errors if invalid
+    if (!isFormValid()) {
+      alert(language === "zh" ? "请完成所有必填字段" : "Please complete all required fields")
+      return
+    }
+
+    // Save current state to flow state
+    updateFlowState({
+      movieId: movieId,
+      analysisPromptId: selectedTemplate.id,
+      analysisSystemInputs: systemInputs
+    })
+
+    // Construct and log the system instruction
+    let constructedSystemInstruction = selectedTemplate.system_instruction_template
+    Object.entries(systemInputs).forEach(([key, value]) => {
+      const placeholder = `{${key}}`
+      constructedSystemInstruction = constructedSystemInstruction.replace(new RegExp(placeholder, 'g'), value || '')
+    })
+
+    console.log('=== CONSTRUCTED SYSTEM INSTRUCTION ===')
+    console.log(constructedSystemInstruction)
+    console.log('=== END SYSTEM INSTRUCTION ===')
+
+    console.log('Navigating to analysis-prompt-config with:', {
+      movieId,
+      promptId: selectedTemplate.id
+    })
+
+    // Navigate to user prompt configuration (flow state will be used)
+    router.push(`/analysis-prompt-config?movieId=${movieId}&promptId=${selectedTemplate.id}`)
   }
 
   if (loading) {
@@ -233,11 +378,75 @@ export default function AnalysisConfigPage() {
             </p>
           </div>
 
-          {/* Movie Header */}
-          {movieId && (
-            <div className="mb-6">
-              <MovieHeader movieId={movieId} movieTitle="" />
-            </div>
+          {/* Movie Information */}
+          {movieData && (
+            <Card className={`${themeClasses.card} mb-6`}>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Movie Poster */}
+                  <div className="flex-shrink-0">
+                    <Image
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster` || "/placeholder.svg"}
+                      alt={language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
+                      width={120}
+                      height={180}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+
+                  {/* Movie Details */}
+                  <div className="flex-1">
+                    <h2 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>
+                      {language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
+                    </h2>
+                    <h3 className={`text-lg ${themeClasses.secondaryText} mb-3`}>
+                      {language === "zh" ? movieData.title_en : (movieData.title_zh || movieData.original_title)}
+                    </h3>
+
+                    {/* Genres */}
+                    {movieData.genre && movieData.genre.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {movieData.genre.map((genre: string, index: number) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {genre}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Overview */}
+                    {movieData.description && (
+                      <p className={`${themeClasses.secondaryText} text-sm leading-relaxed line-clamp-3`}>
+                        {movieData.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Loading state for movie */}
+          {movieLoading && (
+            <Card className={`${themeClasses.card} mb-6`}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-[120px] h-[180px] bg-gray-300 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  <div className="flex-1 space-y-3">
+                    <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                    <div className="flex space-x-2">
+                      <div className="h-6 w-16 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                      <div className="h-6 w-16 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded animate-pulse w-5/6"></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -310,8 +519,8 @@ export default function AnalysisConfigPage() {
           </div>
 
           {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10">
-            <div className="container mx-auto flex justify-between">
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10 z-[60]">
+            <div className="container mx-auto flex justify-between items-center">
               <Button
                 onClick={() => router.back()}
                 variant="outline"
@@ -320,17 +529,21 @@ export default function AnalysisConfigPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {language === "zh" ? "上一步" : "Previous"}
               </Button>
-              
-              <Button
-                onClick={handleNext}
-                disabled={!isFormValid()}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              >
-                {language === "zh" ? "下一步" : "Next"}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleNext}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                >
+                  {language === "zh" ? "下一步" : "Next"}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </div>
           </div>
+
+          {/* Bottom padding to prevent content from being hidden behind fixed navigation */}
+          <div className="h-20"></div>
         </div>
       </AppLayout>
     </div>

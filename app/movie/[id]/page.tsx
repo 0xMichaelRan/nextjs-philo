@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
+import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
 
@@ -125,9 +126,11 @@ export default function MovieHomePage() {
   const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [currentLanguage, setCurrentLanguage] = useState<"zh" | "en">("zh")
   const { theme } = useTheme()
+  const { language, setLanguage, t } = useLanguage()
   const { flowState, updateFlowState, clearFlowState } = useFlow()
+
+  const movieId = params.id as string
 
   useEffect(() => {
     const movieId = params.id as string
@@ -141,7 +144,7 @@ export default function MovieHomePage() {
     setError(null)
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.movies.details(id) + "?language=zh"
+        apiConfig.movies.details(id) + `?language=${language}`
       )
 
       if (response.ok) {
@@ -165,7 +168,7 @@ export default function MovieHomePage() {
             poster_url: mockData.poster
           })
         } else {
-          setError("无法加载电影信息")
+          setError(language === "zh" ? "无法加载电影信息" : "Unable to load movie information")
         }
       }
     } catch (err) {
@@ -187,7 +190,7 @@ export default function MovieHomePage() {
           poster_url: mockData.poster
         })
       } else {
-        setError("网络错误，请稍后重试")
+        setError(language === "zh" ? "网络错误，请稍后重试" : "Network error, please try again later")
       }
     } finally {
       setLoading(false)
@@ -233,9 +236,11 @@ export default function MovieHomePage() {
 
   if (loading) {
     return (
-      <AppLayout title="电影详情">
+      <AppLayout title={language === "zh" ? "电影详情" : "Movie Details"}>
         <div className="flex items-center justify-center h-96">
-          <p className={`${getTextClasses()} text-xl`}>加载中...</p>
+          <p className={`${getTextClasses()} text-xl`}>
+            {language === "zh" ? "加载中..." : "Loading..."}
+          </p>
         </div>
       </AppLayout>
     )
@@ -243,7 +248,7 @@ export default function MovieHomePage() {
 
   if (error) {
     return (
-      <AppLayout title="电影详情">
+      <AppLayout title={language === "zh" ? "电影详情" : "Movie Details"}>
         <div className="flex items-center justify-center h-96">
           <p className={`${getTextClasses()} text-xl`}>{error}</p>
         </div>
@@ -253,9 +258,11 @@ export default function MovieHomePage() {
 
   if (!movieData) {
     return (
-      <AppLayout title="电影详情">
+      <AppLayout title={language === "zh" ? "电影详情" : "Movie Details"}>
         <div className="flex items-center justify-center h-96">
-          <p className={`${getTextClasses()} text-xl`}>电影不存在</p>
+          <p className={`${getTextClasses()} text-xl`}>
+            {language === "zh" ? "电影不存在" : "Movie not found"}
+          </p>
         </div>
       </AppLayout>
     )
@@ -274,21 +281,21 @@ export default function MovieHomePage() {
               className="flex items-center"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              返回
+              {language === "zh" ? "返回" : "Back"}
             </Button>
 
             <div className="flex items-center space-x-1">
               <Button
-                variant={currentLanguage === "zh" ? "default" : "ghost"}
+                variant={language === "zh" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setCurrentLanguage("zh")}
+                onClick={() => setLanguage("zh")}
               >
                 中
               </Button>
               <Button
-                variant={currentLanguage === "en" ? "default" : "ghost"}
+                variant={language === "en" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setCurrentLanguage("en")}
+                onClick={() => setLanguage("en")}
               >
                 EN
               </Button>
@@ -307,7 +314,7 @@ export default function MovieHomePage() {
                 <CardContent className="p-0 relative">
                   <Image
                     src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop` || "/placeholder.svg"}
-                    alt={currentLanguage === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
+                    alt={language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
                     width={400}
                     height={600}
                     className="w-full h-auto object-cover"
@@ -328,10 +335,10 @@ export default function MovieHomePage() {
             {/* Title Section */}
             <div>
               <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold ${getTextClasses()} mb-3`}>
-                {currentLanguage === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
+                {language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
               </h1>
               <h2 className={`text-xl md:text-2xl ${theme === "light" ? "text-purple-600" : "text-cyan-300"} mb-4`}>
-                {currentLanguage === "zh" ? movieData.title_en : (movieData.title_zh || movieData.original_title)}
+                {language === "zh" ? movieData.title_en : (movieData.title_zh || movieData.original_title)}
               </h2>
 
               {movieData.tagline && (
@@ -372,7 +379,9 @@ export default function MovieHomePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {movieData.genre.length > 0 && (
                   <div className="space-y-3">
-                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>类型</h3>
+                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>
+                      {language === "zh" ? "类型" : "Genres"}
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       {movieData.genre.map((g, index) => (
                         <Badge key={index} className="bg-purple-600 hover:bg-purple-700 text-white">
@@ -385,7 +394,9 @@ export default function MovieHomePage() {
 
                 {movieData.popularity && (
                   <div className="space-y-3">
-                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>热度指数</h3>
+                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>
+                      {language === "zh" ? "热度指数" : "Popularity"}
+                    </h3>
                     <div className="flex items-center space-x-3">
                       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                         <div
@@ -402,7 +413,9 @@ export default function MovieHomePage() {
 
                 {movieData.tmdb_id && (
                   <div className="space-y-3">
-                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>数据库ID</h3>
+                    <h3 className={`${getTextClasses()} font-semibold text-lg`}>
+                      {language === "zh" ? "数据库ID" : "Database ID"}
+                    </h3>
                     <div className="space-y-1">
                       <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-sm`}>
                         TMDB: {movieData.tmdb_id}
@@ -418,7 +431,9 @@ export default function MovieHomePage() {
               {/* Description */}
               {movieData.description && (
                 <div className="space-y-4">
-                  <h3 className={`${getTextClasses()} font-semibold text-xl`}>剧情简介</h3>
+                  <h3 className={`${getTextClasses()} font-semibold text-xl`}>
+                    {language === "zh" ? "剧情简介" : "Plot Summary"}
+                  </h3>
                   <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} leading-relaxed text-lg`}>
                     {movieData.description}
                   </p>
@@ -434,7 +449,7 @@ export default function MovieHomePage() {
                 className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-12 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Play className="w-6 h-6 mr-3" />
-                开始生成视频分析
+                {language === "zh" ? "开始生成视频分析" : "Start Video Analysis"}
               </Button>
             </div>
           </div>
@@ -445,7 +460,7 @@ export default function MovieHomePage() {
           <CardHeader>
             <CardTitle className={`${getTextClasses()} text-2xl flex items-center`}>
               <Users className="w-6 h-6 mr-2" />
-              其他用户的精彩分析
+              {language === "zh" ? "其他用户的精彩分析" : "Featured User Analysis"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -479,7 +494,7 @@ export default function MovieHomePage() {
                         className={`flex items-center justify-between text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}
                       >
                         <span>{video.author}</span>
-                        <span>{video.views} 观看</span>
+                        <span>{video.views} {language === "zh" ? "观看" : "views"}</span>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         {video.style}
@@ -501,7 +516,7 @@ export default function MovieHomePage() {
           className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
         >
           <Play className="w-6 h-6 mr-3" />
-          开始生成视频分析
+          {language === "zh" ? "开始生成视频分析" : "Start Video Analysis"}
         </Button>
       </div>
 

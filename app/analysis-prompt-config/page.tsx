@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 
 import { AppLayout } from "@/components/app-layout"
@@ -25,7 +26,6 @@ interface FormField {
   placeholder?: string
   required: boolean
   auto_fill?: string
-  readonly?: boolean
 }
 
 export default function AnalysisPromptConfigPage() {
@@ -34,9 +34,10 @@ export default function AnalysisPromptConfigPage() {
   const { language } = useLanguage()
   const { user } = useAuth()
   const { theme } = useTheme()
+  const { flowState, updateFlowState } = useFlow()
 
-  const movieId = searchParams.get('movieId')
-  const promptId = searchParams.get('promptId')
+  const movieId = searchParams.get('movieId') || flowState?.movieId
+  const promptId = searchParams.get('promptId') || flowState?.analysisPromptId?.toString()
   const systemInputsParam = searchParams.get('systemInputs')
 
   const [promptTemplate, setPromptTemplate] = useState<any>(null)
@@ -45,6 +46,7 @@ export default function AnalysisPromptConfigPage() {
   const [movieInfo, setMovieInfo] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [useMock, setUseMock] = useState(true)  // Default to true
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -67,31 +69,52 @@ export default function AnalysisPromptConfigPage() {
 
   const themeClasses = getThemeClasses()
 
+  // Initial setup effect - only runs once or when core parameters change
   useEffect(() => {
-    // Check if we have the required URL parameters
-    if (!movieId || !promptId || !systemInputsParam) {
+    console.log('Analysis Prompt Config - Debug Info:', {
+      movieId,
+      promptId,
+      systemInputsParam
+    })
+
+    // Check if we have the required parameters (from URL or flow state)
+    if (!movieId || !promptId) {
+      console.log('Missing required parameters, redirecting to analysis-config')
       router.push('/analysis-config')
       return
     }
 
-    // Parse system inputs from URL
-    try {
-      const parsedSystemInputs = JSON.parse(systemInputsParam)
-      setSystemInputs(parsedSystemInputs)
-    } catch (error) {
-      console.error('Error parsing system inputs:', error)
-      router.push('/analysis-config')
-      return
+    // Parse system inputs from URL or use flow state
+    let parsedSystemInputs = {}
+    if (systemInputsParam) {
+      try {
+        parsedSystemInputs = JSON.parse(systemInputsParam)
+      } catch (error) {
+        console.error('Error parsing system inputs from URL:', error)
+      }
+    } else if (flowState?.analysisSystemInputs) {
+      parsedSystemInputs = flowState.analysisSystemInputs
     }
+
+    setSystemInputs(parsedSystemInputs)
 
     // Fetch prompt template and movie info
     fetchPromptTemplate()
     fetchMovieInfo()
   }, [movieId, promptId, systemInputsParam])
 
+  // Separate effect for loading saved user inputs from flow state
+  useEffect(() => {
+    if (flowState?.analysisUserInputs && Object.keys(userInputs).length === 0) {
+      setUserInputs(flowState.analysisUserInputs)
+    }
+  }, [flowState?.analysisUserInputs])
+
   const fetchPromptTemplate = async () => {
     try {
-      const response = await fetch(apiConfig.analysis.listPrompts())
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.analysis.listPrompts(undefined, language)
+      )
       if (response.ok) {
         const templates = await response.json()
         const template = templates.find((t: any) => t.id === parseInt(promptId!))
@@ -104,6 +127,9 @@ export default function AnalysisPromptConfigPage() {
         } else {
           router.push('/analysis-config')
         }
+      } else {
+        console.error('Failed to fetch prompt templates:', response.status)
+        router.push('/analysis-config')
       }
     } catch (error) {
       console.error('Error fetching prompt template:', error)
@@ -116,35 +142,60 @@ export default function AnalysisPromptConfigPage() {
 
     try {
       // Fetch movie info from API
-      const response = await fetch(`${apiConfig.getBaseUrl()}/movies/${movieId}`)
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.movies.details(movieId) + `?language=${language}`
+      )
       if (response.ok) {
         const movieData = await response.json()
         setMovieInfo(movieData)
 
-        // Auto-fill movie-related fields based on language
-        const movieContext = language === "zh"
-          ? `标题：${movieData.title_zh || movieData.title || movieData.original_title}
-年份：${movieData.year}
-导演：${movieData.director}
-主演：${movieData.cast?.slice(0, 5).join(', ') || ''}
-类型：${movieData.genres_zh?.join(', ') || movieData.genres?.join(', ') || ''}
-简介：${movieData.overview_zh || movieData.overview || ''}`
-          : `Title: ${movieData.title_en || movieData.title || movieData.original_title}
-Year: ${movieData.year}
-Director: ${movieData.director}
-Cast: ${movieData.cast?.slice(0, 5).join(', ') || ''}
-Genres: ${movieData.genres_en?.join(', ') || movieData.genres?.join(', ') || ''}
-Overview: ${movieData.overview_en || movieData.overview || ''}`
+        // Auto-fill movie_information field (hidden from UI)
+        setUserInputs(prev => {
+          const autoFillData: Record<string, any> = {}
 
-        // Auto-fill movie-related fields
-        setUserInputs(prev => ({
-          ...prev,
-          movie_title: language === "zh"
-            ? (movieData.title_zh || movieData.title || movieData.original_title)
-            : (movieData.title_en || movieData.title || movieData.original_title),
-          movie_year: movieData.year,
-          movie_info: movieContext
-        }))
+          // Auto-fill movie_information with comprehensive movie data
+          const movieInformation = language === "zh"
+            ? `标题：${movieData.title_zh || movieData.title || movieData.original_title}
+年份：${movieData.year || ''}
+导演：${movieData.director || ''}
+主演：${movieData.cast?.slice(0, 5).join(', ') || ''}
+类型：${movieData.genre?.join(', ') || ''}
+简介：${movieData.description || ''}`
+            : `Title: ${movieData.title_en || movieData.title || movieData.original_title}
+Year: ${movieData.year || ''}
+Director: ${movieData.director || ''}
+Cast: ${movieData.cast?.slice(0, 5).join(', ') || ''}
+Genres: ${movieData.genre?.join(', ') || ''}
+Overview: ${movieData.description || ''}`
+
+          autoFillData['movie_information'] = movieInformation
+
+          // Auto-fill other movie-related fields if they exist and are empty
+          if (promptTemplate?.user_prompt_schema) {
+            Object.entries(promptTemplate.user_prompt_schema).forEach(([fieldName, field]: [string, any]) => {
+              if (field.auto_fill && !prev[fieldName]) {
+                switch (field.auto_fill) {
+                  case 'movie_title':
+                    autoFillData[fieldName] = language === "zh"
+                      ? (movieData.title_zh || movieData.title || movieData.original_title)
+                      : (movieData.title_en || movieData.title || movieData.original_title)
+                    break
+                  case 'movie_year':
+                    autoFillData[fieldName] = movieData.year?.toString() || ''
+                    break
+                  case 'movie_director':
+                    autoFillData[fieldName] = movieData.director || ''
+                    break
+                  case 'movie_genre':
+                    autoFillData[fieldName] = movieData.genre?.join(', ') || ''
+                    break
+                }
+              }
+            })
+          }
+
+          return { ...prev, ...autoFillData }
+        })
       } else {
         // Fallback to mock data if API fails
         const mockMovieInfo = {
@@ -179,10 +230,13 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
   }
 
   const handleInputChange = (fieldName: string, value: any) => {
-    setUserInputs(prev => ({
-      ...prev,
+    const newUserInputs = {
+      ...userInputs,
       [fieldName]: value
-    }))
+    }
+    setUserInputs(newUserInputs)
+
+    // Note: Flow state will be saved when user clicks submit, not on every keystroke
   }
 
   const handleCheckboxChange = (fieldName: string, optionValue: string, checked: boolean) => {
@@ -205,19 +259,24 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
   const renderFormField = (fieldName: string, field: FormField) => {
     const value = userInputs[fieldName] || ""
 
+    // Hide movie_information field from UI
+    if (fieldName === 'movie_information') {
+      return null
+    }
+
     switch (field.type) {
       case "textarea":
         return (
           <div key={fieldName} className="space-y-2">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
             <Textarea
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
               placeholder={field.placeholder}
-              readOnly={field.readonly}
-              className={`${themeClasses.card} border-white/30 min-h-[120px] ${
-                field.readonly ? 'opacity-70' : ''
-              }`}
+              className={`${themeClasses.card} border-white/30 min-h-[120px]`}
             />
           </div>
         )
@@ -225,16 +284,16 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
       case "text":
         return (
           <div key={fieldName} className="space-y-2">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
             <input
               type="text"
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
               placeholder={field.placeholder}
-              readOnly={field.readonly}
-              className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border ${
-                field.readonly ? 'opacity-70' : ''
-              }`}
+              className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border`}
             />
           </div>
         )
@@ -242,16 +301,16 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
       case "number":
         return (
           <div key={fieldName} className="space-y-2">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
             <input
               type="number"
               value={value}
               onChange={(e) => handleInputChange(fieldName, parseInt(e.target.value))}
               placeholder={field.placeholder}
-              readOnly={field.readonly}
-              className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border ${
-                field.readonly ? 'opacity-70' : ''
-              }`}
+              className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border`}
             />
           </div>
         )
@@ -259,7 +318,10 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
       case "checkbox":
         return (
           <div key={fieldName} className="space-y-3">
-            <Label className={themeClasses.text}>{field.label}</Label>
+            <Label className={`${themeClasses.text} flex items-center gap-1`}>
+              {field.label}
+              {field.required && <span className="text-red-500">*</span>}
+            </Label>
             <div className="grid grid-cols-2 gap-3">
               {field.options?.map((option) => {
                 const isChecked = (userInputs[fieldName] || []).includes(option.value)
@@ -268,11 +330,11 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
                     <Checkbox
                       id={`${fieldName}-${option.value}`}
                       checked={isChecked}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         handleCheckboxChange(fieldName, option.value, checked as boolean)
                       }
                     />
-                    <Label 
+                    <Label
                       htmlFor={`${fieldName}-${option.value}`}
                       className={`text-sm ${themeClasses.text} cursor-pointer`}
                     >
@@ -306,16 +368,43 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
   }
 
   const handleSubmit = async () => {
-    if (!user || !movieId || !promptTemplate || !isFormValid()) {
+    if (!user || !movieId || !promptTemplate) {
+      return
+    }
+
+    // Validate form and show errors if invalid
+    if (!isFormValid()) {
+      // Show validation errors by highlighting invalid fields
+      alert(language === "zh" ? "请完成所有必填字段" : "Please complete all required fields")
       return
     }
 
     setIsSubmitting(true)
 
+    // Save user inputs to flow state before submitting
+    updateFlowState({
+      analysisUserInputs: userInputs
+    })
+
+    // Construct and log the user prompt
+    let constructedUserPrompt = promptTemplate.user_prompt_template
+    Object.entries(userInputs).forEach(([key, value]) => {
+      const placeholder = `{${key}}`
+      if (Array.isArray(value)) {
+        constructedUserPrompt = constructedUserPrompt.replace(new RegExp(placeholder, 'g'), value.join(', '))
+      } else {
+        constructedUserPrompt = constructedUserPrompt.replace(new RegExp(placeholder, 'g'), value || '')
+      }
+    })
+
+    console.log('=== CONSTRUCTED USER PROMPT ===')
+    console.log(constructedUserPrompt)
+    console.log('=== END USER PROMPT ===')
+
     try {
       // Submit analysis job to backend
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.analysis.createJob(),
+        apiConfig.analysis.createJob() + `?use_mock=${useMock}`,
         {
           method: 'POST',
           body: JSON.stringify({
@@ -455,6 +544,33 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Mock Configuration */}
+              <div className="space-y-2">
+                <Label className={`${themeClasses.text} flex items-center gap-1`}>
+                  {language === "zh" ? "分析模式" : "Analysis Mode"}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select value={useMock.toString()} onValueChange={(value) => setUseMock(value === "true")}>
+                  <SelectTrigger className={`${themeClasses.card} border-white/30`}>
+                    <SelectValue placeholder={language === "zh" ? "选择分析模式" : "Select analysis mode"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">
+                      {language === "zh" ? "模拟模式 (快速测试)" : "Mock Mode (Fast Testing)"}
+                    </SelectItem>
+                    <SelectItem value="false">
+                      {language === "zh" ? "真实模式 (AI分析)" : "Real Mode (AI Analysis)"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-400">
+                  {language === "zh"
+                    ? "模拟模式将返回预设的示例结果，真实模式将调用AI进行实际分析"
+                    : "Mock mode returns preset example results, real mode calls AI for actual analysis"}
+                </p>
+              </div>
+
+              {/* User Prompt Fields */}
               {promptTemplate.user_prompt_schema &&
                 Object.entries(promptTemplate.user_prompt_schema).map(([fieldName, field]) =>
                   renderFormField(fieldName, field as FormField)
@@ -463,8 +579,8 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
           </Card>
 
           {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10">
-            <div className="container mx-auto flex justify-between">
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10 z-[60]">
+            <div className="container mx-auto flex justify-between items-center">
               <Button
                 onClick={() => router.back()}
                 variant="outline"
@@ -473,26 +589,31 @@ Overview: ${movieData.overview_en || movieData.overview || ''}`
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {language === "zh" ? "上一步" : "Previous"}
               </Button>
-              
-              <Button
-                onClick={handleSubmit}
-                disabled={!isFormValid() || isSubmitting}
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {language === "zh" ? "生成分析中..." : "Generating Analysis..."}
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    {language === "zh" ? "生成分析" : "Generate Analysis"}
-                  </>
-                )}
-              </Button>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {language === "zh" ? "生成分析中..." : "Generating Analysis..."}
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      {language === "zh" ? "生成分析" : "Generate Analysis"}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
+
+          {/* Bottom padding to prevent content from being hidden behind fixed navigation */}
+          <div className="h-20"></div>
         </div>
       </AppLayout>
     </div>

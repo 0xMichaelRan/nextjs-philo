@@ -14,29 +14,35 @@ export interface FlowState {
   movieTitle?: string
   movieTitleEn?: string
   movieTagline?: string
-  
-  // Analysis options
+
+  // Analysis options (legacy)
   analysisStyle?: string
   analysisDepth?: string
   analysisCharacter?: string
   analysisTheme?: string
-  
+
+  // New analysis workflow
+  analysisPromptId?: number
+  analysisSystemInputs?: Record<string, any>
+  analysisUserInputs?: Record<string, any>
+  analysisJobId?: number
+
   // Voice selection
   voiceId?: string
   voiceName?: string
   voiceLanguage?: string
   customVoiceId?: string
-  
+
   // Script options
   scriptLength?: string
   scriptTone?: string
-  
+
   // Job metadata
   jobId?: string
   requiresLogin?: boolean
   isCustomized?: boolean
   createdAt?: string
-  
+
   // Auto-cleanup metadata
   lastUpdated?: number
   expiresAt?: number
