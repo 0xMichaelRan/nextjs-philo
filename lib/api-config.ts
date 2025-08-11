@@ -106,6 +106,21 @@ class ApiConfig {
     vipStatus: () => `${this.baseUrl}/jobs/vip-status`,
   }
 
+  // Analysis endpoints
+  public analysis = {
+    createJob: () => `${this.baseUrl}/analysis/jobs`,
+    listJobs: () => `${this.baseUrl}/analysis/jobs`,
+    getJob: (jobId: number) => `${this.baseUrl}/analysis/jobs/${jobId}`,
+    listPrompts: (category?: string, language?: string) => {
+      const params = new URLSearchParams()
+      if (category) params.append('category', category)
+      if (language) params.append('language', language)
+      const queryString = params.toString()
+      return `${this.baseUrl}/analysis/prompts${queryString ? `?${queryString}` : ''}`
+    },
+    listModels: () => `${this.baseUrl}/analysis/models`,
+  }
+
   // Utility method to get authorization headers
   public getAuthHeaders(): Record<string, string> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null

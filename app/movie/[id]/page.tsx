@@ -210,8 +210,8 @@ export default function MovieHomePage() {
         movieTagline: movieData.tagline
       })
 
-      // Navigate to analysis options
-      router.push('/analysis-options')
+      // Navigate to analysis config with movie ID
+      router.push(`/analysis-config?movieId=${movieId}`)
     }
   }
 
