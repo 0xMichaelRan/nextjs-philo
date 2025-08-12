@@ -118,6 +118,12 @@ class ApiConfig {
       const queryString = params.toString()
       return `${this.baseUrl}/analysis/prompts${queryString ? `?${queryString}` : ''}`
     },
+    getPromptWithMovieData: (promptId: number, movieId: string, language?: string) => {
+      const params = new URLSearchParams()
+      params.append('movie_id', movieId)
+      if (language) params.append('language', language)
+      return `${this.baseUrl}/analysis/prompts/${promptId}?${params.toString()}`
+    },
     listModels: () => `${this.baseUrl}/analysis/models`,
   }
 
