@@ -8,28 +8,18 @@ import { Card, CardContent } from "@/components/ui/card"
 
 import { Badge } from "@/components/ui/badge"
 
-import Link from "next/link"
+
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
 import { VoiceAudioPlayer } from "@/components/voice-audio-player"
 
-interface VoiceOption {
-  id: number
-  name: string
-  display_name: string
-  description?: string
-  language: string
-  gender?: string
-  voice_file: string
-  is_active: boolean
-  is_premium: boolean
-  voice_url: string
-}
+
 
 interface CustomVoice {
   id: number
@@ -42,59 +32,22 @@ interface CustomVoice {
   duration?: string
 }
 
-// Hardcoded voice entries
-const hardcodedVoices: VoiceOption[] = [
-  // Chinese voices
-  {
-    id: 1001,
-    name: "xiaoli_zh",
-    display_name: "小丽",
-    description: "温暖知性的成熟女声，适合讲述情感类电影",
-    language: "zh",
-    gender: "female",
-    voice_file: "09_happy_3.aac",
-    is_active: true,
-    is_premium: false,
-    voice_url: "/static/voices/09_happy_3.aac"
-  },
-  {
-    id: 1002,
-    name: "xiaoming_zh",
-    display_name: "小明",
-    description: "清晰明亮的年轻男声，适合讲述青春励志类电影",
-    language: "zh",
-    gender: "male",
-    voice_file: "02_fear_3.aac",
-    is_active: true,
-    is_premium: true,
-    voice_url: "/static/voices/02_fear_3.aac"
-  },
-  // English voices
-  {
-    id: 1003,
-    name: "sarah_en",
-    display_name: "Sarah",
-    description: "Professional and warm female voice, perfect for dramatic storytelling",
-    language: "en",
-    gender: "female",
-    voice_file: "f5_943_gt0.75.aac",
-    is_active: true,
-    is_premium: false,
-    voice_url: "/static/voices/f5_943_gt0.75.aac"
-  },
-  {
-    id: 1004,
-    name: "david_en",
-    display_name: "David",
-    description: "Deep and authoritative male voice, ideal for action and thriller films",
-    language: "en",
-    gender: "male",
-    voice_file: "indextts2_1037_gt0.75.aac",
-    is_active: true,
-    is_premium: true,
-    voice_url: "/static/voices/indextts2_1037_gt0.75.aac"
-  }
-]
+// Interface for default voices from API
+interface DefaultVoice {
+  id: number
+  voice_code: string
+  voice_name: string
+  display_name_zh: string
+  display_name_en: string
+  gender: string
+  language: string
+  description_zh?: string
+  description_en?: string
+  voice_file: string
+  is_active: boolean
+  sort_order: number
+  supported_providers: string[]
+}
 
 export default function VoiceSelectionPage() {
   const searchParams = useSearchParams()
@@ -105,7 +58,7 @@ export default function VoiceSelectionPage() {
   const [movieId, setMovieId] = useState("")
   const [selectedVoice, setSelectedVoice] = useState("")
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
-  const [voices, setVoices] = useState<VoiceOption[]>([])
+  const [voices, setVoices] = useState<DefaultVoice[]>([])
   const [loading, setLoading] = useState(false)
   const [audioProgress, setAudioProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
@@ -114,13 +67,17 @@ export default function VoiceSelectionPage() {
   const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
   const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
   const [showVipModal, setShowVipModal] = useState(false)
+  const [ttsProvider, setTtsProvider] = useState<"indexTTS" | "xfyun">("indexTTS")
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user } = useAuth()
+  const { updateFlowState } = useFlow()
 
   // Set page title
   usePageTitle("voiceSelection")
+
+
 
   // Fetch custom voices for VIP users
   const fetchCustomVoices = async () => {
@@ -188,30 +145,37 @@ export default function VoiceSelectionPage() {
     fetchVoices()
   }, [voiceLanguage])
 
+  // Auto-select appropriate TTS provider when voice is selected
+  useEffect(() => {
+    if (selectedVoice && !selectedVoice.startsWith("custom_")) {
+      const selectedVoiceData = voices.find(v => v.id.toString() === selectedVoice)
+      if (selectedVoiceData?.supported_providers) {
+        // If current provider is not supported, switch to the first supported one
+        if (!selectedVoiceData.supported_providers.includes(ttsProvider)) {
+          setTtsProvider(selectedVoiceData.supported_providers[0] as "indexTTS" | "xfyun")
+        }
+      }
+    }
+  }, [selectedVoice, voices])
+
   const fetchVoices = async () => {
     setLoading(true)
     try {
-      // Start with hardcoded voices for the selected language
-      const hardcodedForLanguage = hardcodedVoices.filter(voice => voice.language === voiceLanguage)
-      setVoices(hardcodedForLanguage)
-      setLoading(false)
-
-      // Lazy load API voices in the background
+      // Fetch default voices from the new API
       const response = await apiConfig.makeAuthenticatedRequest(
-        `${apiConfig.voices.list()}`
+        apiConfig.defaultVoices.list(voiceLanguage)
       )
 
       if (response.ok) {
-        const apiVoices: VoiceOption[] = await response.json()
-        // Filter API voices by selected language and append to hardcoded ones
-        const filteredApiVoices = apiVoices.filter(voice => voice.language === voiceLanguage)
-        setVoices([...hardcodedForLanguage, ...filteredApiVoices])
+        const defaultVoices: DefaultVoice[] = await response.json()
+        setVoices(defaultVoices)
+      } else {
+        console.error("Failed to fetch default voices")
+        setVoices([])
       }
     } catch (error) {
       console.error("Error fetching voices:", error)
-      // Keep hardcoded voices even if API fails
-      const hardcodedForLanguage = hardcodedVoices.filter(voice => voice.language === voiceLanguage)
-      setVoices(hardcodedForLanguage)
+      setVoices([])
     } finally {
       setLoading(false)
     }
@@ -219,28 +183,7 @@ export default function VoiceSelectionPage() {
 
 
 
-  const formatTimeAgo = (dateString: string) => {
-    const now = new Date()
-    const createdAt = new Date(dateString)
-    const diffMs = now.getTime() - createdAt.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffHours / 24)
-    const diffWeeks = Math.floor(diffDays / 7)
 
-    if (diffHours < 24) {
-      return language === "zh"
-        ? `${diffHours} 小时前添加`
-        : `added ${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
-    } else if (diffDays < 7) {
-      return language === "zh"
-        ? `${diffDays} 天前添加`
-        : `added ${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
-    } else {
-      return language === "zh"
-        ? `${diffWeeks} 周前添加`
-        : `added ${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`
-    }
-  }
 
   const handlePlayAudio = (voiceId: string, audioUrl: string) => {
     if (playingVoice === voiceId) {
@@ -259,6 +202,7 @@ export default function VoiceSelectionPage() {
         audioRef.current.src = fullAudioUrl
         audioRef.current.play().catch(error => {
           console.error("Error playing audio:", error)
+          console.error("Audio source:", fullAudioUrl)
           setPlayingVoice(null)
           setAudioProgress(0)
         })
@@ -286,7 +230,16 @@ export default function VoiceSelectionPage() {
         setAudioProgress(0)
       }
 
-      const handleError = () => {
+      const handleError = (e: Event) => {
+        console.error("Audio playback error:", e)
+        const audio = e.target as HTMLAudioElement
+        if (audio.error) {
+          console.error("Audio error details:", {
+            code: audio.error.code,
+            message: audio.error.message,
+            src: audio.src
+          })
+        }
         setPlayingVoice(null)
         setAudioProgress(0)
       }
@@ -310,7 +263,7 @@ export default function VoiceSelectionPage() {
       const params = new URLSearchParams(searchParams.toString())
 
       if (selectedVoice.startsWith("custom_")) {
-        // Handle custom voice selection
+        // Handle custom voice selection - always use indexTTS for custom voices
         const customVoiceId = selectedVoice.replace("custom_", "")
         const customVoice = customVoices.find(v => v.id.toString() === customVoiceId)
 
@@ -318,15 +271,28 @@ export default function VoiceSelectionPage() {
         params.set("customVoiceId", customVoiceId)
         params.set("voiceName", customVoice?.display_name || "Custom Voice")
         params.set("voiceLanguage", customVoice?.language || "zh")
+        params.set("ttsProvider", "indexTTS") // Custom voices always use indexTTS
       } else {
         // Handle regular voice selection
         const voice = voices.find(v => v.id.toString() === selectedVoice)
         params.set("voiceId", selectedVoice)
-        params.set("voiceName", voice?.name || "")
+        params.set("voiceName", voice?.voice_name || "")
+        params.set("voiceCode", voice?.voice_code || "")
         params.set("voiceLanguage", voiceLanguage)
+        params.set("ttsProvider", ttsProvider) // Use selected TTS provider
       }
 
-      router.push(`/script-review?${params.toString()}`)
+      // Update flow state with voice selection
+      const selectedVoiceData = voices.find(v => v.id.toString() === selectedVoice)
+      updateFlowState({
+        voiceId: selectedVoice.startsWith("custom_") ? "custom" : selectedVoice,
+        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (voiceLanguage === "zh" ? selectedVoiceData?.display_name_zh : selectedVoiceData?.display_name_en || ""),
+        voiceLanguage: voiceLanguage,
+        customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
+        ttsProvider: selectedVoice.startsWith("custom_") ? "indexTTS" : ttsProvider
+      })
+
+      router.push('/script-review')
     }
   }
 
@@ -400,6 +366,35 @@ export default function VoiceSelectionPage() {
             </div>
           </div>
 
+          {/* TTS Provider Selection - Only show for default voices */}
+          {!selectedVoice?.startsWith("custom_") && selectedVoice && (
+            <div className="flex justify-center mb-6">
+              <div className="flex flex-col items-center space-y-2">
+                <label className={`${themeClasses.text} text-sm font-medium`}>
+                  {language === "zh" ? "语音合成引擎" : "TTS Engine"}
+                </label>
+                <div className="flex items-center space-x-1 bg-white/10 dark:bg-black/20 rounded-lg p-1">
+                  {(() => {
+                    const selectedVoiceData = voices.find(v => v.id.toString() === selectedVoice)
+                    const supportedProviders = selectedVoiceData?.supported_providers || ['indexTTS']
+
+                    return supportedProviders.map((provider) => (
+                      <Button
+                        key={provider}
+                        variant={ttsProvider === provider ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setTtsProvider(provider as "indexTTS" | "xfyun")}
+                        className="text-sm px-4"
+                      >
+                        {provider === 'indexTTS' ? 'IndexTTS' : '讯飞语音'}
+                      </Button>
+                    ))
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Loading State */}
           {loading && (
             <div className="text-center py-12">
@@ -418,19 +413,13 @@ export default function VoiceSelectionPage() {
                         {/* Avatar on Left - 1:2 ratio (taller) */}
                         <div className="relative flex-shrink-0">
                           <div className="w-16 h-32 md:w-20 md:h-40 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-xl md:text-2xl font-bold shadow-lg">
-                            {voice.display_name.charAt(0)}
+                            {(voiceLanguage === "zh" ? voice.display_name_zh : voice.display_name_en).charAt(0)}
                           </div>
-                          {/* Premium Badge */}
+                          {/* Provider Badge */}
                           <div className="absolute -top-1 -right-1">
-                            {voice.is_premium ? (
-                              <Badge className="text-xs bg-yellow-500 text-black px-1.5 py-0.5">
-                                限免
-                              </Badge>
-                            ) : (
-                              <Badge className="text-xs bg-green-500 text-white px-1.5 py-0.5">
-                                {voiceLanguage === "zh" ? "免费" : "Free"}
-                              </Badge>
-                            )}
+                            <Badge className="text-xs bg-blue-500 text-white px-1.5 py-0.5">
+                              {voice.supported_providers?.includes('xfyun') && voice.voice_code.startsWith('x4_') ? '讯飞' : '通用'}
+                            </Badge>
                           </div>
                         </div>
 
@@ -441,7 +430,7 @@ export default function VoiceSelectionPage() {
                             {/* Name and Gender Badge on same row */}
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className={`${themeClasses.text} font-semibold text-lg`}>
-                                {voice.display_name}
+                                {voiceLanguage === "zh" ? voice.display_name_zh : voice.display_name_en}
                               </h3>
                               <Badge variant="secondary" className="text-xs">
                                 {voice.gender === "male" ? (voiceLanguage === "zh" ? "男声" : "Male") :
@@ -449,9 +438,9 @@ export default function VoiceSelectionPage() {
                                  (voiceLanguage === "zh" ? "中性" : "Neutral")}
                               </Badge>
                             </div>
-                            {voice.description && (
+                            {(voiceLanguage === "zh" ? voice.description_zh : voice.description_en) && (
                               <p className={`${themeClasses.secondaryText} text-sm mb-2 line-clamp-2`}>
-                                {voice.description}
+                                {voiceLanguage === "zh" ? voice.description_zh : voice.description_en}
                               </p>
                             )}
                           </div>
@@ -475,7 +464,7 @@ export default function VoiceSelectionPage() {
                                     />
                                   </div>
                                   <Button
-                                    onClick={() => handlePlayAudio(voice.id.toString(), voice.voice_url)}
+                                    onClick={() => setPlayingVoice(null)}
                                     size="sm"
                                     variant="ghost"
                                     className="absolute -top-1 -right-1 h-4 w-4 p-0 rounded-full bg-white dark:bg-gray-800 shadow-md"
@@ -487,11 +476,14 @@ export default function VoiceSelectionPage() {
                             ) : (
                               // Play Button and Select Button
                               <div className="flex items-center space-x-3">
-                                {/* Larger Circular Play Button */}
+                                {/* Larger Circular Play Button - Now enabled for default voices */}
                                 <Button
-                                  onClick={() => handlePlayAudio(voice.id.toString(), voice.voice_url)}
+                                  onClick={() => {
+                                    const audioUrl = `/static/voices/${voice.voice_file}`
+                                    handlePlayAudio(voice.id.toString(), audioUrl)
+                                  }}
                                   size="lg"
-                                  className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-0 shadow-lg flex-shrink-0"
+                                  className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-0 shadow-lg flex-shrink-0 transition-all duration-200 hover:scale-105"
                                 >
                                   <Play className="w-5 h-5 md:w-6 md:h-6" />
                                 </Button>

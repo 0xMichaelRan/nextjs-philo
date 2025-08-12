@@ -65,6 +65,39 @@ class ApiConfig {
     details: (id: number) => `${this.baseUrl}/voices/${id}`,
   }
 
+  // Default voices endpoints
+  public defaultVoices = {
+    list: (language?: string, provider?: string) => {
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      if (provider) params.append('provider', provider)
+      const queryString = params.toString()
+      return `${this.baseUrl}/default-voices${queryString ? `?${queryString}` : ''}`
+    },
+    details: (voiceCode: string) => `${this.baseUrl}/default-voices/${voiceCode}`,
+    byProvider: (provider: string, language?: string) => {
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      const queryString = params.toString()
+      return `${this.baseUrl}/default-voices/providers/${provider}${queryString ? `?${queryString}` : ''}`
+    },
+  }
+
+  // TTS endpoints
+  public tts = {
+    providers: () => `${this.baseUrl}/tts-providers`,
+    voices: (provider?: string, language?: string) => {
+      const params = new URLSearchParams()
+      if (provider) params.append('provider', provider)
+      if (language) params.append('language', language)
+      const queryString = params.toString()
+      return `${this.baseUrl}/tts-providers/voices${queryString ? `?${queryString}` : ''}`
+    },
+    health: () => `${this.baseUrl}/tts-providers/health`,
+    validateVoice: () => `${this.baseUrl}/tts-providers/validate-voice`,
+    synthesize: () => `${this.baseUrl}/tts-providers/synthesize`,
+  }
+
   // Script endpoints (to be implemented)
   public scripts = {
     generate: () => `${this.baseUrl}/scripts/generate`,

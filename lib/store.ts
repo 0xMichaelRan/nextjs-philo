@@ -26,12 +26,14 @@ export interface FlowState {
   analysisSystemInputs?: Record<string, any>
   analysisUserInputs?: Record<string, any>
   analysisJobId?: number
+  analysisResult?: string
 
   // Voice selection
   voiceId?: string
   voiceName?: string
   voiceLanguage?: string
   customVoiceId?: string
+  ttsProvider?: string
 
   // Script options
   scriptLength?: string

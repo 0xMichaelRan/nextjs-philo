@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { Play, Pause, Edit, RefreshCw, ArrowRight, AlertTriangle, X } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Play, Pause, Edit, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +34,7 @@ interface ContentBlock {
 
 export default function ScriptReviewPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { flowState } = useFlow()
   const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([])
@@ -44,6 +45,9 @@ export default function ScriptReviewPage() {
   const [audioProgress, setAudioProgress] = useState(0)
   const [showLimitsModal, setShowLimitsModal] = useState(false)
   const [jobLimits, setJobLimits] = useState<any>(null)
+  const [voiceConfig, setVoiceConfig] = useState<any>(null)
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null)
+  const [llmResponse, setLlmResponse] = useState<string>("")
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -66,9 +70,93 @@ export default function ScriptReviewPage() {
       tagline: flowState.movieTagline
     })
 
+    // Get data from flow store
+    if (flowState.voiceId || flowState.customVoiceId) {
+      setVoiceConfig({
+        voiceId: flowState.voiceId,
+        voiceName: flowState.voiceName,
+        voiceCode: flowState.voiceId, // Use voiceId as voiceCode for now
+        voiceLanguage: flowState.voiceLanguage,
+        customVoiceId: flowState.customVoiceId,
+        ttsProvider: flowState.ttsProvider || 'indexTTS',
+        isCustom: flowState.voiceId === 'custom'
+      })
+    }
+
+    // Get analysis result from flow store
+    if (flowState.analysisResult) {
+      console.log("Using analysis result from flow store:", flowState.analysisResult.substring(0, 100) + "...")
+      setLlmResponse(flowState.analysisResult)
+    } else if (flowState.analysisJobId) {
+      // Fallback to fetching from API if no analysis result in store
+      fetchLLMResponse(flowState.analysisJobId.toString())
+    } else {
+      // For testing purposes, show sample content
+      console.log("No analysis result or job ID in flow store, using sample content")
+      const sampleResponse = `欢迎使用AI电影分析系统！
+
+这是一个演示用的AI分析结果。在实际使用中，这里会显示AI对所选电影的深度分析内容，包括：
+
+• 剧情结构分析
+• 角色性格解读
+• 主题思想探讨
+• 艺术手法评析
+• 社会意义阐述
+
+您可以选择不同的语音和TTS引擎来生成这段分析内容的音频版本。点击上方的"生成语音"按钮即可开始语音合成。`
+      setLlmResponse(sampleResponse)
+    }
+
     // Fetch script content if we have movie data
     fetchMovieData(flowState.movieId)
   }, [flowState, router])
+
+  const fetchLLMResponse = async (analysisJobId: string) => {
+    try {
+      console.log("Fetching LLM response for job ID:", analysisJobId)
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.analysis.getJob(parseInt(analysisJobId))
+      )
+
+      if (response.ok) {
+        const jobData = await response.json()
+        console.log("LLM job data:", jobData)
+        if (jobData.response_content) {
+          console.log("Setting LLM response:", jobData.response_content.substring(0, 100) + "...")
+          setLlmResponse(jobData.response_content)
+        } else {
+          console.log("No response_content in job data")
+          // For testing, set a sample response if no real response is available
+          const sampleResponse = `这是一个关于电影《${movieData?.title || "未知电影"}》的深度分析。
+
+电影通过精妙的叙事结构和丰富的视觉语言，展现了人性的复杂性和社会的多面性。导演运用独特的镜头语言，将观众带入一个充满象征意义的世界。
+
+影片的主题围绕着爱情、背叛、救赎等永恒话题展开，每个角色都承载着深刻的寓意。通过细腻的情感描绘和紧张的剧情推进，观众能够感受到强烈的情感冲击。
+
+总的来说，这部电影不仅是一部娱乐作品，更是一面反映社会现实的镜子，值得我们深入思考和品味。`
+          setLlmResponse(sampleResponse)
+        }
+      } else {
+        console.log("Failed to fetch LLM response, status:", response.status)
+        // Set sample response for testing
+        const sampleResponse = `这是一个测试用的AI分析结果。
+
+由于无法获取真实的分析数据，这里显示的是示例内容。在实际使用中，这里会显示AI对电影的深度分析结果。
+
+这段文字将用于语音合成，生成相应的音频内容。您可以点击"生成语音"按钮来测试TTS功能。`
+        setLlmResponse(sampleResponse)
+      }
+    } catch (error) {
+      console.error("Error fetching LLM response:", error)
+      // Set sample response for testing
+      const sampleResponse = `AI分析结果加载失败，显示示例内容。
+
+这是一段用于测试语音合成功能的示例文字。在正常情况下，这里会显示AI对电影的详细分析内容。
+
+您可以使用这段文字来测试TTS语音生成功能是否正常工作。`
+      setLlmResponse(sampleResponse)
+    }
+  }
 
   const fetchMovieData = async (movieId: string) => {
     setLoading(true)
@@ -120,39 +208,152 @@ export default function ScriptReviewPage() {
     }
   }
 
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      setIsPlaying(false)
-      // Pause audio logic
-    } else {
-      setIsPlaying(true)
-      // Play audio logic
-      // Simulate audio progress
-      const interval = setInterval(() => {
-        setAudioProgress((prev) => {
-          if (prev >= 100) {
-            setIsPlaying(false)
-            clearInterval(interval)
-            return 0
+  const generateTTSAudio = async () => {
+    if (!voiceConfig) {
+      toast({
+        title: language === "zh" ? "错误" : "Error",
+        description: language === "zh" ? "缺少语音配置" : "Missing voice configuration",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsGenerating(true)
+    try {
+      // Use LLM response if available, otherwise fall back to content blocks
+      let textContent = llmResponse
+      if (!textContent && contentBlocks.length > 0) {
+        textContent = contentBlocks.find(block => block.type === 'clean')?.content ||
+                     contentBlocks[0]?.content || ''
+      }
+
+      if (!textContent) {
+        throw new Error("No content available for TTS generation")
+      }
+
+      // Prepare TTS request
+      const ttsRequest = {
+        text: textContent.substring(0, 500), // Limit text length for demo
+        provider: voiceConfig.ttsProvider,
+        voice_type: voiceConfig.isCustom ? 'custom' : 'system',
+        language: voiceConfig.voiceLanguage || 'zh',
+        voice_id: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
+        custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null
+      }
+
+      // Call TTS API
+      const response = await apiConfig.makeAuthenticatedRequest(apiConfig.tts.synthesize(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ttsRequest)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.audio_data) {
+          // Convert base64 audio data to blob
+          const audioData = atob(result.audio_data)
+          const audioArray = new Uint8Array(audioData.length)
+          for (let i = 0; i < audioData.length; i++) {
+            audioArray[i] = audioData.charCodeAt(i)
           }
-          return prev + 1
-        })
-      }, 100)
+
+          // Use the correct MIME type based on the audio format returned by the backend
+          const mimeType = result.audio_format === 'wav' ? 'audio/wav' :
+                          result.audio_format === 'mp3' ? 'audio/mpeg' :
+                          result.audio_format === 'aac' ? 'audio/aac' :
+                          result.audio_format === 'ogg' ? 'audio/ogg' :
+                          'audio/wav' // Default fallback
+
+          const audioBlob = new Blob([audioArray], { type: mimeType })
+          const audioUrl = URL.createObjectURL(audioBlob)
+          setGeneratedAudioUrl(audioUrl)
+
+          toast({
+            title: language === "zh" ? "成功" : "Success",
+            description: language === "zh" ? "语音生成完成" : "Audio generated successfully"
+          })
+        } else {
+          throw new Error(result.error_message || "TTS generation failed")
+        }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || "TTS generation failed")
+      }
+    } catch (error) {
+      console.error("TTS generation error:", error)
+      toast({
+        title: language === "zh" ? "错误" : "Error",
+        description: language === "zh" ? "语音生成失败" : "Failed to generate audio",
+        variant: "destructive"
+      })
+    } finally {
+      setIsGenerating(false)
     }
   }
+
+  const handlePlayPause = () => {
+    if (!generatedAudioUrl && !isGenerating) {
+      // Generate audio first
+      generateTTSAudio()
+      return
+    }
+
+    if (isPlaying) {
+      setIsPlaying(false)
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+    } else {
+      setIsPlaying(true)
+      if (audioRef.current && generatedAudioUrl) {
+        audioRef.current.src = generatedAudioUrl
+        audioRef.current.play()
+      }
+    }
+  }
+
+  // Audio event handlers
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleTimeUpdate = () => {
+      if (audio.duration) {
+        setAudioProgress((audio.currentTime / audio.duration) * 100)
+      }
+    }
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      setAudioProgress(0)
+    }
+
+    const handleLoadedData = () => {
+      // Audio is ready to play
+    }
+
+    audio.addEventListener('timeupdate', handleTimeUpdate)
+    audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('loadeddata', handleLoadedData)
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate)
+      audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('loadeddata', handleLoadedData)
+    }
+  }, [generatedAudioUrl])
 
   const handleEditSection = (sectionId: number) => {
     // Navigate to script edit with section ID (flow state will be preserved)
     router.push(`/script-edit?sectionId=${sectionId}`)
   }
 
-  const handleRegenerate = () => {
-    // Allow regeneration without login requirement
-    setIsGenerating(true)
-    // Simulate regeneration
-    setTimeout(() => {
-      setIsGenerating(false)
-    }, 3000)
+  const handleBack = () => {
+    // Go back to voice selection to choose a different voice
+    router.push(`/voice-selection?${searchParams.toString()}`)
   }
 
   const fetchJobLimits = async () => {
@@ -243,19 +444,31 @@ export default function ScriptReviewPage() {
           )}
 
           {/* Content Info */}
-          {contentBlocks.length > 0 && (
+          {(contentBlocks.length > 0 || llmResponse || movieData) && (
             <Card className={`${themeClasses.card} backdrop-blur-md mb-8`}>
               <CardHeader>
                 <CardTitle className={themeClasses.text}>
                   {language === "zh" ? "内容概览" : "Content Overview"}
                 </CardTitle>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">
-                    {language === "zh" ? "内容块" : "Content Blocks"}: {contentBlocks.length}
-                  </Badge>
+                  {contentBlocks.length > 0 && (
+                    <Badge variant="secondary">
+                      {language === "zh" ? "内容块" : "Content Blocks"}: {contentBlocks.length}
+                    </Badge>
+                  )}
+                  {llmResponse && (
+                    <Badge variant="secondary">
+                      {language === "zh" ? "AI分析" : "AI Analysis"}: {llmResponse.length} {language === "zh" ? "字符" : "chars"}
+                    </Badge>
+                  )}
                   {movieData && (
                     <Badge variant="secondary">
                       {language === "zh" ? "电影" : "Movie"}: {movieData.title_zh || movieData.title}
+                    </Badge>
+                  )}
+                  {voiceConfig && (
+                    <Badge variant="secondary">
+                      {language === "zh" ? "语音" : "Voice"}: {voiceConfig.voiceName || (voiceConfig.isCustom ? "自定义语音" : "Default Voice")}
                     </Badge>
                   )}
                 </div>
@@ -268,25 +481,65 @@ export default function ScriptReviewPage() {
             <CardContent className="p-0">
               <div className="relative">
                 <Image
-                  src={movieData ? `/placeholder.svg?height=200&width=400&query=${encodeURIComponent(movieData.title_en || movieData.title)}+movie+scene` : "/placeholder.svg?height=200&width=400"}
-                  alt={t("scriptReview.videoPreview")}
+                  src={movieData ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop` : "/placeholder.svg?height=200&width=400"}
+                  alt={movieData?.title || t("scriptReview.videoPreview")}
                   width={400}
                   height={200}
                   className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    // Fallback to placeholder if backdrop image fails to load
+                    e.currentTarget.src = "/placeholder.svg?height=200&width=400"
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <Button
                     onClick={handlePlayPause}
                     size="lg"
                     className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                    disabled={isGenerating || !generatedAudioUrl}
+                    title={!generatedAudioUrl ? (language === "zh" ? "请先生成语音" : "Please generate audio first") : ""}
                   >
-                    {isPlaying ? <Pause className="w-8 h-8 text-white" /> : <Play className="w-8 h-8 text-white" />}
+                    {isGenerating ? (
+                      <RefreshCw className="w-8 h-8 text-white animate-spin" />
+                    ) : isPlaying ? (
+                      <Pause className="w-8 h-8 text-white" />
+                    ) : (
+                      <Play className="w-8 h-8 text-white" />
+                    )}
                   </Button>
+
+                  {/* Show message when no audio is available */}
+                  {!generatedAudioUrl && !isGenerating && (
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                      <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
+                        <p className="text-sm mb-2">
+                          {language === "zh" ? "请先生成语音" : "Please generate audio first"}
+                        </p>
+                        <p className="text-xs opacity-75">
+                          {language === "zh" ? "点击下方「生成语音」按钮" : "Click 'Generate Voice' button below"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="absolute bottom-4 left-4 right-4">
                   <div className="flex items-center justify-between text-sm text-white mb-2">
-                    <span>{t("scriptReview.videoPreview")}</span>
-                    <span>{language === "zh" ? "预计时长" : "Estimated Duration"}</span>
+                    <span>
+                      {voiceConfig ? (
+                        voiceConfig.isCustom ?
+                          (language === "zh" ? "自定义语音" : "Custom Voice") :
+                          voiceConfig.voiceName
+                      ) : (
+                        t("scriptReview.videoPreview")
+                      )}
+                    </span>
+                    <span>
+                      {voiceConfig?.ttsProvider && (
+                        <Badge variant="secondary" className="text-xs">
+                          {voiceConfig.ttsProvider === 'xfyun' ? '讯飞语音' : 'IndexTTS'}
+                        </Badge>
+                      )}
+                    </span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-2">
                     <div
@@ -298,6 +551,92 @@ export default function ScriptReviewPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* LLM Response Preview */}
+          {llmResponse && (
+            <Card className={`${themeClasses.card} backdrop-blur-md mb-8 border-2 border-blue-400 dark:border-blue-600`}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className={`${themeClasses.text} text-lg flex items-center gap-2`}>
+                      <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                      {language === "zh" ? "AI 分析结果" : "AI Analysis Result"}
+                    </CardTitle>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Badge variant="outline" className="text-xs bg-blue-100 dark:bg-blue-900">
+                        {language === "zh" ? "用于语音合成" : "For TTS"}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {llmResponse.length} {language === "zh" ? "字符" : "characters"}
+                      </Badge>
+                      {voiceConfig && (
+                        <Badge variant="secondary" className="text-xs">
+                          {voiceConfig.voiceName || (voiceConfig.isCustom ? "自定义语音" : "Default Voice")}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={generateTTSAudio}
+                    disabled={isGenerating || !voiceConfig}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        {language === "zh" ? "生成中..." : "Generating..."}
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        {language === "zh" ? "生成语音" : "Generate Voice"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`${themeClasses.secondaryText} leading-relaxed`}>
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-700 shadow-inner">
+                    <p className="whitespace-pre-wrap text-sm md:text-base leading-7">
+                      {llmResponse}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>
+                      {language === "zh" ? "此内容将用于语音合成生成音频" : "This content will be used for TTS audio generation"}
+                    </span>
+                    {generatedAudioUrl && (
+                      <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        {language === "zh" ? "音频已生成" : "Audio generated"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Show placeholder if no LLM response */}
+          {!llmResponse && (
+            <Card className={`${themeClasses.card} backdrop-blur-md mb-8 border-dashed border-2 border-gray-300 dark:border-gray-600`}>
+              <CardContent className="p-6 text-center">
+                <div className="text-gray-500 dark:text-gray-400">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <RefreshCw className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm">
+                    {language === "zh" ? "等待 AI 分析结果..." : "Waiting for AI analysis result..."}
+                  </p>
+                  <p className="text-xs mt-1 text-gray-400">
+                    {language === "zh" ? "分析完成后将显示用于语音合成的内容" : "Content for TTS will appear here after analysis"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Content Blocks */}
           <div className="space-y-6">
@@ -366,16 +705,22 @@ export default function ScriptReviewPage() {
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10 z-40">
           <div className="container mx-auto flex space-x-3">
             <Button
-              onClick={handleRegenerate}
-              disabled={isGenerating}
+              onClick={handleBack}
               variant="outline"
               className="flex-1 bg-transparent border-white/30 text-white hover:bg-white/10"
             >
-              {t("scriptReview.regenerate")}
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {language === "zh" ? "重新选择语音" : "Choose Voice Again"}
             </Button>
             <Button
               onClick={handleNext}
-              className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
+              disabled={!generatedAudioUrl}
+              className={`flex-1 ${
+                generatedAudioUrl
+                  ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }`}
+              title={!generatedAudioUrl ? (language === "zh" ? "请先生成语音" : "Please generate audio first") : ""}
             >
               {t("scriptReview.generateVideo")}
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -466,6 +811,9 @@ export default function ScriptReviewPage() {
           </Card>
         </div>
       )}
+
+      {/* Hidden audio element for TTS playback */}
+      <audio ref={audioRef} style={{ display: 'none' }} />
     </div>
   )
 }

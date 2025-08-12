@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { ArrowLeft, Download, Share2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Download, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +12,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
 
 interface AnalysisJob {
@@ -40,6 +41,7 @@ export default function AnalysisResultsPage() {
   const { language } = useLanguage()
   const { user } = useAuth()
   const { theme } = useTheme()
+  const { updateFlowState } = useFlow()
   
   const jobId = searchParams.get('jobId')
   const [analysisJob, setAnalysisJob] = useState<AnalysisJob | null>(null)
@@ -326,13 +328,7 @@ export default function AnalysisResultsPage() {
                       <Download className="w-4 h-4 mr-1" />
                       {language === "zh" ? "下载" : "Download"}
                     </Button>
-                    <Button
-                      onClick={() => router.push('/voice-selection')}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-                      size="sm"
-                    >
-                      {language === "zh" ? "继续配音" : "Continue to Voice"}
-                    </Button>
+
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -357,6 +353,44 @@ export default function AnalysisResultsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Add bottom padding for fixed navigation */}
+          <div className="pb-24"></div>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10 z-[60]">
+          <div className="container mx-auto flex justify-between items-center">
+            <Button
+              onClick={() => router.push("/analysis-prompt-config")}
+              variant="outline"
+              className="bg-transparent border-white/30 text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {language === "zh" ? "上一步" : "Previous"}
+            </Button>
+
+            <div className="flex items-center gap-3">
+              {analysisJob?.status === 'completed' && (
+                <Button
+                  onClick={() => {
+                    // Save analysis result to flow store
+                    updateFlowState({
+                      analysisResult: analysisJob.analysis_result,
+                      analysisJobId: analysisJob.id
+                    })
+                    router.push('/voice-selection')
+                  }}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <ArrowRight className="w-4 h-4" />
+                    <span>{language === "zh" ? "继续配音" : "Continue to Voice"}</span>
+                  </div>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </AppLayout>
     </div>
