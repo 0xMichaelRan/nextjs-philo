@@ -57,45 +57,83 @@ class ApiConfig {
     details: (id: string) => `${this.baseUrl}/movies/${id}`,
   }
 
-  // Voice endpoints
+  // Voice endpoints (consolidated)
   public voices = {
-    list: () => `${this.baseUrl}/voices`,
-    custom: () => `${this.baseUrl}/voices/custom`,
-    deleteCustom: (id: number) => `${this.baseUrl}/voices/custom/${id}`,
-    details: (id: number) => `${this.baseUrl}/voices/${id}`,
-  }
-
-  // Default voices endpoints
-  public defaultVoices = {
-    list: (language?: string, provider?: string) => {
+    // Main voice listing endpoint - supports all voice types with filtering
+    list: (language?: string, provider?: string, voiceType?: string) => {
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      if (provider) params.append('provider', provider)
+      if (voiceType) params.append('voice_type', voiceType)
+      const queryString = params.toString()
+      return `${this.baseUrl}/voices${queryString ? `?${queryString}` : ''}`
+    },
+    // Default/system voices
+    default: (language?: string, provider?: string) => {
       const params = new URLSearchParams()
       if (language) params.append('language', language)
       if (provider) params.append('provider', provider)
       const queryString = params.toString()
-      return `${this.baseUrl}/default-voices${queryString ? `?${queryString}` : ''}`
+      return `${this.baseUrl}/voices/default${queryString ? `?${queryString}` : ''}`
     },
-    details: (voiceCode: string) => `${this.baseUrl}/default-voices/${voiceCode}`,
-    byProvider: (provider: string, language?: string) => {
+    defaultDetails: (voiceCode: string, language?: string) => {
       const params = new URLSearchParams()
       if (language) params.append('language', language)
       const queryString = params.toString()
-      return `${this.baseUrl}/default-voices/providers/${provider}${queryString ? `?${queryString}` : ''}`
+      return `${this.baseUrl}/voices/default/${voiceCode}${queryString ? `?${queryString}` : ''}`
+    },
+    // Custom voices (VIP only)
+    custom: (language?: string) => {
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      const queryString = params.toString()
+      return `${this.baseUrl}/voices/custom${queryString ? `?${queryString}` : ''}`
+    },
+    uploadCustom: () => `${this.baseUrl}/voices/custom`,
+    deleteCustom: (id: number) => `${this.baseUrl}/voices/custom/${id}`,
+    // Legacy endpoint for backward compatibility
+    details: (id: number) => `${this.baseUrl}/voices/${id}`,
+  }
+
+  // Legacy default voices endpoints (deprecated - use voices.default instead)
+  public defaultVoices = {
+    list: (language?: string, provider?: string) => {
+      console.warn('defaultVoices.list is deprecated. Use voices.default instead.')
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      if (provider) params.append('provider', provider)
+      const queryString = params.toString()
+      return `${this.baseUrl}/voices/default${queryString ? `?${queryString}` : ''}`
+    },
+    details: (voiceCode: string) => {
+      console.warn('defaultVoices.details is deprecated. Use voices.defaultDetails instead.')
+      return `${this.baseUrl}/voices/default/${voiceCode}`
+    },
+    byProvider: (provider: string, language?: string) => {
+      console.warn('defaultVoices.byProvider is deprecated. Use voices.default with provider filter instead.')
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      if (provider) params.append('provider', provider)
+      const queryString = params.toString()
+      return `${this.baseUrl}/voices/default${queryString ? `?${queryString}` : ''}`
     },
   }
 
   // TTS endpoints
   public tts = {
     providers: () => `${this.baseUrl}/tts-providers`,
+    health: () => `${this.baseUrl}/tts-providers/health`,
+    validateVoice: () => `${this.baseUrl}/tts-providers/validate-voice`,
+    synthesize: () => `${this.baseUrl}/tts-providers/synthesize`,
+    // Deprecated: use voices.list with provider filter instead
     voices: (provider?: string, language?: string) => {
+      console.warn('tts.voices is deprecated. Use voices.list with provider filter instead.')
       const params = new URLSearchParams()
       if (provider) params.append('provider', provider)
       if (language) params.append('language', language)
       const queryString = params.toString()
-      return `${this.baseUrl}/tts-providers/voices${queryString ? `?${queryString}` : ''}`
+      return `${this.baseUrl}/voices${queryString ? `?${queryString}` : ''}`
     },
-    health: () => `${this.baseUrl}/tts-providers/health`,
-    validateVoice: () => `${this.baseUrl}/tts-providers/validate-voice`,
-    synthesize: () => `${this.baseUrl}/tts-providers/synthesize`,
   }
 
   // Script endpoints (to be implemented)

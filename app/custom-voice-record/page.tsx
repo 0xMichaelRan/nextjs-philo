@@ -293,7 +293,7 @@ export default function CustomVoiceRecordPage() {
       formData.append('language', recordLanguage)
 
       // Upload to backend API
-      const response = await fetch(apiConfig.voices.custom(), {
+      const response = await fetch(apiConfig.voices.uploadCustom(), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

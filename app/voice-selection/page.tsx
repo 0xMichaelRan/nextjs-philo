@@ -32,21 +32,25 @@ interface CustomVoice {
   duration?: string
 }
 
-// Interface for default voices from API
+// Interface for default voices from API (updated for new unified response)
 interface DefaultVoice {
-  id: number
+  id: string
   voice_code: string
   voice_name: string
-  display_name_zh: string
-  display_name_en: string
+  display_name: string  // Localized display name
+  description?: string  // Localized description
   gender: string
   language: string
+  voice_file?: string
+  is_active: boolean
+  voice_type: string
+  supported_providers: string[]
+  sort_order: number
+  // Legacy fields for backward compatibility
+  display_name_zh?: string
+  display_name_en?: string
   description_zh?: string
   description_en?: string
-  voice_file: string
-  is_active: boolean
-  sort_order: number
-  supported_providers: string[]
 }
 
 export default function VoiceSelectionPage() {
@@ -161,9 +165,9 @@ export default function VoiceSelectionPage() {
   const fetchVoices = async () => {
     setLoading(true)
     try {
-      // Fetch default voices from the new API
+      // Fetch default voices using the new consolidated API
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.defaultVoices.list(voiceLanguage)
+        apiConfig.voices.default(voiceLanguage)
       )
 
       if (response.ok) {
@@ -286,7 +290,7 @@ export default function VoiceSelectionPage() {
       const selectedVoiceData = voices.find(v => v.id.toString() === selectedVoice)
       updateFlowState({
         voiceId: selectedVoice.startsWith("custom_") ? "custom" : selectedVoice,
-        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (voiceLanguage === "zh" ? selectedVoiceData?.display_name_zh : selectedVoiceData?.display_name_en || ""),
+        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.display_name_zh || selectedVoiceData?.display_name_en || selectedVoiceData?.voice_name || ""),
         voiceLanguage: voiceLanguage,
         customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
         ttsProvider: selectedVoice.startsWith("custom_") ? "indexTTS" : ttsProvider
@@ -413,7 +417,7 @@ export default function VoiceSelectionPage() {
                         {/* Avatar on Left - 1:2 ratio (taller) */}
                         <div className="relative flex-shrink-0">
                           <div className="w-16 h-32 md:w-20 md:h-40 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-xl md:text-2xl font-bold shadow-lg">
-                            {(voiceLanguage === "zh" ? voice.display_name_zh : voice.display_name_en).charAt(0)}
+                            {(voice.display_name || voice.display_name_zh || voice.display_name_en || voice.voice_name || "?").charAt(0)}
                           </div>
                           {/* Provider Badge */}
                           <div className="absolute -top-1 -right-1">
@@ -430,7 +434,7 @@ export default function VoiceSelectionPage() {
                             {/* Name and Gender Badge on same row */}
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className={`${themeClasses.text} font-semibold text-lg`}>
-                                {voiceLanguage === "zh" ? voice.display_name_zh : voice.display_name_en}
+                                {voice.display_name || voice.display_name_zh || voice.display_name_en || voice.voice_name}
                               </h3>
                               <Badge variant="secondary" className="text-xs">
                                 {voice.gender === "male" ? (voiceLanguage === "zh" ? "男声" : "Male") :
@@ -438,9 +442,9 @@ export default function VoiceSelectionPage() {
                                  (voiceLanguage === "zh" ? "中性" : "Neutral")}
                               </Badge>
                             </div>
-                            {(voiceLanguage === "zh" ? voice.description_zh : voice.description_en) && (
+                            {(voice.description || voice.description_zh || voice.description_en) && (
                               <p className={`${themeClasses.secondaryText} text-sm mb-2 line-clamp-2`}>
-                                {voiceLanguage === "zh" ? voice.description_zh : voice.description_en}
+                                {voice.description || voice.description_zh || voice.description_en}
                               </p>
                             )}
                           </div>
