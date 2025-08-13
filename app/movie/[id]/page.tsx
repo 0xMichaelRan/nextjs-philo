@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
+import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
@@ -508,8 +509,8 @@ export default function MovieHomePage() {
         </Card>
       </div>
 
-      {/* Fixed Bottom Action Bar for Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 p-4 safe-area-pb">
+      {/* Mobile Bottom Bar */}
+      <MobileBottomBar>
         <Button
           onClick={handleGenerateVideo}
           size="lg"
@@ -518,10 +519,7 @@ export default function MovieHomePage() {
           <Play className="w-6 h-6 mr-3" />
           {language === "zh" ? "开始生成视频分析" : "Start Video Analysis"}
         </Button>
-      </div>
-
-      {/* Add bottom padding to prevent content from being hidden behind fixed button */}
-      <div className="h-20 md:hidden"></div>
+      </MobileBottomBar>
     </AppLayout>
   )
 }

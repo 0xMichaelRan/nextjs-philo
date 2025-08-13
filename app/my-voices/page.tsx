@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 
 interface CustomVoice {
-  id: number
+  id: string  // Changed from number to string since backend returns "custom_X" format
   name: string
   display_name: string
   language: string
@@ -39,9 +39,9 @@ interface VoicesData {
 export default function MyVoicesPage() {
   const [voicesData, setVoicesData] = useState<VoicesData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [playingVoice, setPlayingVoice] = useState<number | null>(null)
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null)
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null)
-  const [deletingVoice, setDeletingVoice] = useState<number | null>(null)
+  const [deletingVoice, setDeletingVoice] = useState<string | null>(null)
   const [vipStatus, setVipStatus] = useState<any>(null)
 
   const { theme } = useTheme()
@@ -119,11 +119,17 @@ export default function MyVoicesPage() {
     }
   }
 
-  const deleteVoice = async (voiceId: number) => {
+  const deleteVoice = async (voiceId: string) => {
     try {
       setDeletingVoice(voiceId)
+
+      // Extract numeric ID from "custom_X" format
+      const numericId = voiceId.startsWith('custom_')
+        ? parseInt(voiceId.replace('custom_', ''))
+        : parseInt(voiceId)
+
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.voices.deleteCustom(voiceId),
+        apiConfig.voices.deleteCustom(numericId),
         { method: 'DELETE' }
       )
       
@@ -149,7 +155,7 @@ export default function MyVoicesPage() {
     }
   }
 
-  const playVoice = (voiceId: number, audioUrl: string) => {
+  const playVoice = (voiceId: string, audioUrl: string) => {
     if (playingVoice === voiceId) {
       if (audioElement) {
         audioElement.pause()

@@ -49,12 +49,10 @@ export default function MovieSelectionPage() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
-  const { clearFlowState } = useFlow()
+  const { flowState } = useFlow()
 
-  // Clear flow state when user comes to movie selection (start fresh)
-  useEffect(() => {
-    clearFlowState()
-  }, [clearFlowState])
+  // Note: Flow state is only cleared when a different movie is selected in movie detail page
+  // This allows users to navigate back and forth without losing their progress
 
   // Fetch popular movies on component mount
   useEffect(() => {

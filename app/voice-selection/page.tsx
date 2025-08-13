@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Play, Pause, ArrowRight, ArrowLeft, Mic, Plus } from "lucide-react"
+import { Play, Pause, ArrowRight, Mic, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 
 
 import { AppLayout } from "@/components/app-layout"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -43,6 +44,7 @@ interface DefaultVoice {
   language: string
   voice_file?: string
   is_active: boolean
+  is_premium: boolean  // Whether this voice requires VIP/SVIP subscription
   voice_type: string
   supported_providers: string[]
   sort_order: number
@@ -71,6 +73,9 @@ export default function VoiceSelectionPage() {
   const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
   const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
   const [showVipModal, setShowVipModal] = useState(false)
+  // Filter states
+  const [languageFilter, setLanguageFilter] = useState<string | null>(null) // 'zh' | 'en' | null
+  const [freeOnlyFilter, setFreeOnlyFilter] = useState(false)
   const [ttsProvider, setTtsProvider] = useState<"indexTTS" | "xfyun">("indexTTS")
   const audioRef = useRef<HTMLAudioElement>(null)
   const { theme } = useTheme()
@@ -144,10 +149,10 @@ export default function VoiceSelectionPage() {
     }
   }, [searchParams, language, user])
 
-  // Fetch voices from API
+  // Fetch voices from API once on mount
   useEffect(() => {
     fetchVoices()
-  }, [voiceLanguage])
+  }, [])
 
   // Auto-select appropriate TTS provider when voice is selected
   useEffect(() => {
@@ -165,9 +170,9 @@ export default function VoiceSelectionPage() {
   const fetchVoices = async () => {
     setLoading(true)
     try {
-      // Fetch default voices using the new consolidated API
+      // Fetch all default voices regardless of language
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.voices.default(voiceLanguage)
+        apiConfig.voices.default() // Remove language parameter to get all voices
       )
 
       if (response.ok) {
@@ -183,6 +188,23 @@ export default function VoiceSelectionPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Filter voices based on current filters
+  const getFilteredVoices = () => {
+    let filtered = voices
+
+    // Apply language filter
+    if (languageFilter) {
+      filtered = filtered.filter(voice => voice.language === languageFilter)
+    }
+
+    // Apply free-only filter for non-VIP users
+    if (freeOnlyFilter || (!user?.is_vip && freeOnlyFilter)) {
+      filtered = filtered.filter(voice => !voice.is_premium)
+    }
+
+    return filtered
   }
 
 
@@ -348,24 +370,24 @@ export default function VoiceSelectionPage() {
       <AppLayout title={t("voiceSelection.title")}>
         <div className="container mx-auto px-6 py-8 pb-32">
 
-          {/* Voice Language Switch */}
+          {/* Voice Filters */}
           <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-1 bg-white/10 dark:bg-black/20 rounded-lg p-1">
+            <div className="flex items-center space-x-2">
               <Button
-                variant={voiceLanguage === "zh" ? "default" : "ghost"}
+                variant={languageFilter === "zh" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setVoiceLanguage("zh")}
+                onClick={() => setLanguageFilter(languageFilter === "zh" ? null : "zh")}
                 className="text-sm px-4"
               >
-                中文
+                {language === "zh" ? "中文语音" : "Chinese"}
               </Button>
               <Button
-                variant={voiceLanguage === "en" ? "default" : "ghost"}
+                variant={freeOnlyFilter ? "default" : "outline"}
                 size="sm"
-                onClick={() => setVoiceLanguage("en")}
+                onClick={() => setFreeOnlyFilter(!freeOnlyFilter)}
                 className="text-sm px-4"
               >
-                English
+                {language === "zh" ? "免费语音" : "Free Voices"}
               </Button>
             </div>
           </div>
@@ -410,7 +432,7 @@ export default function VoiceSelectionPage() {
           {!loading && (
             <div className="max-w-4xl mx-auto">
               <div className="grid gap-4 md:gap-6">
-                {voices.map((voice) => (
+                {getFilteredVoices().map((voice) => (
                   <Card key={voice.voice_code} className={getCardStyle(voice.voice_code)}>
                     <CardContent className="p-4 md:p-6">
                       <div className="flex items-center space-x-4">
@@ -419,10 +441,14 @@ export default function VoiceSelectionPage() {
                           <div className="w-16 h-32 md:w-20 md:h-40 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-xl md:text-2xl font-bold shadow-lg">
                             {(voice.display_name || voice.display_name_zh || voice.display_name_en || voice.voice_name || "?").charAt(0)}
                           </div>
-                          {/* Provider Badge */}
+                          {/* Free/VIP Badge */}
                           <div className="absolute -top-1 -right-1">
-                            <Badge className="text-xs bg-blue-500 text-white px-1.5 py-0.5">
-                              {voice.supported_providers?.includes('xfyun') && voice.voice_code.startsWith('x4_') ? '讯飞' : '通用'}
+                            <Badge className={`text-xs px-1.5 py-0.5 ${
+                              voice.is_premium
+                                ? "bg-yellow-500 text-black"
+                                : "bg-green-500 text-white"
+                            }`}>
+                              {voice.is_premium ? "VIP" : (language === "zh" ? "免费" : "Free")}
                             </Badge>
                           </div>
                         </div>
@@ -437,10 +463,20 @@ export default function VoiceSelectionPage() {
                                 {voice.display_name || voice.display_name_zh || voice.display_name_en || voice.voice_name}
                               </h3>
                               <Badge variant="secondary" className="text-xs">
-                                {voice.gender === "male" ? (voiceLanguage === "zh" ? "男声" : "Male") :
-                                 voice.gender === "female" ? (voiceLanguage === "zh" ? "女声" : "Female") :
-                                 (voiceLanguage === "zh" ? "中性" : "Neutral")}
+                                {voice.gender === "male" ? (language === "zh" ? "男声" : "Male") :
+                                 voice.gender === "female" ? (language === "zh" ? "女声" : "Female") :
+                                 (language === "zh" ? "中性" : "Neutral")}
                               </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {voice.language === "zh" ? (language === "zh" ? "中文" : "Chinese") :
+                                 voice.language === "en" ? (language === "zh" ? "英文" : "English") :
+                                 voice.language.toUpperCase()}
+                              </Badge>
+                              {voice.is_premium && (
+                                <Badge className="text-xs bg-yellow-500 text-black px-1.5 py-0.5">
+                                  VIP
+                                </Badge>
+                              )}
                             </div>
                             {(voice.description || voice.description_zh || voice.description_en) && (
                               <p className={`${themeClasses.secondaryText} text-sm mb-2 line-clamp-2`}>
@@ -452,8 +488,8 @@ export default function VoiceSelectionPage() {
                           {/* Audio Controls */}
                           <div className="space-y-2">
                             {playingVoice === voice.id.toString() ? (
-                              // Audio Progress Bar
-                              <div className="space-y-2">
+                              // Audio Progress Bar + Select Button
+                              <div className="space-y-3">
                                 <div className="flex items-center justify-between text-xs">
                                   <span className={themeClasses.text}>正在播放...</span>
                                   <span className={themeClasses.secondaryText}>
@@ -476,6 +512,34 @@ export default function VoiceSelectionPage() {
                                     <Pause className="w-3 h-3" />
                                   </Button>
                                 </div>
+                                {/* Select Button - Always available during playback */}
+                                <Button
+                                  onClick={() => {
+                                    // Check VIP restriction for premium voices
+                                    if (voice.is_premium && !user?.is_vip) {
+                                      setShowVipModal(true)
+                                      return
+                                    }
+                                    setSelectedVoice(voice.voice_code)
+                                  }}
+                                  variant={selectedVoice === voice.voice_code ? "default" : "outline"}
+                                  size="sm"
+                                  disabled={voice.is_premium && !user?.is_vip}
+                                  className={`w-full text-xs md:text-sm px-3 py-2 h-10 ${
+                                    voice.is_premium && !user?.is_vip
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : selectedVoice === voice.voice_code
+                                        ? `${themeClasses.button} text-white`
+                                        : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                                  }`}
+                                >
+                                  {voice.is_premium && !user?.is_vip
+                                    ? (language === "zh" ? "需要VIP" : "VIP Required")
+                                    : selectedVoice === voice.voice_code
+                                      ? t("voiceSelection.selected")
+                                      : t("voiceSelection.select")
+                                  }
+                                </Button>
                               </div>
                             ) : (
                               // Play Button and Select Button
@@ -483,25 +547,52 @@ export default function VoiceSelectionPage() {
                                 {/* Larger Circular Play Button - Now enabled for default voices */}
                                 <Button
                                   onClick={() => {
+                                    // Check VIP restriction for premium voices
+                                    if (voice.is_premium && !user?.is_vip) {
+                                      setShowVipModal(true)
+                                      return
+                                    }
                                     const audioUrl = `/static/voices/${voice.voice_file}`
                                     handlePlayAudio(voice.id.toString(), audioUrl)
                                   }}
                                   size="lg"
-                                  className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-0 shadow-lg flex-shrink-0 transition-all duration-200 hover:scale-105"
+                                  disabled={voice.is_premium && !user?.is_vip}
+                                  className={`w-12 h-12 md:w-14 md:h-14 rounded-full p-0 shadow-lg flex-shrink-0 transition-all duration-200 ${
+                                    voice.is_premium && !user?.is_vip
+                                      ? "bg-gray-400 cursor-not-allowed opacity-50"
+                                      : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105"
+                                  } text-white`}
                                 >
                                   <Play className="w-5 h-5 md:w-6 md:h-6" />
                                 </Button>
 
                                 {/* Smaller Select Button */}
                                 <Button
-                                  onClick={() => setSelectedVoice(voice.voice_code)}
+                                  onClick={() => {
+                                    // Check VIP restriction for premium voices
+                                    if (voice.is_premium && !user?.is_vip) {
+                                      setShowVipModal(true)
+                                      return
+                                    }
+                                    setSelectedVoice(voice.voice_code)
+                                  }}
                                   variant={selectedVoice === voice.voice_code ? "default" : "outline"}
                                   size="sm"
-                                  className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${selectedVoice === voice.voice_code ?
-                                    `${themeClasses.button} text-white` :
-                                    `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}`}
+                                  disabled={voice.is_premium && !user?.is_vip}
+                                  className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
+                                    voice.is_premium && !user?.is_vip
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : selectedVoice === voice.voice_code
+                                        ? `${themeClasses.button} text-white`
+                                        : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                                  }`}
                                 >
-                                  {selectedVoice === voice.id.toString() ? t("voiceSelection.selected") : t("voiceSelection.select")}
+                                  {voice.is_premium && !user?.is_vip
+                                    ? (voiceLanguage === "zh" ? "需要VIP" : "VIP Required")
+                                    : selectedVoice === voice.voice_code
+                                      ? t("voiceSelection.selected")
+                                      : t("voiceSelection.select")
+                                  }
                                 </Button>
                               </div>
                             )}
@@ -725,28 +816,14 @@ export default function VoiceSelectionPage() {
           <audio ref={audioRef} onEnded={() => setPlayingVoice(null)} onError={() => setPlayingVoice(null)} />
         </div>
 
-        {/* Bottom Buttons */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10">
-          <div className="container mx-auto flex space-x-3">
-            <Button
-              onClick={handleBack}
-              variant="outline"
-              className="flex-1 bg-transparent border-white/30 text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("common.back")}
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={!selectedVoice}
-              className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white"
-              size="lg"
-            >
-              {t("voiceSelection.generateScript")}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </div>
+        {/* Bottom Navigation */}
+        <BottomNavigation
+          onBack={handleBack}
+          onNext={handleNext}
+          nextDisabled={!selectedVoice}
+          backLabel={t("common.back")}
+          nextLabel={t("voiceSelection.generateScript")}
+        />
       </AppLayout>
 
       {/* VIP Upgrade Modal */}

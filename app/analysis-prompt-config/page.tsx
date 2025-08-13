@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AppLayout } from "@/components/app-layout"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useFlow } from "@/hooks/use-flow"
@@ -71,8 +72,9 @@ export default function AnalysisPromptConfigPage() {
   const { language } = useLanguage()
   const { flowState, updateFlowState } = useFlow()
 
-  const movieId = searchParams.get("movieId")
-  const promptId = searchParams.get("promptId")
+  // Get parameters from flow state first, fallback to URL for backward compatibility
+  const movieId = flowState.movieId || searchParams.get("movieId")
+  const promptId = flowState.analysisPromptId?.toString() || searchParams.get("promptId")
   const systemInputsParam = searchParams.get("systemInputs")
 
   const [promptTemplate, setPromptTemplate] = useState<PromptTemplate | null>(null)
@@ -426,8 +428,16 @@ export default function AnalysisPromptConfigPage() {
 
       if (response.ok) {
         const job = await response.json()
-        // Navigate to results page with job ID
-        router.push(`/analysis-results?jobId=${job.id}`)
+
+        // Save analysis job info to flow state
+        updateFlowState({
+          analysisJobId: job.id,
+          analysisSystemInputs: systemInputs,
+          analysisUserInputs: userInputs
+        })
+
+        // Navigate to results page (job ID will be read from flow state)
+        router.push('/analysis-results')
       } else {
         const errorData = await response.json()
         console.error("Failed to create analysis job:", errorData)
@@ -675,44 +685,15 @@ export default function AnalysisPromptConfigPage() {
             </div>
           </div>
 
-          {/* Add bottom padding for fixed navigation */}
-          <div className="pb-24"></div>
         </div>
 
         {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10 z-[60]">
-          <div className="container mx-auto flex justify-between items-center">
-            <Button
-              onClick={() => router.push("/analysis-config")}
-              variant="outline"
-              className="bg-transparent border-white/30 text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {language === "zh" ? "上一步" : "Previous"}
-            </Button>
-
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2"
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>{language === "zh" ? "分析中..." : "Analyzing..."}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Play className="w-5 h-5" />
-                    <span>{language === "zh" ? "开始分析" : "Start Analysis"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </div>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <BottomNavigation
+          onBack={() => router.push("/analysis-config")}
+          onNext={handleSubmit}
+          nextDisabled={isSubmitting}
+          nextLabel={isSubmitting ? (language === "zh" ? "分析中..." : "Analyzing...") : (language === "zh" ? "开始分析" : "Start Analysis")}
+        />
       </AppLayout>
     </div>
   )

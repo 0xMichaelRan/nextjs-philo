@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, ArrowRight, Info } from "lucide-react"
+import { ArrowLeft, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useFlow } from "@/hooks/use-flow"
@@ -48,7 +49,8 @@ export default function AnalysisConfigPage() {
   const { theme } = useTheme()
   const { flowState, updateFlowState } = useFlow()
 
-  const movieId = searchParams.get('movieId')
+  // Get movieId from flow state first, fallback to URL for backward compatibility
+  const movieId = flowState.movieId || searchParams.get('movieId')
   const [promptTemplates, setPromptTemplates] = useState<PromptTemplate[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null)
   const [systemInputs, setSystemInputs] = useState<Record<string, any>>({})
@@ -78,10 +80,14 @@ export default function AnalysisConfigPage() {
   const themeClasses = getThemeClasses()
 
   useEffect(() => {
-    fetchPromptTemplates()
-    if (movieId) {
-      fetchMovieData()
+    // Redirect to movie selection if no movie is selected
+    if (!movieId) {
+      router.push('/movie-selection')
+      return
     }
+
+    fetchPromptTemplates()
+    fetchMovieData()
   }, [language, movieId])
 
   // This logic is now handled in fetchPromptTemplates
@@ -519,31 +525,10 @@ export default function AnalysisConfigPage() {
           </div>
 
           {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/20 backdrop-blur-md border-t border-white/10 z-[60]">
-            <div className="container mx-auto flex justify-between items-center">
-              <Button
-                onClick={() => router.back()}
-                variant="outline"
-                className="bg-transparent border-white/30 text-white hover:bg-white/10"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {language === "zh" ? "上一步" : "Previous"}
-              </Button>
-
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleNext}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                >
-                  {language === "zh" ? "下一步" : "Next"}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom padding to prevent content from being hidden behind fixed navigation */}
-          <div className="h-20"></div>
+          <BottomNavigation
+            onBack={() => router.back()}
+            onNext={handleNext}
+          />
         </div>
       </AppLayout>
     </div>
