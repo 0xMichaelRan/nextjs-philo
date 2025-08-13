@@ -285,6 +285,14 @@ export default function VoiceSelectionPage() {
   }, [])
 
   const handleNext = () => {
+    // Check if user is logged in before proceeding to script review
+    if (!user) {
+      // Store current page for redirect after login
+      localStorage.setItem('redirectAfterAuth', '/script-review')
+      router.push('/auth')
+      return
+    }
+
     if (selectedVoice) {
       const params = new URLSearchParams(searchParams.toString())
 

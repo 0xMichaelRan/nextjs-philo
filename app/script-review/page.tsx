@@ -241,10 +241,10 @@ export default function ScriptReviewPage() {
 
       // Prepare TTS request
       const ttsRequest = {
-        text: textContent.substring(0, 500), // Limit text length for demo
+        text: textContent.substring(0, 7888), // Limit text length of text for xfyun
         provider: voiceConfig.ttsProvider,
         voice_type: voiceConfig.isCustom ? 'custom' : 'system',
-        language: voiceConfig.voiceLanguage || 'zh',
+        language: 'zh', // for now, force zh language for xfyun
         voice_id: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
         custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null
       }
