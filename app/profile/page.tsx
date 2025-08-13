@@ -714,6 +714,15 @@ export default function ProfilePage() {
                             Email address cannot be changed
                           </p>
                         </div>
+                        <div>
+                          <Label className={getThemeClass("text-gray-600", "text-gray-400")}>
+                            {language === "zh" ? "手机号码" : "Phone Number"}
+                          </Label>
+                          <p className={getThemeClass("text-gray-900", "text-white")}>{user.phone_number || (language === "zh" ? "未设置" : "Not set")}</p>
+                          <p className={`${getThemeClass("text-gray-500", "text-gray-400")} text-xs mt-1`}>
+                            {language === "zh" ? "手机号码无法修改" : "Phone number cannot be changed"}
+                          </p>
+                        </div>
                       </div>
                     )}
                   </CardContent>

@@ -436,8 +436,8 @@ export default function AnalysisPromptConfigPage() {
           analysisUserInputs: userInputs
         })
 
-        // Navigate to results page (job ID will be read from flow state)
-        router.push('/analysis-results')
+        // Navigate to analysis job page with job ID
+        router.push(`/analysis-job/${job.id}`)
       } else {
         const errorData = await response.json()
         console.error("Failed to create analysis job:", errorData)

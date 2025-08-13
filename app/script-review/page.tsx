@@ -396,8 +396,85 @@ export default function ScriptReviewPage() {
       return
     }
 
-    // Navigate to job submission (flow state will be preserved)
-    router.push('/job-submission')
+    // Create video job with current flow state
+    try {
+      if (!flowState.analysisJobId || !movieData || !voiceConfig) {
+        toast({
+          title: language === "zh" ? "错误" : "Error",
+          description: language === "zh" ? "缺少必要信息" : "Missing required information",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Get the TTS text from LLM response or content blocks
+      let ttsText = llmResponse
+      if (!ttsText && contentBlocks.length > 0) {
+        ttsText = contentBlocks.find(block => block.type === 'clean')?.content ||
+                 contentBlocks[0]?.content || ''
+      }
+
+      if (!ttsText) {
+        toast({
+          title: language === "zh" ? "错误" : "Error",
+          description: language === "zh" ? "没有可用的文本内容" : "No text content available",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const videoJobRequest = {
+        analysis_job_id: flowState.analysisJobId,
+        movie_id: movieData.id,
+        movie_title: movieData.title_zh || movieData.title,
+        movie_title_en: movieData.title_en,
+        tts_text: ttsText.substring(0, 7888), // Limit text length for xfyun
+        voice_id: voiceConfig.voiceCode || voiceConfig.voiceId,
+        voice_name: voiceConfig.voiceName,
+        voice_language: 'zh', // Force zh language for xfyun
+        custom_voice_id: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
+        tts_provider: voiceConfig.ttsProvider || 'xfyun',
+        video_quality: 'high',
+        video_format: 'mp4',
+        video_resolution: '1920x1080'
+      }
+
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.videoJobs.create(),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(videoJobRequest),
+        }
+      )
+
+      if (response.ok) {
+        const videoJob = await response.json()
+        toast({
+          title: language === "zh" ? "成功" : "Success",
+          description: language === "zh" ? "视频生成任务已创建" : "Video generation job created",
+        })
+
+        // Navigate to video generation page with job ID
+        router.push(`/video-generation/${videoJob.id}`)
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: language === "zh" ? "错误" : "Error",
+          description: errorData.detail || (language === "zh" ? "创建视频任务失败" : "Failed to create video job"),
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error creating video job:', error)
+      toast({
+        title: language === "zh" ? "错误" : "Error",
+        description: language === "zh" ? "网络错误" : "Network error",
+        variant: "destructive"
+      })
+    }
   }
 
   const getThemeClasses = () => {

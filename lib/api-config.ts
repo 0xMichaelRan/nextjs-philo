@@ -48,6 +48,8 @@ class ApiConfig {
     list: () => `${this.baseUrl}/notifications`,
     markRead: (id: number) => `${this.baseUrl}/notifications/${id}`,
     markAllRead: () => `${this.baseUrl}/notifications/mark-all-read`,
+    markSeen: () => `${this.baseUrl}/notifications/mark-seen`,
+    hasNew: () => `${this.baseUrl}/notifications/has-new`,
   }
 
   // Movie endpoints
@@ -165,7 +167,7 @@ class ApiConfig {
     pricing: () => `${this.baseUrl}/payments/pricing`,
   }
 
-  // Job endpoints
+  // Job endpoints (legacy)
   public jobs = {
     base: () => `${this.baseUrl}/jobs`,
     create: () => `${this.baseUrl}/jobs`,
@@ -175,6 +177,13 @@ class ApiConfig {
     submitToQueue: (id: string) => `${this.baseUrl}/jobs/${id}/submit-to-queue`,
     limits: () => `${this.baseUrl}/jobs/limits`,
     vipStatus: () => `${this.baseUrl}/jobs/vip-status`,
+  }
+
+  // Video Job endpoints
+  public videoJobs = {
+    create: () => `${this.baseUrl}/video-jobs`,
+    list: () => `${this.baseUrl}/video-jobs`,
+    details: (id: number) => `${this.baseUrl}/video-jobs/${id}`,
   }
 
   // Analysis endpoints

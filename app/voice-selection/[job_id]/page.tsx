@@ -1,0 +1,465 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Play, Pause, ArrowRight, Mic, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+
+import { Badge } from "@/components/ui/badge"
+
+
+import { AppLayout } from "@/components/app-layout"
+import { BottomNavigation } from "@/components/bottom-navigation"
+import { useTheme } from "@/contexts/theme-context"
+import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
+import { useFlow } from "@/hooks/use-flow"
+import { apiConfig } from "@/lib/api-config"
+import { usePageTitle } from "@/hooks/use-page-title"
+import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
+import { VoiceAudioPlayer } from "@/components/voice-audio-player"
+
+
+
+interface DefaultVoice {
+  id: string  // Backend returns string IDs
+  voice_code: string
+  voice_name: string  // Backend field name
+  display_name: string
+  description?: string
+  language: string
+  gender?: string
+  voice_file?: string
+  is_active: boolean
+  is_premium: boolean
+  voice_type: string
+  supported_providers: string[]
+  sort_order: number
+}
+
+interface CustomVoice {
+  id: number
+  name: string
+  display_name: string
+  language: string
+  duration?: string
+  audio_url: string
+  description?: string
+  description_zh?: string
+  description_en?: string
+}
+
+export default function VoiceSelectionWithJobPage() {
+  const params = useParams()
+  const router = useRouter()
+  const jobId = params.job_id as string
+  
+  const [selectedVoice, setSelectedVoice] = useState("")
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null)
+  const [voices, setVoices] = useState<DefaultVoice[]>([])
+  const [loading, setLoading] = useState(true)
+  const [audioProgress, setAudioProgress] = useState(0)
+  const [audioDuration, setAudioDuration] = useState(0)
+  const [voiceLanguage, setVoiceLanguage] = useState<"zh" | "en">("zh")
+  const [customVoices, setCustomVoices] = useState<CustomVoice[]>([])
+  const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
+  const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
+  const [showVipModal, setShowVipModal] = useState(false)
+  // Filter states
+  const [languageFilter, setLanguageFilter] = useState<string | null>(null) // 'zh' | 'en' | null
+  const [freeOnlyFilter, setFreeOnlyFilter] = useState(false)
+  const [ttsProvider, setTtsProvider] = useState<"xfyun">("xfyun")
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const { theme } = useTheme()
+  const { language, t } = useLanguage()
+  const { user } = useAuth()
+  const { flowState, updateFlowState } = useFlow()
+
+  // Set page title
+  usePageTitle("voiceSelection")
+
+  // Fetch custom voices for VIP users
+  const fetchCustomVoices = async () => {
+    if (!user?.is_vip) return
+
+    try {
+      setCustomVoicesLoading(true)
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.voices.custom()
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setCustomVoices(data.voices || [])
+      }
+    } catch (error) {
+      console.error("Error fetching custom voices:", error)
+    } finally {
+      setCustomVoicesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    // Set voice language to match UI language
+    setVoiceLanguage(language as "zh" | "en")
+
+    // Fetch custom voices if user is VIP
+    if (user?.is_vip) {
+      fetchCustomVoices()
+    }
+  }, [language, user])
+
+  // Fetch voices from API once on mount
+  useEffect(() => {
+    fetchVoices()
+  }, [])
+
+  const fetchVoices = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(apiConfig.voices.default())
+
+      if (response.ok) {
+        const data = await response.json()
+        // Backend returns array directly, not wrapped in {voices: [...]}
+        const voicesArray = Array.isArray(data) ? data : (data.voices || [])
+        setVoices(voicesArray)
+      } else {
+        console.error("Failed to fetch voices, status:", response.status)
+      }
+    } catch (error) {
+      console.error("Error fetching voices:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePlayAudio = (voiceId: string, audioUrl: string) => {
+    if (playingVoice === voiceId) {
+      // Stop current audio
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+      }
+      setPlayingVoice(null)
+      setAudioProgress(0)
+    } else {
+      // Play new audio
+      if (audioRef.current) {
+        // Ensure the audio URL is absolute
+        const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${apiConfig.getBaseUrl()}${audioUrl}`
+        audioRef.current.src = fullAudioUrl
+        audioRef.current.play().catch(error => {
+          console.error("Error playing audio:", error)
+          console.error("Audio source:", fullAudioUrl)
+          setPlayingVoice(null)
+          setAudioProgress(0)
+        })
+        setPlayingVoice(voiceId)
+      }
+    }
+  }
+
+  // Filter voices based on current filters
+  const getFilteredVoices = () => {
+    let filtered = [...voices]
+
+    // Apply language filter
+    if (languageFilter) {
+      filtered = filtered.filter(voice => voice.language === languageFilter)
+    }
+
+    // Apply free-only filter for non-VIP users
+    if (freeOnlyFilter || (!user?.is_vip && freeOnlyFilter)) {
+      filtered = filtered.filter(voice => !voice.is_premium)
+    }
+
+    return filtered
+  }
+
+  // Handle audio events
+  useEffect(() => {
+    const audio = audioRef.current
+    if (audio) {
+      const handleLoadedMetadata = () => {
+        setAudioDuration(audio.duration)
+      }
+
+      const handleTimeUpdate = () => {
+        if (audio.duration) {
+          setAudioProgress((audio.currentTime / audio.duration) * 100)
+        }
+      }
+
+      const handleEnded = () => {
+        setPlayingVoice(null)
+        setAudioProgress(0)
+      }
+
+      const handleError = (e: Event) => {
+        console.error("Audio playback error:", e)
+        const audio = e.target as HTMLAudioElement
+        if (audio.error) {
+          console.error("Audio error details:", {
+            code: audio.error.code,
+            message: audio.error.message,
+            src: audio.src
+          })
+        }
+        setPlayingVoice(null)
+        setAudioProgress(0)
+      }
+
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.addEventListener('timeupdate', handleTimeUpdate)
+      audio.addEventListener('ended', handleEnded)
+      audio.addEventListener('error', handleError)
+
+      return () => {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        audio.removeEventListener('timeupdate', handleTimeUpdate)
+        audio.removeEventListener('ended', handleEnded)
+        audio.removeEventListener('error', handleError)
+      }
+    }
+  }, [])
+
+  const handleNext = () => {
+    // Check if user is logged in before proceeding to script review
+    if (!user) {
+      // Store current page for redirect after login
+      localStorage.setItem('redirectAfterAuth', `/voice-selection/${jobId}`)
+      router.push('/auth')
+      return
+    }
+
+    if (selectedVoice) {
+      // Update flow state with voice selection and job ID
+      const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
+      updateFlowState({
+        voiceId: selectedVoice.startsWith("custom_") ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
+        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
+        voiceLanguage: voiceLanguage,
+        customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
+        ttsProvider: selectedVoice.startsWith("custom_") ? "xfyun" : ttsProvider,
+        analysisJobId: parseInt(jobId)
+      })
+
+      router.push('/script-review')
+    }
+  }
+
+  const handleBack = () => {
+    router.push(`/analysis-job/${jobId}`)
+  }
+
+  const getThemeClasses = () => {
+    if (theme === "light") {
+      return {
+        background: "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50",
+        text: "text-gray-800",
+        secondaryText: "text-gray-600",
+        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
+        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        selectedCard: "border-purple-500 bg-purple-50 ring-2 ring-purple-500/20",
+        hoverCard: "hover:border-purple-300",
+        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        accent: "text-purple-600",
+        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80",
+        activeFilterButton: "bg-purple-100 border-purple-300 text-purple-700"
+      }
+    }
+    return {
+      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
+      text: "text-white",
+      secondaryText: "text-gray-300",
+      card: "bg-white/10 border-white/20 backdrop-blur-md",
+      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      selectedCard: "border-purple-400 bg-purple-900/30 ring-2 ring-purple-400/30",
+      hoverCard: "hover:border-purple-400/50",
+      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      accent: "text-purple-400",
+      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20",
+      activeFilterButton: "bg-purple-900/50 border-purple-400 text-purple-300"
+    }
+  }
+
+  const themeClasses = getThemeClasses()
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className={`min-h-screen ${themeClasses.background}`}>
+          <div className="container mx-auto px-6 py-8">
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className={themeClasses.text}>
+                {language === "zh" ? "加载语音选项..." : "Loading voice options..."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  return (
+    <div className={`min-h-screen ${themeClasses.background}`}>
+      <AppLayout>
+        <div className="container mx-auto px-6 py-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className={`text-3xl md:text-4xl font-bold ${themeClasses.text} mb-4`}>
+              {t("voiceSelection.title")}
+            </h2>
+            <p className={`text-lg ${themeClasses.secondaryText} mb-6`}>
+              {t("voiceSelection.subtitle")}
+            </p>
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap gap-3 mb-6 justify-center">
+            <Button
+              onClick={() => setLanguageFilter(languageFilter === "zh" ? null : "zh")}
+              variant="outline"
+              className={`${languageFilter === "zh" ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
+            >
+              {language === "zh" ? "中文语音" : "Chinese Voices"}
+            </Button>
+            <Button
+              onClick={() => setFreeOnlyFilter(!freeOnlyFilter)}
+              variant="outline"
+              className={`${freeOnlyFilter ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
+            >
+              {language === "zh" ? "免费语音" : "Free Voices"}
+            </Button>
+          </div>
+
+          {/* Voice Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {getFilteredVoices().map((voice) => (
+              <Card
+                key={voice.id}
+                className={`${themeClasses.card} ${themeClasses.cardHover} ${
+                  selectedVoice === voice.voice_code ? themeClasses.selectedCard : themeClasses.hoverCard
+                } cursor-pointer transition-all duration-300`}
+                onClick={() => {
+                  if (voice.is_premium && !user?.is_vip) {
+                    setShowVipModal(true)
+                    return
+                  }
+                  setSelectedVoice(voice.voice_code)
+                }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
+                        {voice.display_name}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Badge variant="outline" className="text-xs">
+                          {voice.language === "zh" ? "中文" : "English"}
+                        </Badge>
+                        {voice.gender && (
+                          <Badge variant="outline" className="text-xs">
+                            {voice.gender === "male" ? (language === "zh" ? "男声" : "Male") : (language === "zh" ? "女声" : "Female")}
+                          </Badge>
+                        )}
+                        <Badge 
+                          className={`text-xs ${voice.is_premium ? "bg-yellow-500 text-black" : "bg-green-500 text-white"}`}
+                        >
+                          {voice.is_premium ? (language === "zh" ? "VIP" : "VIP") : (language === "zh" ? "免费" : "Free")}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    {/* Play Button */}
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (voice.is_premium && !user?.is_vip) {
+                          setShowVipModal(true)
+                          return
+                        }
+                        if (voice.voice_file) {
+                          const audioUrl = `/static/voices/${voice.voice_file}`
+                          handlePlayAudio(voice.id.toString(), audioUrl)
+                        }
+                      }}
+                      size="lg"
+                      disabled={(voice.is_premium && !user?.is_vip) || !voice.voice_file}
+                      className={`w-12 h-12 rounded-full p-0 shadow-lg flex-shrink-0 transition-all duration-200 ${
+                        voice.is_premium && !user?.is_vip
+                          ? "bg-gray-400 cursor-not-allowed opacity-50"
+                          : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105"
+                      } text-white`}
+                    >
+                      {playingVoice === voice.id.toString() ? (
+                        <Pause className="w-5 h-5" />
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                    </Button>
+
+                    {/* Select Button */}
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (voice.is_premium && !user?.is_vip) {
+                          setShowVipModal(true)
+                          return
+                        }
+                        setSelectedVoice(voice.voice_code)
+                      }}
+                      variant={selectedVoice === voice.voice_code ? "default" : "outline"}
+                      size="sm"
+                      disabled={voice.is_premium && !user?.is_vip}
+                      className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
+                        voice.is_premium && !user?.is_vip
+                          ? "opacity-50 cursor-not-allowed"
+                          : selectedVoice === voice.voice_code
+                            ? `${themeClasses.button} text-white`
+                            : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                      }`}
+                    >
+                      {voice.is_premium && !user?.is_vip
+                        ? (language === "zh" ? "需要VIP" : "VIP Required")
+                        : selectedVoice === voice.voice_code
+                          ? t("voiceSelection.selected")
+                          : t("voiceSelection.select")
+                      }
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Audio Element */}
+          <audio ref={audioRef} onEnded={() => setPlayingVoice(null)} onError={() => setPlayingVoice(null)} />
+        </div>
+
+        {/* Bottom Navigation */}
+        <BottomNavigation
+          onBack={handleBack}
+          onNext={handleNext}
+          nextDisabled={!selectedVoice}
+          backLabel={t("common.back")}
+          nextLabel={t("voiceSelection.generateScript")}
+        />
+      </AppLayout>
+
+      {/* VIP Upgrade Modal */}
+      <VipUpgradeModal
+        isOpen={showVipModal}
+        onClose={() => setShowVipModal(false)}
+        feature="custom-voice"
+        onUpgrade={() => router.push('/vip')}
+      />
+    </div>
+  )
+}

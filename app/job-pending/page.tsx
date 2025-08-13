@@ -67,13 +67,15 @@ export default function JobPendingPage() {
     try {
       setLoading(true)
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.list()
+        apiConfig.videoJobs.list()
       )
 
       if (response.ok) {
         const data = await response.json()
-        // Map backend job data to frontend Job interface and add movie images
-        const mappedJobs = await Promise.all((data.jobs || []).map(async (job: any) => {
+        // Map backend video job data to frontend Job interface and add movie images
+        // Video jobs API returns array directly, not wrapped in {jobs: [...]}
+        const jobsArray = Array.isArray(data) ? data : (data.jobs || [])
+        const mappedJobs = await Promise.all(jobsArray.map(async (job: any) => {
           const baseJob = {
             ...job,
             movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',

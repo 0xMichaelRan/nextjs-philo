@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Clock, Film, User, Play, Search, Menu, X, Bell, Mic } from "lucide-react"
+import { Clock, Film, User, Play, Search, Menu, X, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +12,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { NotificationBell } from "@/components/notification-bell"
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -122,15 +123,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
           </Link>
 
           {/* Notification Button */}
-          <Link href="/notifications">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`${theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10"}`}
-            >
-              <Bell className="w-5 h-5" />
-            </Button>
-          </Link>
+          <NotificationBell />
         </div>
       </header>
 

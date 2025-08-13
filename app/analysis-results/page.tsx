@@ -46,6 +46,15 @@ export default function AnalysisResultsPage() {
 
   // Get jobId from flow state first, fallback to URL for backward compatibility
   const jobId = flowState.analysisJobId?.toString() || searchParams.get('jobId')
+
+  // Redirect to new URL structure
+  useEffect(() => {
+    if (jobId) {
+      router.replace(`/analysis-job/${jobId}`)
+    } else {
+      router.replace('/movie-selection')
+    }
+  }, [jobId, router])
   const [analysisJob, setAnalysisJob] = useState<AnalysisJob | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
