@@ -26,29 +26,7 @@ interface Movie {
   backdrop_url?: string
 }
 
-// Mock data for fallback
-const fallbackMovies = [
-  {
-    id: "tt0111161",
-    title: "肖申克的救赎",
-    title_en: "The Shawshank Redemption",
-    title_zh: "肖申克的救赎",
-    year: 1994,
-    genre: ["剧情", "犯罪"],
-    rating: 9.3,
-    poster_url: "/placeholder.svg?height=300&width=200",
-  },
-  {
-    id: "tt0068646",
-    title: "教父",
-    title_en: "The Godfather",
-    title_zh: "教父",
-    year: 1972,
-    genre: ["剧情", "犯罪"],
-    rating: 9.2,
-    poster_url: "/placeholder.svg?height=300&width=200",
-  },
-]
+// Removed fallbackMovies - show empty list if API fails
 
 const recentSearches = ["肖申克的救赎", "黑暗骑士", "教父", "盗梦空间"]
 
@@ -109,15 +87,15 @@ export default function MovieSelectionPage() {
         setMovies(data.movies || [])
         setFilteredMovies(data.movies || [])
       } else {
-        // Fallback to mock data
-        setMovies(fallbackMovies)
-        setFilteredMovies(fallbackMovies)
+        // Show empty list if API fails
+        setMovies([])
+        setFilteredMovies([])
       }
     } catch (error) {
       console.error("Error fetching movies:", error)
-      // Fallback to mock data
-      setMovies(fallbackMovies)
-      setFilteredMovies(fallbackMovies)
+      // Show empty list if API fails
+      setMovies([])
+      setFilteredMovies([])
     } finally {
       setLoading(false)
     }

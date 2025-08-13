@@ -278,22 +278,22 @@ export default function VoiceSelectionPage() {
         params.set("ttsProvider", "indexTTS") // Custom voices always use indexTTS
       } else {
         // Handle regular voice selection
-        const voice = voices.find(v => v.id.toString() === selectedVoice)
-        params.set("voiceId", selectedVoice)
-        params.set("voiceName", voice?.voice_name || "")
+        const voice = voices.find(v => v.voice_code === selectedVoice)
+        params.set("voiceId", voice?.voice_code || selectedVoice)  // Use voice_code as voiceId
+        params.set("voiceName", voice?.display_name || voice?.voice_code || "")
         params.set("voiceCode", voice?.voice_code || "")
         params.set("voiceLanguage", voiceLanguage)
         params.set("ttsProvider", ttsProvider) // Use selected TTS provider
       }
 
       // Update flow state with voice selection
-      const selectedVoiceData = voices.find(v => v.id.toString() === selectedVoice)
+      const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
       updateFlowState({
-        voiceId: selectedVoice.startsWith("custom_") ? "custom" : selectedVoice,
-        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.display_name_zh || selectedVoiceData?.display_name_en || selectedVoiceData?.voice_name || ""),
+        voiceId: selectedVoice.startsWith("custom_") ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
+        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.display_name_zh || selectedVoiceData?.display_name_en || selectedVoiceData?.voice_code || ""),
         voiceLanguage: voiceLanguage,
         customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
-        ttsProvider: selectedVoice.startsWith("custom_") ? "indexTTS" : ttsProvider
+        ttsProvider: selectedVoice.startsWith("custom_") ? "xfyun" : ttsProvider  // Changed from indexTTS to xfyun
       })
 
       router.push('/script-review')
@@ -411,7 +411,7 @@ export default function VoiceSelectionPage() {
             <div className="max-w-4xl mx-auto">
               <div className="grid gap-4 md:gap-6">
                 {voices.map((voice) => (
-                  <Card key={voice.id} className={getCardStyle(voice.id.toString())}>
+                  <Card key={voice.voice_code} className={getCardStyle(voice.voice_code)}>
                     <CardContent className="p-4 md:p-6">
                       <div className="flex items-center space-x-4">
                         {/* Avatar on Left - 1:2 ratio (taller) */}
@@ -494,10 +494,10 @@ export default function VoiceSelectionPage() {
 
                                 {/* Smaller Select Button */}
                                 <Button
-                                  onClick={() => setSelectedVoice(voice.id.toString())}
-                                  variant={selectedVoice === voice.id.toString() ? "default" : "outline"}
+                                  onClick={() => setSelectedVoice(voice.voice_code)}
+                                  variant={selectedVoice === voice.voice_code ? "default" : "outline"}
                                   size="sm"
-                                  className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${selectedVoice === voice.id.toString() ?
+                                  className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${selectedVoice === voice.voice_code ?
                                     `${themeClasses.button} text-white` :
                                     `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}`}
                                 >

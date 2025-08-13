@@ -78,7 +78,7 @@ export default function ScriptReviewPage() {
         voiceCode: flowState.voiceId, // Use voiceId as voiceCode for now
         voiceLanguage: flowState.voiceLanguage,
         customVoiceId: flowState.customVoiceId,
-        ttsProvider: flowState.ttsProvider || 'indexTTS',
+        ttsProvider: flowState.ttsProvider || 'xfyun',
         isCustom: flowState.voiceId === 'custom'
       })
     }
@@ -103,13 +103,21 @@ export default function ScriptReviewPage() {
 • 艺术手法评析
 • 社会意义阐述
 
-您可以选择不同的语音和TTS引擎来生成这段分析内容的音频版本。点击上方的"生成语音"按钮即可开始语音合成。`
+您可以选择不同的语音来生成这段分析内容的音频版本。语音将自动生成。`
       setLlmResponse(sampleResponse)
     }
 
     // Fetch script content if we have movie data
     fetchMovieData(flowState.movieId)
   }, [flowState, router])
+
+  // Auto-generate TTS when llmResponse changes
+  useEffect(() => {
+    if (llmResponse && voiceConfig && !isGenerating) {
+      console.log("Auto-generating TTS for analysis result...")
+      generateTTSAudio()
+    }
+  }, [llmResponse, voiceConfig])
 
   const fetchLLMResponse = async (analysisJobId: string) => {
     try {
@@ -143,7 +151,7 @@ export default function ScriptReviewPage() {
 
 由于无法获取真实的分析数据，这里显示的是示例内容。在实际使用中，这里会显示AI对电影的深度分析结果。
 
-这段文字将用于语音合成，生成相应的音频内容。您可以点击"生成语音"按钮来测试TTS功能。`
+这段文字将用于语音合成，生成相应的音频内容。语音将自动生成。`
         setLlmResponse(sampleResponse)
       }
     } catch (error) {
@@ -497,7 +505,7 @@ export default function ScriptReviewPage() {
                     size="lg"
                     className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
                     disabled={isGenerating || !generatedAudioUrl}
-                    title={!generatedAudioUrl ? (language === "zh" ? "请先生成语音" : "Please generate audio first") : ""}
+                    title={!generatedAudioUrl ? (language === "zh" ? "语音正在生成中" : "Audio is being generated") : ""}
                   >
                     {isGenerating ? (
                       <RefreshCw className="w-8 h-8 text-white animate-spin" />
@@ -513,10 +521,10 @@ export default function ScriptReviewPage() {
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                       <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 text-white">
                         <p className="text-sm mb-2">
-                          {language === "zh" ? "请先生成语音" : "Please generate audio first"}
+                          {language === "zh" ? "语音正在生成中" : "Audio is being generated"}
                         </p>
                         <p className="text-xs opacity-75">
-                          {language === "zh" ? "点击下方「生成语音」按钮" : "Click 'Generate Voice' button below"}
+                          {language === "zh" ? "请稍候，语音将自动播放" : "Please wait, audio will play automatically"}
                         </p>
                       </div>
                     </div>
@@ -576,24 +584,13 @@ export default function ScriptReviewPage() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    onClick={generateTTSAudio}
-                    disabled={isGenerating || !voiceConfig}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    size="sm"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        {language === "zh" ? "生成中..." : "Generating..."}
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        {language === "zh" ? "生成语音" : "Generate Voice"}
-                      </>
-                    )}
-                  </Button>
+                  {/* Auto-generation status indicator */}
+                  {isGenerating && (
+                    <div className="flex items-center text-blue-600 text-sm">
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      {language === "zh" ? "正在生成语音..." : "Generating audio..."}
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -720,7 +717,7 @@ export default function ScriptReviewPage() {
                   ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
                   : "bg-gray-400 text-gray-600 cursor-not-allowed"
               }`}
-              title={!generatedAudioUrl ? (language === "zh" ? "请先生成语音" : "Please generate audio first") : ""}
+              title={!generatedAudioUrl ? (language === "zh" ? "语音正在生成中" : "Audio is being generated") : ""}
             >
               {t("scriptReview.generateVideo")}
               <ArrowRight className="w-4 h-4 ml-2" />
