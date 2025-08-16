@@ -30,6 +30,7 @@ export interface FlowState {
 
   // Voice selection
   voiceId?: string
+  voiceCode?: string
   voiceName?: string
   voiceLanguage?: string
   customVoiceId?: string

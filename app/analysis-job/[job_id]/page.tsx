@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, ArrowRight, Download, Share2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Download, Share2, Edit, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Textarea } from "@/components/ui/textarea"
 
 import { AppLayout } from "@/components/app-layout"
 import { BottomNavigation } from "@/components/bottom-navigation"
@@ -50,6 +51,9 @@ export default function AnalysisJobPage() {
   const [analysisJob, setAnalysisJob] = useState<AnalysisJob | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedText, setEditedText] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   const getThemeClasses = () => {
@@ -141,6 +145,60 @@ export default function AnalysisJobPage() {
       setError(language === "zh" ? "网络错误" : "Network error")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleEditStart = () => {
+    if (analysisJob?.analysis_result) {
+      setEditedText(analysisJob.analysis_result)
+      setIsEditing(true)
+    }
+  }
+
+  const handleEditCancel = () => {
+    setIsEditing(false)
+    setEditedText("")
+  }
+
+  const handleEditSave = async () => {
+    if (!analysisJob || !editedText.trim()) return
+
+    try {
+      setIsSaving(true)
+
+      // Update the analysis job with the new text
+      const response = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.analysis.updateJob(analysisJob.id),
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            analysis_result: editedText.trim()
+          })
+        }
+      )
+
+      if (response.ok) {
+        // Update local state
+        setAnalysisJob(prev => prev ? { ...prev, analysis_result: editedText.trim() } : null)
+
+        // Update flow state
+        updateFlowState({
+          analysisResult: editedText.trim(),
+          analysisJobId: analysisJob.id,
+          movieId: analysisJob.movie_id
+        })
+
+        setIsEditing(false)
+        setEditedText("")
+      } else {
+        throw new Error('Failed to update analysis result')
+      }
+    } catch (error) {
+      console.error('Error saving analysis result:', error)
+      // You might want to add a toast notification here
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -264,16 +322,64 @@ export default function AnalysisJobPage() {
           {analysisJob?.status === 'completed' && analysisJob.analysis_result && (
             <Card className={`${themeClasses.card} ${themeClasses.cardHover}`}>
               <CardHeader>
-                <CardTitle className={themeClasses.text}>
-                  {language === "zh" ? "分析结果" : "Analysis Result"}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className={themeClasses.text}>
+                    {language === "zh" ? "分析结果" : "Analysis Result"}
+                  </CardTitle>
+                  {!isEditing && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEditStart}
+                      className={`${themeClasses.text} border-white/20 hover:bg-white/10`}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      {language === "zh" ? "编辑" : "Edit"}
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className={`${themeClasses.card} border border-white/20 rounded-lg p-4 max-h-96 overflow-y-auto`}>
-                  <pre className={`${themeClasses.text} text-sm whitespace-pre-wrap`}>
-                    {analysisJob.analysis_result}
-                  </pre>
-                </div>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value)}
+                      className={`${themeClasses.card} border border-white/20 min-h-[300px] text-sm`}
+                      placeholder={language === "zh" ? "编辑分析结果..." : "Edit analysis result..."}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={handleEditSave}
+                        disabled={isSaving || !editedText.trim()}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {isSaving
+                          ? (language === "zh" ? "保存中..." : "Saving...")
+                          : (language === "zh" ? "保存" : "Save")
+                        }
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleEditCancel}
+                        disabled={isSaving}
+                        className={`${themeClasses.text} border-white/20 hover:bg-white/10`}
+                        size="sm"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        {language === "zh" ? "取消" : "Cancel"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`${themeClasses.card} border border-white/20 rounded-lg p-4 max-h-96 overflow-y-auto`}>
+                    <pre className={`${themeClasses.text} text-sm whitespace-pre-wrap`}>
+                      {analysisJob.analysis_result}
+                    </pre>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

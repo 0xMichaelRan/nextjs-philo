@@ -383,12 +383,13 @@ export default function JobPendingPage() {
             ) : jobs.map((job) => (
               <Card
                 key={job.id}
-                className={`${themeClasses.card} ${themeClasses.cardHover} shadow-lg relative overflow-hidden border-l-4 border-orange-500`}
+                className={`${themeClasses.card} ${themeClasses.cardHover} shadow-lg relative overflow-hidden border-l-4 border-orange-500 cursor-pointer transition-transform hover:scale-[1.02]`}
                 style={{
                   backgroundImage: job.backdrop_url ? `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${job.backdrop_url})` : undefined,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }}
+                onClick={() => router.push(`/video-generation/${job.id}`)}
               >
                 <CardContent className="p-6 relative z-10">
                   <div className="flex items-start space-x-4 mb-4">
@@ -481,7 +482,10 @@ export default function JobPendingPage() {
                         <Button
                           size="sm"
                           className="bg-blue-600 hover:bg-blue-700"
-                          onClick={() => window.open(job.video_url || job.downloadUrl, '_blank')}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.open(job.video_url || job.downloadUrl, '_blank')
+                          }}
                         >
                           <Play className="w-4 h-4 mr-2" />
                           {language === "zh" ? "播放" : "Play"}
@@ -491,7 +495,8 @@ export default function JobPendingPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             const videoUrl = job.video_url || job.downloadUrl
                             if (videoUrl) {
                               const link = document.createElement('a')

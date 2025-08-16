@@ -73,6 +73,7 @@ const paymentMethods = [
 export default function PaymentPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const returnTo = searchParams.get('returnTo') // Get return URL from query params
   const [selectedPlan, setSelectedPlan] = useState("vip")
   const [billingCycle, setBillingCycle] = useState("monthly")
   const [selectedPayment, setSelectedPayment] = useState("alipay")
@@ -213,17 +214,15 @@ export default function PaymentPage() {
     setPromoError("")
   }, [selectedPlan, billingCycle, currentPlanPricing.price])
 
-  // Auto-validate promo code when it changes
+  // Reset promo state when promo code is cleared
   useEffect(() => {
-    if (promoCode.trim()) {
-      handlePromoCode()
-    } else {
+    if (!promoCode.trim()) {
       setFinalPrice(currentPlanPricing.price)
       setPromoDiscount(0)
       setPromoApplied(false)
       setPromoError("")
     }
-  }, [promoCode])
+  }, [promoCode, currentPlanPricing.price])
 
   // Get current VIP status display
   const getCurrentVipDisplay = () => {
@@ -360,7 +359,8 @@ export default function PaymentPage() {
             variant: "success",
           })
 
-          router.push("/payment/success")
+          const successUrl = returnTo ? `/payment/success?returnTo=${encodeURIComponent(returnTo)}` : "/payment/success"
+          router.push(successUrl)
         } else {
           // Regular payment processing - show QR code
           setShowQRCode(true)
@@ -401,7 +401,8 @@ export default function PaymentPage() {
                 // Clear any stored payment info
                 localStorage.removeItem('pending_payment_id')
 
-                router.push("/payment/success")
+                const successUrl = returnTo ? `/payment/success?returnTo=${encodeURIComponent(returnTo)}` : "/payment/success"
+                router.push(successUrl)
               } else {
                 throw new Error("Mock payment completion failed")
               }

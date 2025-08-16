@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Play, Pause, ArrowRight, Mic, Plus } from "lucide-react"
+import { Play, Pause, Mic, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-
 import { Badge } from "@/components/ui/badge"
 
 
@@ -237,16 +236,22 @@ export default function VoiceSelectionWithJobPage() {
     if (selectedVoice) {
       // Update flow state with voice selection and job ID
       const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
-      updateFlowState({
+      const voiceConfig = {
         voiceId: selectedVoice.startsWith("custom_") ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
+        voiceCode: selectedVoice.startsWith("custom_") ? selectedVoice : (selectedVoiceData?.voice_code || selectedVoice),
         voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
         voiceLanguage: voiceLanguage,
         customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
         ttsProvider: selectedVoice.startsWith("custom_") ? "xfyun" : ttsProvider,
         analysisJobId: parseInt(jobId)
-      })
+      }
 
-      router.push('/script-review')
+      console.log("Voice selection - Selected voice code:", selectedVoice)
+      console.log("Voice selection - Voice config:", voiceConfig)
+
+      updateFlowState(voiceConfig)
+
+      router.push(`/script-review/${jobId}`)
     }
   }
 
@@ -326,6 +331,13 @@ export default function VoiceSelectionWithJobPage() {
               className={`${languageFilter === "zh" ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
             >
               {language === "zh" ? "中文语音" : "Chinese Voices"}
+            </Button>
+            <Button
+              onClick={() => setLanguageFilter(languageFilter === "en" ? null : "en")}
+              variant="outline"
+              className={`${languageFilter === "en" ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
+            >
+              {language === "zh" ? "英文语音" : "English Voices"}
             </Button>
             <Button
               onClick={() => setFreeOnlyFilter(!freeOnlyFilter)}
@@ -438,6 +450,115 @@ export default function VoiceSelectionWithJobPage() {
               </Card>
             ))}
           </div>
+
+          {/* Custom Voice Section for VIP Users */}
+          {user?.is_vip && (
+            <div className="mb-8">
+              <div className="text-center mb-6">
+                <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>
+                  {language === "zh" ? "自定义语音" : "Custom Voices"}
+                </h3>
+                <p className={`${themeClasses.secondaryText}`}>
+                  {language === "zh" ? "使用您自己录制的语音" : "Use your own recorded voice"}
+                </p>
+              </div>
+
+              {/* Custom Voice Grid */}
+              {customVoices.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                  {customVoices.map((voice) => (
+                    <Card
+                      key={voice.id}
+                      className={`${themeClasses.card} ${themeClasses.cardHover} ${
+                        selectedVoice === `custom_${voice.id}` ? themeClasses.selectedCard : themeClasses.hoverCard
+                      } cursor-pointer transition-all duration-300`}
+                      onClick={() => setSelectedVoice(`custom_${voice.id}`)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
+                              {voice.display_name || voice.name}
+                            </h3>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <Badge variant="outline" className="text-xs">
+                                {voice.language === "zh" ? "中文" : "English"}
+                              </Badge>
+                              <Badge className="text-xs bg-purple-500 text-white">
+                                {language === "zh" ? "自定义" : "Custom"}
+                              </Badge>
+                              {voice.duration && (
+                                <Badge variant="outline" className="text-xs">
+                                  {voice.duration}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          {/* Play Button */}
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              // Custom voice playback logic would go here
+                              console.log("Playing custom voice:", voice.id)
+                            }}
+                            size="lg"
+                            variant="outline"
+                            className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
+                          >
+                            <Play className="w-4 h-4 mr-2" />
+                            {language === "zh" ? "试听" : "Preview"}
+                          </Button>
+
+                          {/* Select Button */}
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedVoice(`custom_${voice.id}`)
+                            }}
+                            variant={selectedVoice === `custom_${voice.id}` ? "default" : "outline"}
+                            size="sm"
+                            className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
+                              selectedVoice === `custom_${voice.id}`
+                                ? `${themeClasses.button} text-white`
+                                : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                            }`}
+                          >
+                            {selectedVoice === `custom_${voice.id}`
+                              ? t("voiceSelection.selected")
+                              : t("voiceSelection.select")
+                            }
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Custom Voice Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  onClick={() => router.push(`/custom-voice-record?returnTo=/voice-selection/${jobId}`)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  {language === "zh" ? "录制新语音" : "Record New Voice"}
+                </Button>
+
+                <Button
+                  onClick={() => router.push(`/my-voices?returnTo=/voice-selection/${jobId}`)}
+                  variant="outline"
+                  className={`${themeClasses.filterButton}`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {language === "zh" ? "管理语音" : "Manage Voices"}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Audio Element */}
           <audio ref={audioRef} onEnded={() => setPlayingVoice(null)} onError={() => setPlayingVoice(null)} />

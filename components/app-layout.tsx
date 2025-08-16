@@ -13,6 +13,14 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { NotificationBell } from "@/components/notification-bell"
+import { apiConfig } from "@/lib/api-config"
+
+interface UserStats {
+  dailyRemaining: number
+  totalGenerated: number
+  monthlyUsed: number
+  monthlyLimit: number | null
+}
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -23,6 +31,8 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const [isNavOpen, setIsNavOpen] = useState(false)
   const [hideUserStats, setHideUserStats] = useState(false)
   const [hideUpgradeCTA, setHideUpgradeCTA] = useState(false)
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { user, logout } = useAuth()
@@ -34,6 +44,59 @@ export function AppLayout({ children, title }: AppLayoutProps) {
     setHideUserStats(false)
     setHideUpgradeCTA(false)
   }, [])
+
+  // Fetch user stats when user is available
+  useEffect(() => {
+    if (user && !hideUserStats) {
+      fetchUserStats()
+    }
+  }, [user, hideUserStats])
+
+  const fetchUserStats = async () => {
+    if (!user || statsLoading) return
+
+    try {
+      setStatsLoading(true)
+
+      // Fetch VIP status and usage statistics
+      const vipResponse = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.jobs.vipStatus(),
+        { method: 'GET' }
+      )
+
+      if (vipResponse.ok) {
+        const vipData = await vipResponse.json()
+
+        // Calculate daily remaining based on monthly usage
+        const monthlyUsed = vipData.usage?.monthly_jobs?.current || 0
+        const monthlyLimit = vipData.usage?.monthly_jobs?.limit
+        const dailyRemaining = monthlyLimit ? Math.max(0, monthlyLimit - monthlyUsed) : (user.is_vip ? 999 : 1)
+
+        // Fetch total video count
+        const videosResponse = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.videoJobs.list(),
+          { method: 'GET' }
+        )
+
+        let totalGenerated = 0
+        if (videosResponse.ok) {
+          const videos = await videosResponse.json()
+          totalGenerated = videos.length || 0
+        }
+
+        setUserStats({
+          dailyRemaining,
+          totalGenerated,
+          monthlyUsed,
+          monthlyLimit
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -168,33 +231,56 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                 </Button>
                 <CardContent className="p-4">
                   <h3 className={`${getTextClasses()} font-semibold mb-3`}>{t("nav.usageStats")}</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
-                      <span>{t("nav.dailyRemaining")}</span>
-                      <span className={getTextClasses()}>{user.is_vip ? "∞" : "0/1"}</span>
+                  {statsLoading ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-300 rounded"></div>
+                      </div>
                     </div>
-                    <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
-                      <span>{t("nav.totalGenerated")}</span>
-                      <span className={getTextClasses()}>15</span>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
+                        <span>{language === "zh" ? "今日剩余" : "Daily Remaining"}</span>
+                        <span className={getTextClasses()}>
+                          {user.is_vip
+                            ? "∞"
+                            : userStats
+                              ? `${userStats.dailyRemaining}`
+                              : "0"
+                          }
+                        </span>
+                      </div>
+                      <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
+                        <span>{language === "zh" ? "本月已用" : "Monthly Used"}</span>
+                        <span className={getTextClasses()}>
+                          {userStats?.monthlyUsed || 0}
+                          {userStats?.monthlyLimit && userStats.monthlyLimit < 999 ? `/${userStats.monthlyLimit}` : ""}
+                        </span>
+                      </div>
+                      <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
+                        <span>{language === "zh" ? "总计生成" : "Total Generated"}</span>
+                        <span className={getTextClasses()}>{userStats?.totalGenerated || 0}</span>
+                      </div>
+                      <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
+                        <span>{t("nav.memberStatus")}</span>
+                        {user.is_vip ? (
+                          <VipBadge
+                            isVip={user.is_vip}
+                            subscriptionStatus={user.subscription_status}
+                            daysRemaining={user.vip_days_remaining}
+                            showDaysRemaining={true}
+                            size="sm"
+                          />
+                        ) : (
+                          <Badge className="bg-gray-500 text-white text-xs">
+                            {t("nav.freeUser")}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
-                      <span>{t("nav.memberStatus")}</span>
-                      {user.is_vip ? (
-                        <VipBadge
-                          isVip={user.is_vip}
-                          subscriptionStatus={user.subscription_status}
-                          daysRemaining={user.vip_days_remaining}
-                          showDaysRemaining={true}
-                          size="sm"
-                        />
-                      ) : (
-                        <Badge className="bg-gray-500 text-white text-xs">
-                          {t("nav.freeUser")}
-                        </Badge>
-                      )}
-                    </div>
-
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             )}

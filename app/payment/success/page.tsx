@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { CheckCircle, Crown, ArrowRight, Calendar } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { CheckCircle, Crown, ArrowRight, Calendar, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/auth-context"
 
 export default function PaymentSuccessPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnTo = searchParams.get('returnTo')
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user, fetchUserProfile } = useAuth()
@@ -119,12 +121,22 @@ export default function PaymentSuccessPage() {
                 )}
 
                 <div className="space-y-3">
-                  <Link href="/movie-selection">
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      {language === "zh" ? "开始创作吧！" : "Start Creating"}
+                  {returnTo ? (
+                    <Button
+                      onClick={() => router.push(returnTo)}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      {language === "zh" ? "返回继续创作" : "Return to Continue"}
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link href="/movie-selection">
+                      <Button className="w-full bg-green-600 hover:bg-green-700">
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        {language === "zh" ? "开始创作吧！" : "Start Creating"}
+                      </Button>
+                    </Link>
+                  )}
   {/* extra spacer */}
   <div className="h-2" />       {/* or h-4, h-6, etc. */}
 

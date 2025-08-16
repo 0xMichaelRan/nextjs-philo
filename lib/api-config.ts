@@ -181,8 +181,8 @@ class ApiConfig {
 
   // Video Job endpoints
   public videoJobs = {
-    create: () => `${this.baseUrl}/video-jobs`,
-    list: () => `${this.baseUrl}/video-jobs`,
+    create: () => `${this.baseUrl}/video-jobs/`,
+    list: () => `${this.baseUrl}/video-jobs/`,
     details: (id: number) => `${this.baseUrl}/video-jobs/${id}`,
   }
 
