@@ -200,7 +200,17 @@ export default function VideoJobPage() {
                 {error}
               </p>
               <div className="space-x-4">
-                <Button onClick={() => router.back()} variant="outline">
+                <Button
+                  onClick={() => {
+                    // Navigate based on job status if available, otherwise go to job-pending
+                    if (job && job.status === 'completed') {
+                      router.push('/video-generation')
+                    } else {
+                      router.push('/job-pending')
+                    }
+                  }}
+                  variant="outline"
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   {language === "zh" ? "返回" : "Go Back"}
                 </Button>
@@ -226,7 +236,14 @@ export default function VideoJobPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => router.back()}
+                onClick={() => {
+                  // Navigate based on job status
+                  if (job && (job.status === 'pending' || job.status === 'processing')) {
+                    router.push('/job-pending')
+                  } else {
+                    router.push('/video-generation')
+                  }
+                }}
                 className={`${themeClasses.text} hover:bg-white/10`}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
