@@ -395,6 +395,37 @@ export default function VideoJobPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* TTS Text Content */}
+          <Card className={`${themeClasses.card} mt-8`}>
+            <CardHeader>
+              <CardTitle className={themeClasses.text}>
+                {language === "zh" ? "TTS文本内容" : "TTS Text Content"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <span className={`${themeClasses.secondaryText} text-sm font-medium`}>
+                    {language === "zh" ? "文本长度" : "Text Length"}
+                  </span>
+                  <p className={themeClasses.text}>
+                    {job.tts_text.length} {language === "zh" ? "字符" : "characters"}
+                  </p>
+                </div>
+                <div>
+                  <span className={`${themeClasses.secondaryText} text-sm font-medium`}>
+                    {language === "zh" ? "文本内容" : "Text Content"}
+                  </span>
+                  <div className={`${themeClasses.text} mt-2 p-4 bg-gray-100/20 rounded-lg max-h-96 overflow-y-auto`}>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {job.tts_text}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </AppLayout>
     </div>
