@@ -18,6 +18,8 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
+import { useAuthGuard, checkAuthForAction } from "@/hooks/use-auth-guard"
+import { useAuth } from "@/contexts/auth-context"
 
 interface PromptTemplate {
   id: number
@@ -48,6 +50,10 @@ export default function AnalysisConfigPage() {
   const { language } = useLanguage()
   const { theme } = useTheme()
   const { flowState, updateFlowState } = useFlow()
+  const { user } = useAuth()
+
+  // Analysis config page doesn't require authentication, but next step does
+  useAuthGuard({ requireAuth: false })
 
   // Get movieId from flow state first, fallback to URL for backward compatibility
   const movieId = flowState.movieId || searchParams.get('movieId')
@@ -315,6 +321,11 @@ export default function AnalysisConfigPage() {
       return
     }
 
+    // Check authentication before proceeding to next step
+    if (!checkAuthForAction(user, router, `/analysis-config?movieId=${movieId}`)) {
+      return
+    }
+
     // Save current state to flow state
     updateFlowState({
       movieId: movieId,
@@ -368,7 +379,7 @@ export default function AnalysisConfigPage() {
           {/* Header */}
           <div className="mb-6">
             <Button
-              onClick={() => router.back()}
+              onClick={() => router.push(`/movie/${movieId}`)}
               variant="ghost"
               className={`${themeClasses.text} hover:bg-white/10 mb-4`}
             >
@@ -526,7 +537,7 @@ export default function AnalysisConfigPage() {
 
           {/* Bottom Navigation */}
           <BottomNavigation
-            onBack={() => router.back()}
+            onBack={() => router.push(`/movie/${movieId}`)}
             onNext={handleNext}
           />
         </div>

@@ -13,6 +13,7 @@ import { VideoPlayer } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
 
@@ -38,9 +39,7 @@ interface VideoJob {
   thumbnail_url?: string
   narration_audio_url?: string
   error_message?: string
-  video_quality: string
-  video_format: string
-  video_resolution: string
+  resolution: string
   created_at: string
   updated_at: string
   completed_at?: string
@@ -52,12 +51,12 @@ export default function VideoJobPage() {
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
+  const { onJobUpdate } = useRealtimeNotifications()
   const { toast } = useToast()
 
   const [job, setJob] = useState<VideoJob | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   const jobId = params.job_id as string
 
@@ -90,31 +89,29 @@ export default function VideoJobPage() {
     }
   }
 
-  // Start polling for job updates
+  // Initial job fetch
   useEffect(() => {
     fetchJob()
-
-    // Poll every 5 seconds if job is in progress
-    const interval = setInterval(() => {
-      if (job && (job.status === 'pending' || job.status === 'queued' || job.status === 'processing')) {
-        fetchJob()
-      }
-    }, 5000)
-
-    setPollingInterval(interval)
-
-    return () => {
-      if (interval) clearInterval(interval)
-    }
   }, [jobId, user])
 
-  // Stop polling when job is completed or failed
+  // Subscribe to real-time job updates
   useEffect(() => {
-    if (job && (job.status === 'completed' || job.status === 'failed') && pollingInterval) {
-      clearInterval(pollingInterval)
-      setPollingInterval(null)
-    }
-  }, [job?.status, pollingInterval])
+    if (!user || !jobId) return
+
+    const unsubscribe = onJobUpdate((data) => {
+      // Update job if it matches current job ID
+      if (data.job_id === jobId) {
+        setJob(prevJob => prevJob ? {
+          ...prevJob,
+          status: data.status as VideoJob['status'],
+          progress: data.progress,
+          error_message: data.error_message
+        } : null)
+      }
+    })
+
+    return unsubscribe
+  }, [user, jobId, onJobUpdate])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -313,7 +310,7 @@ export default function VideoJobPage() {
             </Card>
 
             {/* Video Preview */}
-            {job.status === 'completed' && job.video_url && (
+            {job.status === 'completed' && (job.video_url || job.result_video_url) && (
               <Card className={themeClasses.card}>
                 <CardHeader>
                   <CardTitle className={themeClasses.text}>
@@ -322,20 +319,30 @@ export default function VideoJobPage() {
                 </CardHeader>
                 <CardContent>
                   <VideoPlayer
-                    src={job.video_url}
-                    poster={job.thumbnail_url}
+                    src={job.video_url
+                      ? `${apiConfig.getBaseUrl()}${job.video_url}`
+                      : job.result_video_url
+                        ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
+                        : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
+                    }
+                    poster={job.thumbnail_url ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}` : undefined}
                     className="w-full rounded-lg"
                   />
                   <div className="mt-4 flex space-x-2">
                     <Button asChild className="flex-1">
-                      <a href={job.video_url} download>
+                      <a href={job.video_url
+                        ? `${apiConfig.getBaseUrl()}${job.video_url}`
+                        : job.result_video_url
+                          ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
+                          : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
+                      } download>
                         <Download className="w-4 h-4 mr-2" />
                         {language === "zh" ? "下载视频" : "Download Video"}
                       </a>
                     </Button>
                     {job.narration_audio_url && (
                       <Button variant="outline" asChild>
-                        <a href={job.narration_audio_url} download>
+                        <a href={`${apiConfig.getBaseUrl()}${job.narration_audio_url}`} download>
                           <Download className="w-4 h-4 mr-2" />
                           {language === "zh" ? "下载音频" : "Download Audio"}
                         </a>
@@ -382,15 +389,9 @@ export default function VideoJobPage() {
                 </div>
                 <div>
                   <span className={themeClasses.secondaryText}>
-                    {language === "zh" ? "视频质量" : "Video Quality"}
-                  </span>
-                  <p className={themeClasses.text}>{job.video_quality}</p>
-                </div>
-                <div>
-                  <span className={themeClasses.secondaryText}>
                     {language === "zh" ? "分辨率" : "Resolution"}
                   </span>
-                  <p className={themeClasses.text}>{job.video_resolution}</p>
+                  <p className={themeClasses.text}>{job.resolution}</p>
                 </div>
               </div>
             </CardContent>

@@ -14,6 +14,8 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
+import { PageNavigation } from "@/components/page-navigation"
 
 interface MovieData {
   id: string
@@ -132,6 +134,9 @@ export default function MovieHomePage() {
   const { flowState, updateFlowState, clearFlowState } = useFlow()
 
   const movieId = params.id as string
+
+  // Movie detail page doesn't require authentication
+  useAuthGuard({ requireAuth: false })
 
   useEffect(() => {
     const movieId = params.id as string
@@ -278,7 +283,7 @@ export default function MovieHomePage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.back()}
+              onClick={() => router.push('/movie-selection')}
               className="flex items-center"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -442,16 +447,13 @@ export default function MovieHomePage() {
               )}
             </div>
 
-            {/* Enhanced Action Button - Hidden on mobile (shown in fixed bottom bar) */}
+            {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
             <div className="pt-6 hidden md:block">
-              <Button
-                onClick={handleGenerateVideo}
-                size="lg"
-                className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-12 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <Play className="w-6 h-6 mr-3" />
-                {language === "zh" ? "开始生成视频分析" : "Start Video Analysis"}
-              </Button>
+              <PageNavigation
+                onPrevious={() => router.push('/movie-selection')}
+                onNext={handleGenerateVideo}
+                nextLabel={language === "zh" ? "开始分析" : "Start Analysis"}
+              />
             </div>
           </div>
         </div>
@@ -511,14 +513,23 @@ export default function MovieHomePage() {
 
       {/* Mobile Bottom Bar */}
       <MobileBottomBar>
-        <Button
-          onClick={handleGenerateVideo}
-          size="lg"
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <Play className="w-6 h-6 mr-3" />
-          {language === "zh" ? "开始生成视频分析" : "Start Video Analysis"}
-        </Button>
+        <div className="flex space-x-3 w-full">
+          <Button
+            onClick={() => router.push('/movie-selection')}
+            variant="outline"
+            size="lg"
+            className="flex-1 py-4"
+          >
+            {language === "zh" ? "上一步" : "Previous"}
+          </Button>
+          <Button
+            onClick={handleGenerateVideo}
+            size="lg"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4"
+          >
+            {language === "zh" ? "开始分析" : "Start Analysis"}
+          </Button>
+        </div>
       </MobileBottomBar>
     </AppLayout>
   )

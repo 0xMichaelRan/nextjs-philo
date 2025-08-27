@@ -12,7 +12,31 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
+
+// Utility function for relative time formatting
+const formatRelativeTime = (dateString: string): string => {
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds} seconds ago`
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60)
+    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600)
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`
+  } else if (diffInSeconds < 2592000) {
+    const days = Math.floor(diffInSeconds / 86400)
+    return `${days} day${days > 1 ? 's' : ''} ago`
+  } else {
+    const months = Math.floor(diffInSeconds / 2592000)
+    return `${months} month${months > 1 ? 's' : ''} ago`
+  }
+}
 
 interface Job {
   id: string
@@ -57,9 +81,11 @@ export default function JobPendingPage() {
   const [loading, setLoading] = useState(true)
   const [jobLimits, setJobLimits] = useState<JobLimits | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showFailedJobs, setShowFailedJobs] = useState(false)
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
+  const { onJobUpdate } = useRealtimeNotifications()
 
   const fetchJobs = async () => {
     if (!user) return
@@ -75,12 +101,13 @@ export default function JobPendingPage() {
         // Map backend video job data to frontend Job interface and add movie images
         // Video jobs API returns array directly, not wrapped in {jobs: [...]}
         const jobsArray = Array.isArray(data) ? data : (data.jobs || [])
-        const mappedJobs = await Promise.all(jobsArray.map(async (job: any) => {
+        const filteredJobs = jobsArray.filter((job: any) => job.status !== 'completed') // Filter out completed jobs
+        const mappedJobs = await Promise.all(filteredJobs.map(async (job: any) => {
           const baseJob = {
             ...job,
             movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',
-            createdAt: job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown time',
-            updatedAt: job.updated_at ? new Date(job.updated_at).toLocaleString() : 'Unknown time',
+            createdAt: job.created_at ? formatRelativeTime(job.created_at) : 'Unknown time',
+            updatedAt: job.updated_at ? formatRelativeTime(job.updated_at) : 'Unknown time',
           }
 
           // Add movie images if movie_id exists
@@ -127,19 +154,7 @@ export default function JobPendingPage() {
     }
   }, [user])
 
-  // Auto-refresh jobs every 30 seconds for pending/processing jobs
-  useEffect(() => {
-    if (!user) return
-
-    const hasPendingJobs = jobs.some(job =>
-      job.status === 'pending' || job.status === 'processing' || job.status === 'queued'
-    )
-
-    if (hasPendingJobs) {
-      const interval = setInterval(fetchJobs, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [jobs, user])
+  // No more HTTP polling - using SSE for real-time updates
 
   // Check for error from URL params
   useEffect(() => {
@@ -181,17 +196,23 @@ export default function JobPendingPage() {
 
   const themeClasses = getThemeClasses()
 
+  // Subscribe to real-time job updates
   useEffect(() => {
     if (!user) return
 
-    // Poll for job updates every 5 seconds
-    const interval = setInterval(() => {
-      fetchJobs()
-      fetchJobLimits()
-    }, 5000)
+    const unsubscribe = onJobUpdate((data) => {
+      // Update specific job in the list
+      setJobs(prevJobs =>
+        prevJobs.map(job =>
+          job.id === data.job_id
+            ? { ...job, status: data.status as Job['status'], progress: data.progress }
+            : job
+        ).filter(job => job.status !== 'completed') // Remove completed jobs
+      )
+    })
 
-    return () => clearInterval(interval)
-  }, [user])
+    return unsubscribe
+  }, [user, onJobUpdate])
 
   const getStatusBadge = (status: Job['status']) => {
     const badges = {
@@ -275,6 +296,11 @@ export default function JobPendingPage() {
     }
   }
 
+  // Filter jobs by status
+  const pendingJobs = jobs.filter(job => ['draft', 'pending', 'queued', 'processing'].includes(job.status))
+  const failedJobs = jobs.filter(job => ['failed', 'cancelled'].includes(job.status))
+  const displayedJobs = showFailedJobs ? [...pendingJobs, ...failedJobs] : pendingJobs
+
   return (
     <div className={themeClasses.background}>
       <AppLayout title={language === "zh" ? "视频任务" : "Video Jobs"}>
@@ -299,6 +325,33 @@ export default function JobPendingPage() {
                 {language === "zh" ? "我的视频" : "My Videos"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
+            </div>
+
+            {/* Job Status Toggle */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <span className={`${themeClasses.text} text-sm`}>
+                  {language === "zh" ? "显示任务：" : "Show jobs:"}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    {language === "zh" ? `待处理 (${pendingJobs.length})` : `Pending (${pendingJobs.length})`}
+                  </Badge>
+                  {failedJobs.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowFailedJobs(!showFailedJobs)}
+                      className={`text-red-600 border-red-600 hover:bg-red-50 ${showFailedJobs ? 'bg-red-50' : ''}`}
+                    >
+                      {showFailedJobs ?
+                        (language === "zh" ? `隐藏失败任务 (${failedJobs.length})` : `Hide Failed (${failedJobs.length})`) :
+                        (language === "zh" ? `显示失败任务 (${failedJobs.length})` : `Show Failed (${failedJobs.length})`)
+                      }
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -380,7 +433,7 @@ export default function JobPendingPage() {
                   </p>
                 </CardContent>
               </Card>
-            ) : jobs.map((job) => (
+            ) : displayedJobs.map((job) => (
               <Card
                 key={job.id}
                 className={`${themeClasses.card} ${themeClasses.cardHover} shadow-lg relative overflow-hidden border-l-4 border-orange-500 cursor-pointer transition-transform hover:scale-[1.02]`}

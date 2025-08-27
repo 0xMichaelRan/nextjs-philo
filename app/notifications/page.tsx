@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 // Types for notifications from backend API
 interface Notification {
@@ -72,6 +73,9 @@ export default function NotificationsPage() {
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
+
+  // Notifications page doesn't require authentication
+  useAuthGuard({ requireAuth: false })
 
   const [activeTab, setActiveTab] = useState(user ? "notifications" : "news")
   const [notifications, setNotifications] = useState<Notification[]>([])

@@ -40,6 +40,9 @@ export interface FlowState {
   scriptLength?: string
   scriptTone?: string
 
+  // Video options
+  resolution?: number // 480, 720, or 1080
+
   // Job metadata
   jobId?: string
   requiresLogin?: boolean

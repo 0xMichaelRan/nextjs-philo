@@ -12,6 +12,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { NotificationBell } from "@/components/notification-bell"
 import { apiConfig } from "@/lib/api-config"
 
@@ -36,6 +37,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   const { theme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { user, logout } = useAuth()
+  const { onJobUpdate } = useRealtimeNotifications()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -51,6 +53,20 @@ export function AppLayout({ children, title }: AppLayoutProps) {
       fetchUserStats()
     }
   }, [user, hideUserStats])
+
+  // Subscribe to real-time job updates to refresh stats
+  useEffect(() => {
+    if (!user) return
+
+    const unsubscribe = onJobUpdate((data) => {
+      // Refresh stats when a job completes or fails
+      if (data.status === 'completed' || data.status === 'failed') {
+        fetchUserStats()
+      }
+    })
+
+    return unsubscribe
+  }, [user, onJobUpdate])
 
   const fetchUserStats = async () => {
     if (!user || statsLoading) return
@@ -81,7 +97,11 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         let totalGenerated = 0
         if (videosResponse.ok) {
           const videos = await videosResponse.json()
-          totalGenerated = videos.length || 0
+          // Only count completed and pending jobs, ignore failed jobs
+          const validJobs = videos.filter((job: any) =>
+            job.status === 'completed' || job.status === 'pending' || job.status === 'processing' || job.status === 'queued'
+          )
+          totalGenerated = validJobs.length || 0
         }
 
         setUserStats({

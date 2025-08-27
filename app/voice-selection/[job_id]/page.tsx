@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Play, Pause, Mic, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -52,9 +52,11 @@ interface CustomVoice {
 export default function VoiceSelectionWithJobPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const jobId = params.job_id as string
   
   const [selectedVoice, setSelectedVoice] = useState("")
+  const [selectedResolution, setSelectedResolution] = useState<number>(480)
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
   const [voices, setVoices] = useState<DefaultVoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -113,6 +115,28 @@ export default function VoiceSelectionWithJobPage() {
   useEffect(() => {
     fetchVoices()
   }, [])
+
+  // Initialize selected voice and resolution from flow state
+  useEffect(() => {
+    if (flowState.voiceCode) {
+      setSelectedVoice(flowState.voiceCode)
+    }
+    if (flowState.resolution) {
+      setSelectedResolution(flowState.resolution)
+    }
+  }, [flowState.voiceCode, flowState.resolution])
+
+  // Handle new voice selection from custom voice recording
+  useEffect(() => {
+    const newVoiceId = searchParams.get('newVoiceId')
+    if (newVoiceId && voices.length > 0) {
+      setSelectedVoice(newVoiceId)
+      // Clear the parameter from URL
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('newVoiceId')
+      window.history.replaceState({}, '', newUrl.toString())
+    }
+  }, [voices, searchParams])
 
   const fetchVoices = async () => {
     try {
@@ -233,26 +257,45 @@ export default function VoiceSelectionWithJobPage() {
       return
     }
 
-    if (selectedVoice) {
-      // Update flow state with voice selection and job ID
-      const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
-      const voiceConfig = {
-        voiceId: selectedVoice.startsWith("custom_") ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
-        voiceCode: selectedVoice.startsWith("custom_") ? selectedVoice : (selectedVoiceData?.voice_code || selectedVoice),
-        voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
-        voiceLanguage: voiceLanguage,
-        customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
-        ttsProvider: selectedVoice.startsWith("custom_") ? "xfyun" : ttsProvider,
-        analysisJobId: parseInt(jobId)
-      }
-
-      console.log("Voice selection - Selected voice code:", selectedVoice)
-      console.log("Voice selection - Voice config:", voiceConfig)
-
-      updateFlowState(voiceConfig)
-
-      router.push(`/script-review/${jobId}`)
+    if (!selectedVoice) {
+      toast({
+        title: language === "zh" ? "请选择语音" : "Please select a voice",
+        description: language === "zh" ? "请选择一个语音后继续" : "Please select a voice to continue",
+        variant: "destructive",
+      })
+      return
     }
+
+    // Check resolution restrictions for non-VIP users
+    if (!user.is_vip && selectedResolution > 480) {
+      toast({
+        title: language === "zh" ? "分辨率限制" : "Resolution Restriction",
+        description: language === "zh" ? "免费用户只能选择480p分辨率，升级VIP可选择更高分辨率" : "Free users can only select 480p resolution. Upgrade to VIP for higher resolutions",
+        variant: "destructive",
+      })
+      setSelectedResolution(480)
+      return
+    }
+
+    // Update flow state with voice selection and job ID
+    const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
+    const voiceConfig = {
+      voiceId: selectedVoice.startsWith("custom_") ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
+      voiceCode: selectedVoice.startsWith("custom_") ? selectedVoice : (selectedVoiceData?.voice_code || selectedVoice),
+      voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
+      voiceLanguage: voiceLanguage,
+      customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
+      ttsProvider: selectedVoice.startsWith("custom_") ? "xfyun" : ttsProvider,
+      analysisJobId: parseInt(jobId),
+      resolution: selectedResolution
+    }
+
+    console.log("Voice selection - Selected voice code:", selectedVoice)
+    console.log("Voice selection - Voice config:", voiceConfig)
+
+    updateFlowState(voiceConfig)
+
+    router.push(`/script-review/${jobId}`)
   }
 
   const handleBack = () => {
@@ -323,6 +366,17 @@ export default function VoiceSelectionWithJobPage() {
             </p>
           </div>
 
+          {/* Resolution Selection Link */}
+          <div className="mb-8 text-center">
+            <Button
+              onClick={() => router.push(`/resolution-selection?jobId=${jobId}&returnTo=/voice-selection/${jobId}`)}
+              variant="outline"
+              className={`${themeClasses.filterButton} px-6 py-3`}
+            >
+              {language === "zh" ? `当前分辨率: ${selectedResolution}p - 点击更改` : `Current Resolution: ${selectedResolution}p - Click to Change`}
+            </Button>
+          </div>
+
           {/* Filter Buttons */}
           <div className="flex flex-wrap gap-3 mb-6 justify-center">
             <Button
@@ -371,11 +425,11 @@ export default function VoiceSelectionWithJobPage() {
                         {voice.display_name}
                       </h3>
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
                           {voice.language === "zh" ? "中文" : "English"}
                         </Badge>
                         {voice.gender && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
                             {voice.gender === "male" ? (language === "zh" ? "男声" : "Male") : (language === "zh" ? "女声" : "Female")}
                           </Badge>
                         )}
@@ -481,14 +535,14 @@ export default function VoiceSelectionWithJobPage() {
                               {voice.display_name || voice.name}
                             </h3>
                             <div className="flex flex-wrap gap-2 mb-3">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
                                 {voice.language === "zh" ? "中文" : "English"}
                               </Badge>
                               <Badge className="text-xs bg-purple-500 text-white">
                                 {language === "zh" ? "自定义" : "Custom"}
                               </Badge>
                               {voice.duration && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
                                   {voice.duration}
                                 </Badge>
                               )}
@@ -501,14 +555,20 @@ export default function VoiceSelectionWithJobPage() {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              // Custom voice playback logic would go here
-                              console.log("Playing custom voice:", voice.id)
+                              if (voice.audio_url) {
+                                const customVoiceId = `custom_${voice.id}`
+                                handlePlayAudio(customVoiceId, voice.audio_url)
+                              }
                             }}
                             size="lg"
                             variant="outline"
                             className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
                           >
-                            <Play className="w-4 h-4 mr-2" />
+                            {playingVoice === `custom_${voice.id}` ? (
+                              <Pause className="w-4 h-4 mr-2" />
+                            ) : (
+                              <Play className="w-4 h-4 mr-2" />
+                            )}
                             {language === "zh" ? "试听" : "Preview"}
                           </Button>
 

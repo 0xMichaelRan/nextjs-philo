@@ -38,9 +38,7 @@ interface VideoJob {
   thumbnail_url?: string
   narration_audio_url?: string
   error_message?: string
-  video_quality: string
-  video_format: string
-  video_resolution: string
+  resolution: string
   created_at: string
   updated_at: string
   completed_at?: string
@@ -269,7 +267,7 @@ export default function VideoGenerationPage() {
                       <CardContent className="p-0">
                         <div className="relative">
                           <img
-                            src={job.thumbnail_url || "/placeholder.svg"}
+                            src={job.thumbnail_url ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}` : "/placeholder.svg"}
                             alt={job.movie_title}
                             className="w-full h-32 object-cover"
                           />
@@ -320,7 +318,7 @@ export default function VideoGenerationPage() {
                                 <Button
                                   size="sm"
                                   className="flex-1 bg-green-600 hover:bg-green-700"
-                                  onClick={() => window.open(job.result_video_url, '_blank')}
+                                  onClick={() => window.open(`${apiConfig.getBaseUrl()}${job.video_url || job.result_video_url}`, '_blank')}
                                 >
                                   <Download className="w-4 h-4 mr-2" />
                                   {language === "zh" ? "下载" : "Download"}
@@ -346,8 +344,8 @@ export default function VideoGenerationPage() {
               {selectedVideo && (
                 <div className="aspect-video">
                   <VideoPlayer
-                    src={selectedVideo.result_video_url || selectedVideo.video_url || ""}
-                    poster={selectedVideo.thumbnail_url}
+                    src={`${apiConfig.getBaseUrl()}${selectedVideo.video_url || selectedVideo.result_video_url || ""}`}
+                    poster={selectedVideo.thumbnail_url ? `${apiConfig.getBaseUrl()}${selectedVideo.thumbnail_url}` : undefined}
                     className="w-full h-full"
                   />
                 </div>

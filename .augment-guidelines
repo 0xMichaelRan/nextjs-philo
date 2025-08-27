@@ -45,7 +45,8 @@ app/
 - **Theme switching**: Components must work in light/dark modes
 - **VIP features**: Proper VIP/SVIP gating for premium features
 - **Audio handling**: Voice selection and custom voice recording
-- **Real-time updates**: Job status and video generation progress
+- **Real-time updates**: Server-Sent Events (SSE) for instant job status and notifications
+- **Video playback**: Completed videos served from backend with proper authentication
 - **Phone number authentication**: Primary auth method with verification codes
 - **Password reset**: Phone-based password reset with verification
 
@@ -59,6 +60,9 @@ app/
 7. Prefer Zustand + localStorage over React Context for complex state
 8. Only clear flowState when selecting new movie (not on every navigation)
 9. Redirect to auth page on 401 errors then return to previous page
+10. Use SSE for real-time updates instead of HTTP polling
+11. Filter completed jobs from job-pending page (show in video-generation instead)
+12. Use resolution selection with VIP restrictions (480p free, 720p/1080p VIP)
 
 ### API Integration
 - **Backend API**: `localhost:8009` (main API)
@@ -81,5 +85,16 @@ const text = t('nav.home')
 
 // VIP checking
 const { user } = useAuth()
-const isVip = user?.isVip
+const isVip = user?.is_vip
+
+// SSE real-time updates
+const { onJobUpdate, onNotificationUpdate } = useRealtimeNotifications()
+
+useEffect(() => {
+  const unsubscribe = onJobUpdate((data) => {
+    // Handle job status updates
+    console.log('Job update:', data)
+  })
+  return unsubscribe
+}, [onJobUpdate])
 ```

@@ -16,6 +16,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 interface AnalysisJob {
   id: number
@@ -43,6 +44,9 @@ export default function AnalysisJobPage() {
   const { language } = useLanguage()
   const { user } = useAuth()
   const { theme } = useTheme()
+
+  // Analysis job page requires authentication
+  useAuthGuard({ requireAuth: true })
   const { flowState, updateFlowState } = useFlow()
 
   // Get jobId from URL params
@@ -388,13 +392,10 @@ export default function AnalysisJobPage() {
         {/* Bottom Navigation */}
         <BottomNavigation
           onBack={() => {
-            // Navigate back to analysis-prompt-config with flow state
-            if (flowState.movieId && flowState.analysisPromptId) {
-              router.push(`/analysis-prompt-config?movieId=${flowState.movieId}&promptId=${flowState.analysisPromptId}`)
-            } else {
-              router.push("/analysis-config")
-            }
+            // Start over - go back to movie selection
+            router.push("/movie-selection")
           }}
+          backLabel={language === "zh" ? "重新开始" : "Start Over"}
           onNext={analysisJob?.status === 'completed' ? () => {
             // Navigate to voice selection with job ID
             router.push(`/voice-selection/${jobId}`)

@@ -90,19 +90,21 @@ export default function ScriptReviewPage() {
         const job = await response.json()
         setAnalysisJob(job)
         
-        if (job.analysis_result) {
-          setLlmResponse(job.analysis_result)
+        // Prioritize edited text from flow state, fallback to job result
+        const textToUse = flowState.analysisResult || job.analysis_result
+        if (textToUse) {
+          setLlmResponse(textToUse)
         }
 
         if (job.movie_id) {
           await fetchMovieData(job.movie_id)
         }
 
-        // Update flow state
+        // Update flow state (preserve existing analysisResult if it exists)
         updateFlowState({
           analysisJobId: job.id,
           movieId: job.movie_id,
-          analysisResult: job.analysis_result
+          analysisResult: flowState.analysisResult || job.analysis_result
         })
       } else {
         throw new Error('Failed to fetch analysis job')

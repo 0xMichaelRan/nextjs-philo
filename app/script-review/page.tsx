@@ -434,9 +434,7 @@ export default function ScriptReviewPage() {
         voice_language: 'zh', // Force zh language for xfyun
         custom_voice_id: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
         tts_provider: voiceConfig.ttsProvider || 'xfyun',
-        video_quality: 'high',
-        video_format: 'mp4',
-        video_resolution: '1920x1080'
+        resolution: flowState.resolution || '1080p'
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(

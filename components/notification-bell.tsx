@@ -5,6 +5,7 @@ import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useTheme } from "@/contexts/theme-context"
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
 import Link from "next/link"
 
@@ -17,8 +18,9 @@ export function NotificationBell({ className }: NotificationBellProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { user } = useAuth()
   const { theme } = useTheme()
+  const { onNotificationUpdate } = useRealtimeNotifications()
 
-  // Check for new notifications
+  // Initial check for new notifications (fallback)
   const checkNewNotifications = async () => {
     if (!user || isLoading) return
 
@@ -58,18 +60,25 @@ export function NotificationBell({ className }: NotificationBellProps) {
     }
   }
 
-  // Check for new notifications on mount and periodically
+  // Check for new notifications on mount (initial load only)
   useEffect(() => {
     if (user) {
       checkNewNotifications()
-      
-      // Check every 30 seconds for new notifications
-      const interval = setInterval(checkNewNotifications, 30000)
-      return () => clearInterval(interval)
     }
   }, [user])
 
-  // Listen for storage events to sync across tabs
+  // Subscribe to real-time notification updates
+  useEffect(() => {
+    if (!user) return
+
+    const unsubscribe = onNotificationUpdate((data) => {
+      setHasNew(data.has_new)
+    })
+
+    return unsubscribe
+  }, [user, onNotificationUpdate])
+
+  // Listen for storage events to sync across tabs (keep for backward compatibility)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'notification_check_trigger') {

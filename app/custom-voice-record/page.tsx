@@ -64,8 +64,9 @@ export default function CustomVoiceRecordPage() {
   // Check VIP status
   useEffect(() => {
     if (!user || !user.is_vip) {
-      const returnTo = searchParams.get("returnTo") || "voice-selection"
-      router.push(`/${returnTo}?${searchParams.toString()}`)
+      const returnTo = searchParams.get("returnTo") || "/voice-selection"
+      const cleanReturnTo = returnTo.startsWith('/') ? returnTo : `/${returnTo}`
+      router.push(`${cleanReturnTo}?${searchParams.toString()}`)
     }
     // Set record language to match UI language
     setRecordLanguage(language as "zh" | "en")
@@ -133,7 +134,8 @@ export default function CustomVoiceRecordPage() {
         })
       }
 
-      // Determine best supported MIME type for cross-platform compatibility
+      // Determine best supported MIME type for TTS compatibility
+      // Note: Most browsers don't support wav recording directly, so we'll use webm and convert on backend
       let mimeType = 'audio/webm'
       if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
         mimeType = 'audio/webm;codecs=opus'
@@ -141,8 +143,6 @@ export default function CustomVoiceRecordPage() {
         mimeType = 'audio/mp4'
       } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
         mimeType = 'audio/ogg;codecs=opus'
-      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
-        mimeType = 'audio/wav'
       }
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
@@ -179,12 +179,14 @@ export default function CustomVoiceRecordPage() {
           const newTime = prev + 1
           // Auto-stop at time limit
           if (newTime >= RECORDING_TIME_LIMIT) {
+            // Clear the interval first to prevent multiple calls
+            if (recordingIntervalRef.current) {
+              clearInterval(recordingIntervalRef.current)
+              recordingIntervalRef.current = null
+            }
+            // Stop recording as if user clicked stop button
             stopRecording()
-            // Auto-generate a random name and advance to review step
-            setTimeout(() => {
-              setRecordingName(generateRandomName())
-              setStep("review")
-            }, 500)
+            return RECORDING_TIME_LIMIT
           }
           return newTime
         })
@@ -224,6 +226,12 @@ export default function CustomVoiceRecordPage() {
     if (audioBlob && audioRef.current) {
       const url = URL.createObjectURL(audioBlob)
       audioRef.current.src = url
+
+      // Set duration from recording time if audio duration is not available
+      if (!audioDuration && recordingTime > 0) {
+        setAudioDuration(recordingTime)
+      }
+
       audioRef.current.play()
       setIsPlaying(true)
     }
@@ -242,14 +250,26 @@ export default function CustomVoiceRecordPage() {
     if (!audio) return
 
     const updateProgress = () => {
-      if (audio.duration && audio.currentTime) {
+      if (audio.duration && !isNaN(audio.duration) && audio.currentTime && !isNaN(audio.currentTime)) {
         const progress = (audio.currentTime / audio.duration) * 100
         setPlayProgress(progress)
       }
     }
 
     const handleLoadedMetadata = () => {
-      setAudioDuration(audio.duration)
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setAudioDuration(audio.duration)
+      } else if (recordingTime > 0) {
+        // Fallback to recording time if audio duration is not available
+        setAudioDuration(recordingTime)
+      }
+    }
+
+    const handleLoadedData = () => {
+      // Try to get duration when data is loaded
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setAudioDuration(audio.duration)
+      }
     }
 
     const handleEnded = () => {
@@ -259,11 +279,13 @@ export default function CustomVoiceRecordPage() {
 
     audio.addEventListener('timeupdate', updateProgress)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+    audio.addEventListener('loadeddata', handleLoadedData)
     audio.addEventListener('ended', handleEnded)
 
     return () => {
       audio.removeEventListener('timeupdate', updateProgress)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.removeEventListener('loadeddata', handleLoadedData)
       audio.removeEventListener('ended', handleEnded)
     }
   }, [audioBlob])
@@ -284,8 +306,9 @@ export default function CustomVoiceRecordPage() {
       const formData = new FormData()
 
       // Determine file extension based on blob type
-      const fileExtension = audioBlob.type.includes('webm') ? 'webm' :
+      const fileExtension = audioBlob.type.includes('wav') ? 'wav' :
                            audioBlob.type.includes('mp4') ? 'mp4' :
+                           audioBlob.type.includes('webm') ? 'webm' :
                            audioBlob.type.includes('ogg') ? 'ogg' : 'webm'
 
       formData.append('audio', audioBlob, `${recordingName}.${fileExtension}`)
@@ -304,20 +327,22 @@ export default function CustomVoiceRecordPage() {
       if (response.ok) {
         setStep("save")
         setTimeout(() => {
-          const returnTo = searchParams.get("returnTo") || "my-voices"
+          const returnTo = searchParams.get("returnTo") || "/my-voices"
 
-          if (returnTo === "voice-selection") {
+          if (returnTo === "voice-selection" || returnTo === "/voice-selection") {
             // Return to voice-selection with the new voice selected
             const currentParams = new URLSearchParams(searchParams.toString())
             currentParams.delete('returnTo')
-            currentParams.set('newVoiceId', 'latest') // Signal to select the latest voice
+            // Use the actual voice ID from the response
+            currentParams.set('newVoiceId', `custom_${result.id}`)
             router.push(`/voice-selection?${currentParams.toString()}`)
-          } else if (returnTo === "my-voices") {
+          } else if (returnTo === "my-voices" || returnTo === "/my-voices") {
             // Return to my-voices
             router.push('/my-voices')
           } else {
             // Default fallback
-            router.push(`/${returnTo}`)
+            const cleanReturnTo = returnTo.startsWith('/') ? returnTo : `/${returnTo}`
+            router.push(cleanReturnTo)
           }
         }, 2000)
       } else {
@@ -352,8 +377,9 @@ export default function CustomVoiceRecordPage() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                const returnTo = searchParams.get("returnTo") || "voice-selection"
-                router.push(`/${returnTo}?${searchParams.toString()}`)
+                const returnTo = searchParams.get("returnTo") || "/voice-selection"
+                const cleanReturnTo = returnTo.startsWith('/') ? returnTo : `/${returnTo}`
+                router.push(`${cleanReturnTo}?${searchParams.toString()}`)
               }}
               className={`${themeClasses.text} hover:bg-white/10`}
             >
@@ -494,10 +520,10 @@ export default function CustomVoiceRecordPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className={themeClasses.secondaryText}>
-                          {Math.floor((playProgress / 100) * audioDuration)}s
+                          {formatTime(Math.floor((playProgress / 100) * (audioDuration || 0)))}
                         </span>
                         <span className={themeClasses.secondaryText}>
-                          {Math.floor(audioDuration)}s
+                          {formatTime(Math.floor(audioDuration || 0))}
                         </span>
                       </div>
                       <Progress value={playProgress} className="w-full" />

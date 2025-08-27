@@ -191,6 +191,7 @@ class ApiConfig {
     createJob: () => `${this.baseUrl}/analysis/jobs`,
     listJobs: () => `${this.baseUrl}/analysis/jobs`,
     getJob: (jobId: number) => `${this.baseUrl}/analysis/jobs/${jobId}`,
+    updateJob: (jobId: number) => `${this.baseUrl}/analysis/jobs/${jobId}`,
     listPrompts: (category?: string, language?: string) => {
       const params = new URLSearchParams()
       if (category) params.append('category', category)

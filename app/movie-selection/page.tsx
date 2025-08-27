@@ -13,6 +13,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 interface Movie {
   id: string
@@ -45,6 +46,9 @@ export default function MovieSelectionPage() {
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([])
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Movie selection doesn't require authentication
+  useAuthGuard({ requireAuth: false })
   const [searchLoading, setSearchLoading] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { theme } = useTheme()

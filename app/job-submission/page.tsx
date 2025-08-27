@@ -123,6 +123,7 @@ export default function JobSubmissionPage() {
           length: flowState.scriptLength || "medium",
           tone: flowState.scriptTone || "analytical"
         },
+        resolution: flowState.resolution || 480,
         status: "pending"
       }
 

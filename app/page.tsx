@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 export default function HomePage() {
   const [currentSection, setCurrentSection] = useState(0)
   const { language, t } = useLanguage()
+
+  // Home page doesn't require authentication
+  useAuthGuard({ requireAuth: false })
 
   // Set page title
   usePageTitle("home")
