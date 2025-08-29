@@ -389,7 +389,7 @@ export default function ScriptReviewPage() {
     try {
       // Check job limits first
       const limitsResponse = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.limits(),
+        `${apiConfig.getBaseUrl()}/api/auth/user/limits`,
         { method: 'GET' }
       )
 
@@ -413,7 +413,8 @@ export default function ScriptReviewPage() {
         voice_name: voiceConfig?.voiceName || 'Default Voice',
         voice_language: voiceConfig?.voiceLanguage || 'zh',
         custom_voice_id: voiceConfig?.isCustom ? voiceConfig?.customVoiceId : null,
-        tts_provider: voiceConfig?.ttsProvider || 'xfyun'
+        tts_provider: voiceConfig?.ttsProvider || 'xfyun',
+        resolution: flowState.resolution || '480p'
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(
@@ -693,7 +694,7 @@ export default function ScriptReviewPage() {
           <div className="flex justify-center">
             <Button
               onClick={handleGenerateVideo}
-              disabled={!generatedAudioUrl || isGenerating}
+              disabled={isGenerating}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-12 py-4 text-lg font-semibold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {language === "zh" ? "生成视频" : "Generate Video"}
@@ -724,11 +725,11 @@ export default function ScriptReviewPage() {
               <CardContent>
                 <p className="mb-4">
                   {language === "zh"
-                    ? `您今天已使用 ${jobLimits.daily_jobs_used}/${jobLimits.daily_job_limit} 个任务。`
-                    : `You have used ${jobLimits.daily_jobs_used}/${jobLimits.daily_job_limit} jobs today.`
+                    ? `您今天已使用 ${jobLimits.daily_jobs?.used || 0}/${jobLimits.daily_jobs?.limit || 0} 个任务。`
+                    : `You have used ${jobLimits.daily_jobs?.used || 0}/${jobLimits.daily_jobs?.limit || 0} jobs today.`
                   }
                 </p>
-                {!jobLimits.is_vip && (
+                {jobLimits.plan === 'free' && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     {language === "zh"
                       ? "升级到VIP以获得更多任务额度。"
@@ -740,7 +741,7 @@ export default function ScriptReviewPage() {
                   <Button variant="outline" onClick={() => setShowLimitsModal(false)}>
                     {language === "zh" ? "关闭" : "Close"}
                   </Button>
-                  {!jobLimits.is_vip && (
+                  {jobLimits.plan === 'free' && (
                     <Button onClick={() => router.push(`/payment?returnTo=/script-review/${jobId}`)}>
                       {language === "zh" ? "升级VIP" : "Upgrade VIP"}
                     </Button>

@@ -10,12 +10,12 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { MobileBottomBar } from "@/components/mobile-bottom-bar"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
-import { PageNavigation } from "@/components/page-navigation"
 
 interface MovieData {
   id: string
@@ -129,6 +129,8 @@ export default function MovieHomePage() {
   const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [featuredVideos, setFeaturedVideos] = useState<any[]>([])
+  const [videosLoading, setVideosLoading] = useState(false)
   const { theme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { flowState, updateFlowState, clearFlowState } = useFlow()
@@ -142,6 +144,7 @@ export default function MovieHomePage() {
     const movieId = params.id as string
     if (movieId) {
       fetchMovieData(movieId)
+      fetchFeaturedVideos(movieId)
     }
   }, [params])
 
@@ -200,6 +203,24 @@ export default function MovieHomePage() {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchFeaturedVideos = async (movieId: string) => {
+    setVideosLoading(true)
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/jobs/completed?movie_id=${movieId}&limit=3`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setFeaturedVideos(data.jobs || [])
+      }
+    } catch (error) {
+      console.error("Error fetching featured videos:", error)
+    } finally {
+      setVideosLoading(false)
     }
   }
 
@@ -449,8 +470,8 @@ export default function MovieHomePage() {
 
             {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
             <div className="pt-6 hidden md:block">
-              <PageNavigation
-                onPrevious={() => router.push('/movie-selection')}
+              <BottomNavigation
+                onBack={() => router.push('/movie-selection')}
                 onNext={handleGenerateVideo}
                 nextLabel={language === "zh" ? "开始分析" : "Start Analysis"}
               />
@@ -467,18 +488,33 @@ export default function MovieHomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockMoviesData["1"].sampleVideos.map((video) => (
+            {videosLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className={getTextClasses()}>
+                  {language === "zh" ? "加载中..." : "Loading..."}
+                </p>
+              </div>
+            ) : featuredVideos.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredVideos.map((video) => (
                 <Card
                   key={video.id}
                   className={`${theme === "light" ? "bg-white/60 border-gray-200/30 hover:bg-white/80" : "bg-white/5 border-white/10 hover:bg-white/10"} transition-all duration-300 cursor-pointer group`}
                 >
                   <CardContent className="p-0">
-                    <a href={video.videoUrl} target="_blank" rel="noopener noreferrer">
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (video.result_video_url) {
+                          window.open(`${process.env.NEXT_PUBLIC_API_URL}${video.result_video_url}`, '_blank')
+                        }
+                      }}
+                    >
                       <div className="relative">
                         <Image
-                          src={video.thumbnail || "/placeholder.svg"}
-                          alt={video.title}
+                          src={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : "/placeholder.svg"}
+                          alt={video.movie_title || "Video"}
                           width={200}
                           height={120}
                           className="w-full h-32 object-cover rounded-t-lg"
@@ -487,26 +523,35 @@ export default function MovieHomePage() {
                           <Play className="w-8 h-8 text-white" />
                         </div>
                         <Badge className="absolute bottom-2 right-2 bg-black/70 text-white text-xs">
-                          {video.duration}
+                          {video.status === 'completed' ? (language === "zh" ? "已完成" : "Completed") : video.status}
                         </Badge>
                       </div>
-                    </a>
-                    <div className="p-4">
-                      <h3 className={`${getTextClasses()} font-semibold text-sm mb-2 line-clamp-2`}>{video.title}</h3>
-                      <div
-                        className={`flex items-center justify-between text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}
-                      >
-                        <span>{video.author}</span>
-                        <span>{video.views} {language === "zh" ? "观看" : "views"}</span>
+                      <div className="p-4">
+                        <h3 className={`${getTextClasses()} font-semibold text-sm mb-2 line-clamp-2`}>
+                          {video.movie_title || "Unknown Movie"}
+                        </h3>
+                        <div
+                          className={`flex items-center justify-between text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}
+                        >
+                          <span>{language === "zh" ? "用户分析" : "User Analysis"}</span>
+                          <span>{new Date(video.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {video.character_type || (language === "zh" ? "哲学家" : "Philosopher")}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {video.style}
-                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className={getTextClasses()}>
+                  {language === "zh" ? "暂无用户分析视频" : "No user analysis videos yet"}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

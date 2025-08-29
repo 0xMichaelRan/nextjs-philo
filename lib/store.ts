@@ -41,7 +41,7 @@ export interface FlowState {
   scriptTone?: string
 
   // Video options
-  resolution?: number // 480, 720, or 1080
+  resolution?: string // "480p", "720p", or "1080p"
 
   // Job metadata
   jobId?: string

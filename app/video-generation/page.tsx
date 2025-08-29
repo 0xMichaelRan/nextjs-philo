@@ -154,6 +154,28 @@ export default function VideoGenerationPage() {
     }
   }
 
+  const formatRelativeTime = (dateString: string) => {
+    try {
+      const now = new Date()
+      const date = new Date(dateString)
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+
+      if (diffInMinutes < 1) {
+        return language === "zh" ? "刚刚" : "just now"
+      } else if (diffInMinutes < 60) {
+        return language === "zh" ? `${diffInMinutes}分钟前` : `${diffInMinutes} minutes ago`
+      } else if (diffInMinutes < 1440) { // 24 hours
+        const hours = Math.floor(diffInMinutes / 60)
+        return language === "zh" ? `${hours}小时前` : `${hours} hours ago`
+      } else {
+        const days = Math.floor(diffInMinutes / 1440)
+        return language === "zh" ? `${days}天前` : `${days} days ago`
+      }
+    } catch {
+      return dateString
+    }
+  }
+
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
@@ -263,16 +285,19 @@ export default function VideoGenerationPage() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {jobs.map((job) => (
-                    <Card key={job.id} className={`${themeClasses.card} overflow-hidden cursor-pointer hover:scale-105 transition-transform`}>
+                    <Card key={job.id} className={`${themeClasses.card} overflow-hidden hover:scale-105 transition-transform`}>
                       <CardContent className="p-0">
                         <div className="relative">
                           <img
-                            src={job.thumbnail_url ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}` : "/placeholder.svg"}
+                            src={job.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=backdrop` : "/placeholder.svg"}
                             alt={job.movie_title}
                             className="w-full h-32 object-cover"
                           />
                           <button
-                            onClick={() => handleVideoPlay(job)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleVideoPlay(job)
+                            }}
                             className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
                           >
                             <Play className="w-12 h-12 text-white" />
@@ -280,11 +305,14 @@ export default function VideoGenerationPage() {
                           <div className="absolute top-2 right-2 flex items-center space-x-1">
                             {getStatusIcon(job.status)}
                             <Badge className="bg-black/70 text-white text-xs">
-                              {job.video_quality}
+                              {job.resolution}
                             </Badge>
                           </div>
                         </div>
-                        <div className="p-4">
+                        <div
+                          className="p-4 cursor-pointer"
+                          onClick={() => router.push(`/video-generation/${job.id}`)}
+                        >
                           <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
                             {job.movie_title}
                           </h3>
@@ -292,6 +320,9 @@ export default function VideoGenerationPage() {
                             <div className={`flex justify-between text-sm ${themeClasses.secondaryText}`}>
                               <span>
                                 {language === "zh" ? "状态" : "Status"}: {getStatusText(job.status)}
+                              </span>
+                              <span>
+                                {formatRelativeTime(job.completed_at || job.created_at)}
                               </span>
                             </div>
                             <div className={`flex justify-between text-xs ${themeClasses.secondaryText}`}>
@@ -305,15 +336,6 @@ export default function VideoGenerationPage() {
                               )}
                             </div>
                             <div className="flex space-x-2 pt-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 bg-transparent"
-                                onClick={() => router.push(`/video-generation/${job.id}`)}
-                              >
-                                <Play className="w-4 h-4 mr-2" />
-                                {language === "zh" ? "查看详情" : "View Details"}
-                              </Button>
                               {job.result_video_url && (
                                 <Button
                                   size="sm"

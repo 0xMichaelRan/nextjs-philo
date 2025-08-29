@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Play, Pause, Mic, Plus } from "lucide-react"
+import { Play, Pause, Mic, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -45,8 +45,6 @@ interface CustomVoice {
   duration?: string
   audio_url: string
   description?: string
-  description_zh?: string
-  description_en?: string
 }
 
 export default function VoiceSelectionWithJobPage() {
@@ -56,7 +54,7 @@ export default function VoiceSelectionWithJobPage() {
   const jobId = params.job_id as string
   
   const [selectedVoice, setSelectedVoice] = useState("")
-  const [selectedResolution, setSelectedResolution] = useState<number>(480)
+  const [selectedResolution, setSelectedResolution] = useState<string>("480p")
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
   const [voices, setVoices] = useState<DefaultVoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,7 +63,7 @@ export default function VoiceSelectionWithJobPage() {
   const [voiceLanguage, setVoiceLanguage] = useState<"zh" | "en">("zh")
   const [customVoices, setCustomVoices] = useState<CustomVoice[]>([])
   const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
-  const [voiceBalance, setVoiceBalance] = useState({ used: 0, limit: 1 })
+  const [vipLimits, setVipLimits] = useState<any>(null)
   const [showVipModal, setShowVipModal] = useState(false)
   // Filter states
   const [languageFilter, setLanguageFilter] = useState<string | null>(null) // 'zh' | 'en' | null
@@ -114,7 +112,10 @@ export default function VoiceSelectionWithJobPage() {
   // Fetch voices from API once on mount
   useEffect(() => {
     fetchVoices()
-  }, [])
+    if (user) {
+      fetchVipLimits()
+    }
+  }, [user])
 
   // Initialize selected voice and resolution from flow state
   useEffect(() => {
@@ -155,6 +156,23 @@ export default function VoiceSelectionWithJobPage() {
       console.error("Error fetching voices:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchVipLimits = async () => {
+    if (!user) return
+
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        `${apiConfig.getBaseUrl()}/api/auth/user/limits`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setVipLimits(data)
+      }
+    } catch (error) {
+      console.error("Error fetching VIP limits:", error)
     }
   }
 
@@ -258,34 +276,28 @@ export default function VoiceSelectionWithJobPage() {
     }
 
     if (!selectedVoice) {
-      toast({
-        title: language === "zh" ? "请选择语音" : "Please select a voice",
-        description: language === "zh" ? "请选择一个语音后继续" : "Please select a voice to continue",
-        variant: "destructive",
-      })
+      alert(language === "zh" ? "请选择一个语音后继续" : "Please select a voice to continue")
       return
     }
 
     // Check resolution restrictions for non-VIP users
-    if (!user.is_vip && selectedResolution > 480) {
-      toast({
-        title: language === "zh" ? "分辨率限制" : "Resolution Restriction",
-        description: language === "zh" ? "免费用户只能选择480p分辨率，升级VIP可选择更高分辨率" : "Free users can only select 480p resolution. Upgrade to VIP for higher resolutions",
-        variant: "destructive",
-      })
-      setSelectedResolution(480)
+    const resolutionValue = parseInt(selectedResolution.replace('p', ''))
+    if (!user.is_vip && resolutionValue > 480) {
+      alert(language === "zh" ? "免费用户只能选择480p分辨率，升级VIP可选择更高分辨率" : "Free users can only select 480p resolution. Upgrade to VIP for higher resolutions")
+      setSelectedResolution("480p")
       return
     }
 
     // Update flow state with voice selection and job ID
     const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
+    const isCustomVoice = customVoices.some(cv => cv.id.toString() === selectedVoice)
     const voiceConfig = {
-      voiceId: selectedVoice.startsWith("custom_") ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
-      voiceCode: selectedVoice.startsWith("custom_") ? selectedVoice : (selectedVoiceData?.voice_code || selectedVoice),
-      voiceName: selectedVoice.startsWith("custom_") ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
+      voiceId: isCustomVoice ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
+      voiceCode: isCustomVoice ? selectedVoice : (selectedVoiceData?.voice_code || selectedVoice),
+      voiceName: isCustomVoice ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
       voiceLanguage: voiceLanguage,
-      customVoiceId: selectedVoice.startsWith("custom_") ? selectedVoice.replace("custom_", "") : undefined,
-      ttsProvider: selectedVoice.startsWith("custom_") ? "xfyun" : ttsProvider,
+      customVoiceId: isCustomVoice ? selectedVoice : undefined,
+      ttsProvider: isCustomVoice ? "xfyun" : ttsProvider,
       analysisJobId: parseInt(jobId),
       resolution: selectedResolution
     }
@@ -373,28 +385,49 @@ export default function VoiceSelectionWithJobPage() {
               variant="outline"
               className={`${themeClasses.filterButton} px-6 py-3`}
             >
-              {language === "zh" ? `当前分辨率: ${selectedResolution}p - 点击更改` : `Current Resolution: ${selectedResolution}p - Click to Change`}
+              {language === "zh" ? `当前分辨率: ${selectedResolution} - 点击更改` : `Current Resolution: ${selectedResolution} - Click to Change`}
             </Button>
           </div>
 
           {/* Filter Buttons */}
           <div className="flex flex-wrap gap-3 mb-6 justify-center">
             <Button
-              onClick={() => setLanguageFilter(languageFilter === "zh" ? null : "zh")}
+              onClick={() => {
+                if (languageFilter === "zh") {
+                  setLanguageFilter(null)
+                } else {
+                  setLanguageFilter("zh")
+                  setFreeOnlyFilter(false) // Clear other filters
+                }
+              }}
               variant="outline"
               className={`${languageFilter === "zh" ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
             >
               {language === "zh" ? "中文语音" : "Chinese Voices"}
             </Button>
             <Button
-              onClick={() => setLanguageFilter(languageFilter === "en" ? null : "en")}
+              onClick={() => {
+                if (languageFilter === "en") {
+                  setLanguageFilter(null)
+                } else {
+                  setLanguageFilter("en")
+                  setFreeOnlyFilter(false) // Clear other filters
+                }
+              }}
               variant="outline"
               className={`${languageFilter === "en" ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
             >
               {language === "zh" ? "英文语音" : "English Voices"}
             </Button>
             <Button
-              onClick={() => setFreeOnlyFilter(!freeOnlyFilter)}
+              onClick={() => {
+                if (freeOnlyFilter) {
+                  setFreeOnlyFilter(false)
+                } else {
+                  setFreeOnlyFilter(true)
+                  setLanguageFilter(null) // Clear other filters
+                }
+              }}
               variant="outline"
               className={`${freeOnlyFilter ? themeClasses.activeFilterButton : themeClasses.filterButton}`}
             >
@@ -512,9 +545,48 @@ export default function VoiceSelectionWithJobPage() {
                 <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>
                   {language === "zh" ? "自定义语音" : "Custom Voices"}
                 </h3>
-                <p className={`${themeClasses.secondaryText}`}>
+                <p className={`${themeClasses.secondaryText} mb-4`}>
                   {language === "zh" ? "使用您自己录制的语音" : "Use your own recorded voice"}
                 </p>
+
+                {/* VIP Limits Display */}
+                {vipLimits && (
+                  <div className={`inline-flex items-center px-4 py-2 rounded-lg ${themeClasses.card} mb-4`}>
+                    <span className={`text-sm ${themeClasses.secondaryText} mr-2`}>
+                      {language === "zh" ? "自定义语音:" : "Custom Voices:"}
+                    </span>
+                    <span className={`text-sm font-semibold ${themeClasses.text}`}>
+                      {customVoices.length} / {vipLimits.plan === 'SVIP' ? 10 : (vipLimits.plan === 'VIP' ? 2 : 0)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-center space-x-4">
+                  <Button
+                    onClick={() => {
+                      if (vipLimits && customVoices.length >= (vipLimits.plan === 'SVIP' ? 10 : 2)) {
+                        setShowVipModal(true)
+                      } else {
+                        router.push(`/voice-recording?returnTo=/voice-selection/${jobId}`)
+                      }
+                    }}
+                    variant="default"
+                    className={`${themeClasses.button}`}
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    {language === "zh" ? "录制新语音" : "Record New Voice"}
+                  </Button>
+
+                  <Button
+                    onClick={() => router.push(`/my-voices?returnTo=/voice-selection/${jobId}`)}
+                    variant="outline"
+                    className={`${themeClasses.filterButton}`}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    {language === "zh" ? "管理语音" : "Manage Voices"}
+                  </Button>
+                </div>
               </div>
 
               {/* Custom Voice Grid */}
@@ -524,9 +596,9 @@ export default function VoiceSelectionWithJobPage() {
                     <Card
                       key={voice.id}
                       className={`${themeClasses.card} ${themeClasses.cardHover} ${
-                        selectedVoice === `custom_${voice.id}` ? themeClasses.selectedCard : themeClasses.hoverCard
+                        selectedVoice === voice.id.toString() ? themeClasses.selectedCard : themeClasses.hoverCard
                       } cursor-pointer transition-all duration-300`}
-                      onClick={() => setSelectedVoice(`custom_${voice.id}`)}
+                      onClick={() => setSelectedVoice(voice.id.toString())}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -556,7 +628,7 @@ export default function VoiceSelectionWithJobPage() {
                             onClick={(e) => {
                               e.stopPropagation()
                               if (voice.audio_url) {
-                                const customVoiceId = `custom_${voice.id}`
+                                const customVoiceId = voice.id.toString()
                                 handlePlayAudio(customVoiceId, voice.audio_url)
                               }
                             }}
@@ -564,7 +636,7 @@ export default function VoiceSelectionWithJobPage() {
                             variant="outline"
                             className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
                           >
-                            {playingVoice === `custom_${voice.id}` ? (
+                            {playingVoice === voice.id.toString() ? (
                               <Pause className="w-4 h-4 mr-2" />
                             ) : (
                               <Play className="w-4 h-4 mr-2" />
@@ -576,17 +648,17 @@ export default function VoiceSelectionWithJobPage() {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedVoice(`custom_${voice.id}`)
+                              setSelectedVoice(voice.id.toString())
                             }}
-                            variant={selectedVoice === `custom_${voice.id}` ? "default" : "outline"}
+                            variant={selectedVoice === voice.id.toString() ? "default" : "outline"}
                             size="sm"
                             className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
-                              selectedVoice === `custom_${voice.id}`
+                              selectedVoice === voice.id.toString()
                                 ? `${themeClasses.button} text-white`
                                 : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
                             }`}
                           >
-                            {selectedVoice === `custom_${voice.id}`
+                            {selectedVoice === voice.id.toString()
                               ? t("voiceSelection.selected")
                               : t("voiceSelection.select")
                             }
@@ -598,25 +670,7 @@ export default function VoiceSelectionWithJobPage() {
                 </div>
               )}
 
-              {/* Add Custom Voice Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  onClick={() => router.push(`/custom-voice-record?returnTo=/voice-selection/${jobId}`)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                >
-                  <Mic className="w-4 h-4 mr-2" />
-                  {language === "zh" ? "录制新语音" : "Record New Voice"}
-                </Button>
 
-                <Button
-                  onClick={() => router.push(`/my-voices?returnTo=/voice-selection/${jobId}`)}
-                  variant="outline"
-                  className={`${themeClasses.filterButton}`}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {language === "zh" ? "管理语音" : "Manage Voices"}
-                </Button>
-              </div>
             </div>
           )}
 

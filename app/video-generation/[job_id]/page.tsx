@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Clock, Play, Download, CheckCircle, AlertCircle, ArrowLeft, RefreshCw } from "lucide-react"
+import { Clock, Play, Download, CheckCircle, AlertCircle, ArrowLeft, RefreshCw, ChevronDown, ChevronUp, Volume2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -45,6 +45,21 @@ interface VideoJob {
   completed_at?: string
 }
 
+interface MovieData {
+  id: string
+  title: string
+  title_en: string
+  title_zh?: string
+  year?: number
+  genre: string[]
+  director?: string
+  duration_minutes?: number
+  rating?: number
+  description?: string
+  poster_url?: string
+  backdrop_url?: string
+}
+
 export default function VideoJobPage() {
   const params = useParams()
   const router = useRouter()
@@ -55,8 +70,10 @@ export default function VideoJobPage() {
   const { toast } = useToast()
 
   const [job, setJob] = useState<VideoJob | null>(null)
+  const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showTtsText, setShowTtsText] = useState(false)
 
   const jobId = params.job_id as string
 
@@ -76,6 +93,19 @@ export default function VideoJobPage() {
         const jobData = await response.json()
         setJob(jobData)
         setError(null)
+
+        // Fetch movie data if movie_id exists
+        if (jobData.movie_id) {
+          try {
+            const movieResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/movies/${jobData.movie_id}`)
+            if (movieResponse.ok) {
+              const movieInfo = await movieResponse.json()
+              setMovieData(movieInfo)
+            }
+          } catch (movieErr) {
+            console.error('Error fetching movie data:', movieErr)
+          }
+        }
       } else if (response.status === 404) {
         setError(language === "zh" ? "视频任务未找到" : "Video job not found")
       } else {
@@ -152,7 +182,9 @@ export default function VideoJobPage() {
         card: "bg-white/90 backdrop-blur-sm border-white/20",
         text: "text-gray-900",
         secondaryText: "text-gray-600",
-        accent: "from-purple-600 to-pink-600"
+        accent: "from-purple-600 to-pink-600",
+        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80"
       }
     }
     return {
@@ -160,7 +192,9 @@ export default function VideoJobPage() {
       card: "bg-white/10 backdrop-blur-sm border-white/20",
       text: "text-white",
       secondaryText: "text-gray-300",
-      accent: "from-orange-500 to-red-600"
+      accent: "from-orange-500 to-red-600",
+      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20"
     }
   }
 
@@ -224,8 +258,22 @@ export default function VideoJobPage() {
   }
 
   return (
-    <div className={themeClasses.background}>
-      <AppLayout>
+    <div className="relative min-h-screen">
+      {/* Movie backdrop background */}
+      {movieData?.id && (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop)`
+          }}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        </div>
+      )}
+
+      {/* Content overlay */}
+      <div className={`relative z-10 ${!movieData?.id ? themeClasses.background : ''}`}>
+        <AppLayout>
         <div className="container mx-auto px-6 py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -235,7 +283,7 @@ export default function VideoJobPage() {
                 size="sm"
                 onClick={() => {
                   // Navigate based on job status
-                  if (job && (job.status === 'pending' || job.status === 'processing')) {
+                  if (job && (job.status === 'pending' || job.status === 'processing' || job.status === 'queued')) {
                     router.push('/job-pending')
                   } else {
                     router.push('/video-generation')
@@ -260,175 +308,236 @@ export default function VideoJobPage() {
             </Badge>
           </div>
 
-          {/* Job Details */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Status Card */}
-            <Card className={themeClasses.card}>
-              <CardHeader>
-                <CardTitle className={themeClasses.text}>
-                  {language === "zh" ? "任务状态" : "Job Status"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={themeClasses.secondaryText}>
-                      {language === "zh" ? "进度" : "Progress"}
-                    </span>
-                    <span className={themeClasses.text}>{job.progress}%</span>
-                  </div>
-                  <Progress value={job.progress} className="h-2" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className={themeClasses.secondaryText}>
-                      {language === "zh" ? "创建时间" : "Created"}
-                    </span>
-                    <p className={themeClasses.text}>
-                      {new Date(job.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  {job.completed_at && (
-                    <div>
-                      <span className={themeClasses.secondaryText}>
-                        {language === "zh" ? "完成时间" : "Completed"}
-                      </span>
-                      <p className={themeClasses.text}>
-                        {new Date(job.completed_at).toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {job.error_message && (
-                  <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                    <p className="text-red-400 text-sm">{job.error_message}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Video Preview */}
-            {job.status === 'completed' && (job.video_url || job.result_video_url) && (
-              <Card className={themeClasses.card}>
-                <CardHeader>
-                  <CardTitle className={themeClasses.text}>
-                    {language === "zh" ? "视频预览" : "Video Preview"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <VideoPlayer
-                    src={job.video_url
-                      ? `${apiConfig.getBaseUrl()}${job.video_url}`
-                      : job.result_video_url
-                        ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
-                        : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
-                    }
-                    poster={job.thumbnail_url ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}` : undefined}
-                    className="w-full rounded-lg"
-                  />
-                  <div className="mt-4 flex space-x-2">
-                    <Button asChild className="flex-1">
-                      <a href={job.video_url
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Video Player - Main Focus */}
+            <div className="lg:col-span-2">
+              {job.status === 'completed' && (job.video_url || job.result_video_url) ? (
+                <Card className={themeClasses.card}>
+                  <CardContent className="p-0">
+                    <VideoPlayer
+                      src={job.video_url
                         ? `${apiConfig.getBaseUrl()}${job.video_url}`
                         : job.result_video_url
                           ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
                           : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
-                      } download>
-                        <Download className="w-4 h-4 mr-2" />
-                        {language === "zh" ? "下载视频" : "Download Video"}
-                      </a>
-                    </Button>
-                    {job.narration_audio_url && (
-                      <Button variant="outline" asChild>
-                        <a href={`${apiConfig.getBaseUrl()}${job.narration_audio_url}`} download>
-                          <Download className="w-4 h-4 mr-2" />
-                          {language === "zh" ? "下载音频" : "Download Audio"}
-                        </a>
+                      }
+                      poster={movieData?.backdrop_url
+                        ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
+                        : job.thumbnail_url
+                          ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
+                          : undefined
+                      }
+                      className="w-full rounded-lg"
+                    />
+                    <div className="p-6">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Button
+                          asChild
+                          className={`flex-1 ${themeClasses.button} text-white`}
+                        >
+                          <a href={job.video_url
+                            ? `${apiConfig.getBaseUrl()}${job.video_url}`
+                            : job.result_video_url
+                              ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
+                              : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
+                          } download>
+                            <Download className="w-4 h-4 mr-2" />
+                            {language === "zh" ? "下载视频" : "Download Video"}
+                          </a>
+                        </Button>
+                        <Button
+                          onClick={() => router.push('/video-generation')}
+                          variant="outline"
+                          className={`flex-1 ${themeClasses.filterButton}`}
+                        >
+                          <ArrowLeft className="w-4 h-4 mr-2" />
+                          {language === "zh" ? "返回列表" : "Back to List"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className={themeClasses.card}>
+                  <CardContent className="p-12 text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <h3 className={`text-xl font-semibold ${themeClasses.text} mb-3`}>
+                      {language === "zh" ? "视频生成中..." : "Generating Video..."}
+                    </h3>
+                    <p className={`${themeClasses.secondaryText} mb-6`}>
+                      {language === "zh" ? "请耐心等待，视频正在处理中" : "Please wait while your video is being processed"}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar - Movie Info & Job Details */}
+            <div className="space-y-6">
+              {/* Movie Information */}
+              {movieData && (
+                <Card className={themeClasses.card}>
+                  <CardHeader>
+                    <CardTitle className={themeClasses.text}>
+                      {language === "zh" ? "电影信息" : "Movie Information"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {movieData.poster_url && (
+                      <div className="flex justify-center">
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster`}
+                          alt={movieData.title}
+                          className="w-32 h-48 object-cover rounded-lg shadow-lg"
+                        />
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <h3 className={`text-lg font-semibold ${themeClasses.text} mb-1`}>
+                        {movieData.title_zh || movieData.title}
+                      </h3>
+                      {movieData.title_en && movieData.title_en !== (movieData.title_zh || movieData.title) && (
+                        <p className={`text-sm ${themeClasses.secondaryText} mb-2`}>
+                          {movieData.title_en}
+                        </p>
+                      )}
+                      {movieData.year && (
+                        <p className={`${themeClasses.secondaryText} text-sm mb-2`}>
+                          {movieData.year}
+                        </p>
+                      )}
+                      {movieData.genre && movieData.genre.length > 0 && (
+                        <div className="flex flex-wrap gap-1 justify-center mb-3">
+                          {movieData.genre.slice(0, 3).map((g, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {g}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <Button
+                        onClick={() => router.push(`/movie/${movieData.id}`)}
+                        variant="outline"
+                        size="sm"
+                        className={themeClasses.filterButton}
+                      >
+                        {language === "zh" ? "查看电影详情" : "View Movie Details"}
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Job Summary */}
+              <Card className={themeClasses.card}>
+                <CardHeader>
+                  <CardTitle className={themeClasses.text}>
+                    {language === "zh" ? "任务信息" : "Job Information"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3 text-sm">
+                    <div>
+                      <span className={themeClasses.secondaryText}>
+                        {language === "zh" ? "分辨率" : "Resolution"}
+                      </span>
+                      <p className={themeClasses.text}>{job.resolution}</p>
+                    </div>
+                    <div>
+                      <span className={themeClasses.secondaryText}>
+                        {language === "zh" ? "语音" : "Voice"}
+                      </span>
+                      <p className={themeClasses.text}>
+                        {job.voice_name || job.voice_id}
+                      </p>
+                    </div>
+                    <div>
+                      <span className={themeClasses.secondaryText}>
+                        {language === "zh" ? "创建时间" : "Created"}
+                      </span>
+                      <p className={themeClasses.text}>
+                        {new Date(job.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {job.completed_at && (
+                      <div>
+                        <span className={themeClasses.secondaryText}>
+                          {language === "zh" ? "完成时间" : "Completed"}
+                        </span>
+                        <p className={themeClasses.text}>
+                          {new Date(job.completed_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     )}
                   </div>
+
+                  {job.error_message && (
+                    <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                      <p className="text-red-400 text-sm">{job.error_message}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            )}
+
+              {/* TTS Audio Section */}
+              {job.tts_text && (
+                <Card className={themeClasses.card}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className={`${themeClasses.text} flex items-center gap-2`}>
+                        <Volume2 className="w-5 h-5" />
+                        {language === "zh" ? "语音文本" : "TTS Audio"}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTtsText(!showTtsText)}
+                        className={`${themeClasses.text} hover:bg-white/10`}
+                      >
+                        {showTtsText ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-1" />
+                            {language === "zh" ? "收起" : "Collapse"}
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-1" />
+                            {language === "zh" ? "展开" : "Expand"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {showTtsText && (
+                    <CardContent>
+                      <div className={`p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {job.tts_text}
+                        </p>
+                      </div>
+                      {job.narration_audio_url && (
+                        <div className="mt-4">
+                          <audio
+                            controls
+                            className="w-full"
+                            src={`${apiConfig.getBaseUrl()}${job.narration_audio_url}`}
+                          >
+                            {language === "zh" ? "您的浏览器不支持音频播放" : "Your browser does not support audio playback"}
+                          </audio>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              )}
+            </div>
           </div>
 
-          {/* Job Details */}
-          <Card className={`${themeClasses.card} mt-8`}>
-            <CardHeader>
-              <CardTitle className={themeClasses.text}>
-                {language === "zh" ? "任务详情" : "Job Details"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className={themeClasses.secondaryText}>
-                    {language === "zh" ? "电影ID" : "Movie ID"}
-                  </span>
-                  <p className={themeClasses.text}>{job.movie_id}</p>
-                </div>
-                <div>
-                  <span className={themeClasses.secondaryText}>
-                    {language === "zh" ? "语音" : "Voice"}
-                  </span>
-                  <p className={themeClasses.text}>{job.voice_name || job.voice_id}</p>
-                </div>
-                <div>
-                  <span className={themeClasses.secondaryText}>
-                    {language === "zh" ? "语音语言" : "Voice Language"}
-                  </span>
-                  <p className={themeClasses.text}>{job.voice_language}</p>
-                </div>
-                <div>
-                  <span className={themeClasses.secondaryText}>
-                    {language === "zh" ? "TTS提供商" : "TTS Provider"}
-                  </span>
-                  <p className={themeClasses.text}>{job.tts_provider}</p>
-                </div>
-                <div>
-                  <span className={themeClasses.secondaryText}>
-                    {language === "zh" ? "分辨率" : "Resolution"}
-                  </span>
-                  <p className={themeClasses.text}>{job.resolution}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* TTS Text Content */}
-          <Card className={`${themeClasses.card} mt-8`}>
-            <CardHeader>
-              <CardTitle className={themeClasses.text}>
-                {language === "zh" ? "TTS文本内容" : "TTS Text Content"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <span className={`${themeClasses.secondaryText} text-sm font-medium`}>
-                    {language === "zh" ? "文本长度" : "Text Length"}
-                  </span>
-                  <p className={themeClasses.text}>
-                    {job.tts_text.length} {language === "zh" ? "字符" : "characters"}
-                  </p>
-                </div>
-                <div>
-                  <span className={`${themeClasses.secondaryText} text-sm font-medium`}>
-                    {language === "zh" ? "文本内容" : "Text Content"}
-                  </span>
-                  <div className={`${themeClasses.text} mt-2 p-4 bg-gray-100/20 rounded-lg max-h-96 overflow-y-auto`}>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {job.tts_text}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </AppLayout>
+      </div>
     </div>
   )
 }

@@ -124,9 +124,7 @@ export default function MyVoicesPage() {
       setDeletingVoice(voiceId)
 
       // Extract numeric ID from "custom_X" format
-      const numericId = voiceId.startsWith('custom_')
-        ? parseInt(voiceId.replace('custom_', ''))
-        : parseInt(voiceId)
+      const numericId = parseInt(voiceId)
 
       const response = await apiConfig.makeAuthenticatedRequest(
         apiConfig.voices.deleteCustom(numericId),

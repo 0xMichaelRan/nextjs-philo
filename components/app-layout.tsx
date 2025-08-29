@@ -19,6 +19,7 @@ import { apiConfig } from "@/lib/api-config"
 interface UserStats {
   dailyRemaining: number
   totalGenerated: number
+  failedJobs: number
   monthlyUsed: number
   monthlyLimit: number | null
 }
@@ -95,18 +96,22 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         )
 
         let totalGenerated = 0
+        let failedJobs = 0
         if (videosResponse.ok) {
           const videos = await videosResponse.json()
           // Only count completed and pending jobs, ignore failed jobs
           const validJobs = videos.filter((job: any) =>
             job.status === 'completed' || job.status === 'pending' || job.status === 'processing' || job.status === 'queued'
           )
+          const failedJobsList = videos.filter((job: any) => job.status === 'failed')
           totalGenerated = validJobs.length || 0
+          failedJobs = failedJobsList.length || 0
         }
 
         setUserStats({
           dailyRemaining,
           totalGenerated,
+          failedJobs,
           monthlyUsed,
           monthlyLimit
         })
@@ -283,6 +288,23 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                         <span>{language === "zh" ? "总计生成" : "Total Generated"}</span>
                         <span className={getTextClasses()}>{userStats?.totalGenerated || 0}</span>
                       </div>
+                      {userStats?.failedJobs && userStats.failedJobs > 0 && (
+                        <div className={`flex justify-between ${theme === "light" ? "text-red-600" : "text-red-400"}`}>
+                          <span className="flex items-center">
+                            {language === "zh" ? "失败任务" : "Failed Jobs"}
+                            <span
+                              className="ml-1 cursor-help"
+                              title={language === "zh"
+                                ? "很抱歉部分视频生成失败，我们正在努力解决这些问题"
+                                : "We're sorry some video generations failed. We're working to resolve these issues ASAP"
+                              }
+                            >
+                              ⚠️
+                            </span>
+                          </span>
+                          <span className={theme === "light" ? "text-red-600" : "text-red-400"}>{userStats.failedJobs}</span>
+                        </div>
+                      )}
                       <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                         <span>{t("nav.memberStatus")}</span>
                         {user.is_vip ? (

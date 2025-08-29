@@ -16,25 +16,35 @@ import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
 
 // Utility function for relative time formatting
-const formatRelativeTime = (dateString: string): string => {
+const formatRelativeTime = (dateString: string, language: string = 'en'): string => {
+  if (!dateString) {
+    return language === "zh" ? "时间未知" : "Unknown time"
+  }
+
   const now = new Date()
   const date = new Date(dateString)
+
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return language === "zh" ? "时间格式错误" : "Invalid time format"
+  }
+
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
   if (diffInSeconds < 60) {
-    return `${diffInSeconds} seconds ago`
+    return language === "zh" ? `${diffInSeconds} 秒前` : `${diffInSeconds} seconds ago`
   } else if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60)
-    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${minutes} 分钟前` : `${minutes} minute${minutes > 1 ? 's' : ''} ago`
   } else if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600)
-    return `${hours} hour${hours > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${hours} 小时前` : `${hours} hour${hours > 1 ? 's' : ''} ago`
   } else if (diffInSeconds < 2592000) {
     const days = Math.floor(diffInSeconds / 86400)
-    return `${days} day${days > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${days} 天前` : `${days} day${days > 1 ? 's' : ''} ago`
   } else {
     const months = Math.floor(diffInSeconds / 2592000)
-    return `${months} month${months > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${months} 个月前` : `${months} month${months > 1 ? 's' : ''} ago`
   }
 }
 
@@ -47,6 +57,8 @@ interface Job {
   queuePosition?: number
   createdAt: string
   updatedAt: string
+  createdAtFormatted?: string
+  updatedAtFormatted?: string
   completedAt?: string
   downloadUrl?: string
   video_url?: string
@@ -59,15 +71,20 @@ interface Job {
 
 interface JobLimits {
   plan: string
-  pending_jobs: {
-    current: number
+  daily_jobs: {
+    used: number
     limit: number
     remaining: number
   }
   monthly_jobs: {
-    current: number
-    limit: number | null
-    remaining: number | null
+    used: number
+    limit: number
+    remaining: number
+  }
+  pending_jobs: {
+    used: number
+    limit: number
+    remaining: number
   }
   can_create_job: boolean
 }
@@ -106,8 +123,9 @@ export default function JobPendingPage() {
           const baseJob = {
             ...job,
             movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',
-            createdAt: job.created_at ? formatRelativeTime(job.created_at) : 'Unknown time',
-            updatedAt: job.updated_at ? formatRelativeTime(job.updated_at) : 'Unknown time',
+            // Keep original timestamps for calculations, add formatted versions
+            createdAtFormatted: job.created_at ? formatRelativeTime(job.created_at, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+            updatedAtFormatted: job.updated_at ? formatRelativeTime(job.updated_at, language) : (language === "zh" ? "时间未知" : "Unknown time"),
           }
 
           // Add movie images if movie_id exists
@@ -135,7 +153,7 @@ export default function JobPendingPage() {
 
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.limits()
+        `${apiConfig.getBaseUrl()}/api/auth/user/limits`
       )
 
       if (response.ok) {
@@ -301,6 +319,8 @@ export default function JobPendingPage() {
   const failedJobs = jobs.filter(job => ['failed', 'cancelled'].includes(job.status))
   const displayedJobs = showFailedJobs ? [...pendingJobs, ...failedJobs] : pendingJobs
 
+  // Monthly jobs count is now provided by the API
+
   return (
     <div className={themeClasses.background}>
       <AppLayout title={language === "zh" ? "视频任务" : "Video Jobs"}>
@@ -398,7 +418,7 @@ export default function JobPendingPage() {
                       {language === "zh" ? "等待中任务" : "Pending Jobs"}
                     </h3>
                     <div className={`text-2xl font-bold ${themeClasses.text}`}>
-                      {jobLimits.pending_jobs.current} / {jobLimits.pending_jobs.limit}
+                      {jobLimits.pending_jobs.used} / {jobLimits.pending_jobs.limit}
                     </div>
                     <p className={`text-sm ${themeClasses.secondaryText}`}>
                       {language === "zh" ? `还可创建 ${jobLimits.pending_jobs.remaining} 个` : `${jobLimits.pending_jobs.remaining} remaining`}
@@ -409,13 +429,11 @@ export default function JobPendingPage() {
                       {language === "zh" ? "本月任务" : "Monthly Jobs"}
                     </h3>
                     <div className={`text-2xl font-bold ${themeClasses.text}`}>
-                      {jobLimits.monthly_jobs.current} / {jobLimits.monthly_jobs.limit || "∞"}
+                      {jobLimits.monthly_jobs.used} / {jobLimits.monthly_jobs.limit}
                     </div>
-                    {jobLimits.monthly_jobs.limit && (
-                      <p className={`text-sm ${themeClasses.secondaryText}`}>
-                        {language === "zh" ? `还可创建 ${jobLimits.monthly_jobs.remaining} 个` : `${jobLimits.monthly_jobs.remaining} remaining`}
-                      </p>
-                    )}
+                    <p className={`text-sm ${themeClasses.secondaryText}`}>
+                      {language === "zh" ? `还可创建 ${jobLimits.monthly_jobs.remaining} 个` : `${jobLimits.monthly_jobs.remaining} remaining`}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -483,10 +501,10 @@ export default function JobPendingPage() {
                             {job.movieTitle}
                           </h3>
                           <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
-                            {language === "zh" ? "创建于" : "Created"} {job.createdAt}
+                            {language === "zh" ? "创建于" : "Created"} {job.createdAtFormatted}
                           </p>
                           <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
-                            {language === "zh" ? "更新于" : "Updated"} {job.updatedAt}
+                            {language === "zh" ? "更新于" : "Updated"} {job.updatedAtFormatted}
                           </p>
                           {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
                             <p className={`text-sm ${job.backdrop_url ? 'text-gray-100 font-medium' : `${themeClasses.secondaryText} font-medium`}`}>

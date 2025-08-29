@@ -334,7 +334,7 @@ export default function CustomVoiceRecordPage() {
             const currentParams = new URLSearchParams(searchParams.toString())
             currentParams.delete('returnTo')
             // Use the actual voice ID from the response
-            currentParams.set('newVoiceId', `custom_${result.id}`)
+            currentParams.set('newVoiceId', `${result.id}`)
             router.push(`/voice-selection?${currentParams.toString()}`)
           } else if (returnTo === "my-voices" || returnTo === "/my-voices") {
             // Return to my-voices
