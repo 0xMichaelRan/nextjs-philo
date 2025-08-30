@@ -10,9 +10,9 @@ interface User {
   name: string
   email?: string
   is_vip: boolean
+  is_svip: boolean
   vip_expiry_date?: string
   vip_days_remaining?: number
-  subscription_status?: string
   preferences?: any
   created_at: string
   avatar?: string

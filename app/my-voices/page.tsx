@@ -51,8 +51,7 @@ export default function MyVoicesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const returnTo = searchParams?.get('returnTo') || ''
-  const showSelectButton = !!returnTo
+  // Removed returnTo and showSelectButton logic - selection only happens in voice-selection page
   
   usePageTitle("myVoices")
 
@@ -82,7 +81,7 @@ export default function MyVoicesPage() {
 
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.vipStatus()
+        apiConfig.videoJobs.vipStatus()
       )
 
       if (response.ok) {
@@ -121,6 +120,13 @@ export default function MyVoicesPage() {
 
   const deleteVoice = async (voiceId: string) => {
     try {
+      // Stop any playing audio when delete button is clicked
+      if (audioElement) {
+        audioElement.pause()
+        setPlayingVoice(null)
+        setAudioElement(null)
+      }
+
       setDeletingVoice(voiceId)
 
       // Extract numeric ID from "custom_X" format
@@ -176,15 +182,7 @@ export default function MyVoicesPage() {
     newAudio.onended = () => setPlayingVoice(null)
   }
 
-  const selectVoice = (voiceId: number) => {
-    if (!searchParams) return
-    
-    const currentParams = new URLSearchParams(searchParams.toString())
-    currentParams.delete('returnTo')
-    currentParams.set('newVoiceId', voiceId.toString())
-
-    router.push(`/voice-selection?${currentParams.toString()}`)
-  }
+  // Removed selectVoice function - selection only happens in voice-selection page
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -219,19 +217,7 @@ export default function MyVoicesPage() {
     <div className={themeClasses.background}>
       <AppLayout title={t("myVoices.title")}>
         <div className="container mx-auto px-6 py-8">
-          {/* Back button when in selection mode */}
-          {showSelectButton && (
-            <div className="mb-4">
-              <Button
-                onClick={() => router.push('/voice-selection')}
-                variant="ghost"
-                className={`${themeClasses.text} hover:bg-white/10`}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {t("common.back")}
-              </Button>
-            </div>
-          )}
+          {/* Removed back button - no longer needed since selection only happens in voice-selection page */}
 
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -335,17 +321,7 @@ export default function MyVoicesPage() {
                         </Button>
                       </div>
 
-                      {showSelectButton && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => selectVoice(voice.id)}
-                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                        >
-                          <Check className="w-4 h-4 mr-1" />
-                          {t("myVoices.select")}
-                        </Button>
-                      )}
+                      {/* Removed select button - selection only happens in voice-selection page */}
                     </div>
                   </CardContent>
                 </Card>

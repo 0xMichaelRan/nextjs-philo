@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Play, Pause, Mic, Plus, Settings } from "lucide-react"
+import { Play, Pause, Mic } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -33,7 +33,6 @@ interface DefaultVoice {
   is_active: boolean
   is_premium: boolean
   voice_type: string
-  supported_providers: string[]
   sort_order: number
 }
 
@@ -55,6 +54,7 @@ export default function VoiceSelectionWithJobPage() {
   
   const [selectedVoice, setSelectedVoice] = useState("")
   const [selectedResolution, setSelectedResolution] = useState<string>("480p")
+  const [selectedSpeed, setSelectedSpeed] = useState<number>(50)
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
   const [voices, setVoices] = useState<DefaultVoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -117,7 +117,7 @@ export default function VoiceSelectionWithJobPage() {
     }
   }, [user])
 
-  // Initialize selected voice and resolution from flow state
+  // Initialize selected voice, resolution, and speed from flow state
   useEffect(() => {
     if (flowState.voiceCode) {
       setSelectedVoice(flowState.voiceCode)
@@ -125,7 +125,10 @@ export default function VoiceSelectionWithJobPage() {
     if (flowState.resolution) {
       setSelectedResolution(flowState.resolution)
     }
-  }, [flowState.voiceCode, flowState.resolution])
+    if (flowState.speed !== undefined) {
+      setSelectedSpeed(flowState.speed)
+    }
+  }, [flowState.voiceCode, flowState.resolution, flowState.speed])
 
   // Handle new voice selection from custom voice recording
   useEffect(() => {
@@ -164,7 +167,7 @@ export default function VoiceSelectionWithJobPage() {
 
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        `${apiConfig.getBaseUrl()}/api/auth/user/limits`
+        `${apiConfig.getBaseUrl()}/auth/user/limits`
       )
 
       if (response.ok) {
@@ -299,7 +302,8 @@ export default function VoiceSelectionWithJobPage() {
       customVoiceId: isCustomVoice ? selectedVoice : undefined,
       ttsProvider: isCustomVoice ? "xfyun" : ttsProvider,
       analysisJobId: parseInt(jobId),
-      resolution: selectedResolution
+      resolution: selectedResolution,
+      speed: selectedSpeed
     }
 
     console.log("Voice selection - Selected voice code:", selectedVoice)
@@ -379,7 +383,7 @@ export default function VoiceSelectionWithJobPage() {
           </div>
 
           {/* Resolution Selection Link */}
-          <div className="mb-8 text-center">
+          <div className="mb-4 text-center">
             <Button
               onClick={() => router.push(`/resolution-selection?jobId=${jobId}&returnTo=/voice-selection/${jobId}`)}
               variant="outline"
@@ -387,6 +391,28 @@ export default function VoiceSelectionWithJobPage() {
             >
               {language === "zh" ? `当前分辨率: ${selectedResolution} - 点击更改` : `Current Resolution: ${selectedResolution} - Click to Change`}
             </Button>
+          </div>
+
+          {/* Speed Selection */}
+          <div className="mb-8 text-center">
+            <div className="inline-flex items-center gap-4 px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600">
+              <label className={`text-sm font-medium ${themeClasses.text}`}>
+                {language === "zh" ? "语音速度:" : "Voice Speed:"}
+              </label>
+              <select
+                value={selectedSpeed}
+                onChange={(e) => setSelectedSpeed(parseInt(e.target.value))}
+                className={`px-3 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 ${themeClasses.text} text-sm`}
+              >
+                <option value={20}>{language === "zh" ? "很慢 (20)" : "Very Slow (20)"}</option>
+                <option value={30}>{language === "zh" ? "慢 (30)" : "Slow (30)"}</option>
+                <option value={40}>{language === "zh" ? "较慢 (40)" : "Slower (40)"}</option>
+                <option value={50}>{language === "zh" ? "正常 (50)" : "Normal (50)"}</option>
+                <option value={60}>{language === "zh" ? "较快 (60)" : "Faster (60)"}</option>
+                <option value={70}>{language === "zh" ? "快 (70)" : "Fast (70)"}</option>
+                <option value={80}>{language === "zh" ? "很快 (80)" : "Very Fast (80)"}</option>
+              </select>
+            </div>
           </div>
 
           {/* Filter Buttons */}
@@ -568,6 +594,13 @@ export default function VoiceSelectionWithJobPage() {
                       if (vipLimits && customVoices.length >= (vipLimits.plan === 'SVIP' ? 10 : 2)) {
                         setShowVipModal(true)
                       } else {
+                        // Store current state in localStorage for return and auto-selection
+                        localStorage.setItem('voiceSelectionState', JSON.stringify({
+                          jobId,
+                          selectedVoice,
+                          selectedResolution,
+                          selectedSpeed
+                        }))
                         router.push(`/voice-recording?returnTo=/voice-selection/${jobId}`)
                       }
                     }}
@@ -578,14 +611,7 @@ export default function VoiceSelectionWithJobPage() {
                     {language === "zh" ? "录制新语音" : "Record New Voice"}
                   </Button>
 
-                  <Button
-                    onClick={() => router.push(`/my-voices?returnTo=/voice-selection/${jobId}`)}
-                    variant="outline"
-                    className={`${themeClasses.filterButton}`}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    {language === "zh" ? "管理语音" : "Manage Voices"}
-                  </Button>
+                  {/* Removed "Manage Voices" button - management happens in dedicated my-voices page */}
                 </div>
               </div>
 

@@ -210,7 +210,7 @@ export default function MovieHomePage() {
     setVideosLoading(true)
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/jobs/completed?movie_id=${movieId}&limit=3`
+        apiConfig.videoJobs.completed(movieId, 3)
       )
 
       if (response.ok) {
@@ -514,7 +514,12 @@ export default function MovieHomePage() {
                       <div className="relative">
                         <Image
                           src={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : "/placeholder.svg"}
-                          alt={video.movie_title || "Video"}
+                          alt={(() => {
+                            if (typeof video.movie_title === 'object' && video.movie_title) {
+                              return video.movie_title[language] || video.movie_title.en || video.movie_title.zh || "Video"
+                            }
+                            return video.movie_title || "Video"
+                          })()}
                           width={200}
                           height={120}
                           className="w-full h-32 object-cover rounded-t-lg"
@@ -528,13 +533,25 @@ export default function MovieHomePage() {
                       </div>
                       <div className="p-4">
                         <h3 className={`${getTextClasses()} font-semibold text-sm mb-2 line-clamp-2`}>
-                          {video.movie_title || "Unknown Movie"}
+                          {(() => {
+                            if (typeof video.movie_title === 'object' && video.movie_title) {
+                              return video.movie_title[language] || video.movie_title.en || video.movie_title.zh || "Unknown Movie"
+                            }
+                            return video.movie_title || "Unknown Movie"
+                          })()}
                         </h3>
                         <div
                           className={`flex items-center justify-between text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}
                         >
                           <span>{language === "zh" ? "用户分析" : "User Analysis"}</span>
-                          <span>{new Date(video.created_at).toLocaleDateString()}</span>
+                          <span>{(() => {
+                            try {
+                              const date = new Date(video.created_at)
+                              return isNaN(date.getTime()) ? (language === "zh" ? "未知日期" : "Unknown date") : date.toLocaleDateString()
+                            } catch {
+                              return language === "zh" ? "未知日期" : "Unknown date"
+                            }
+                          })()}</span>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {video.character_type || (language === "zh" ? "哲学家" : "Philosopher")}

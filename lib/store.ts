@@ -35,6 +35,7 @@ export interface FlowState {
   voiceLanguage?: string
   customVoiceId?: string
   ttsProvider?: string
+  speed?: number // TTS speed (0-100)
 
   // Script options
   scriptLength?: string
@@ -253,7 +254,7 @@ export const useFlowStore = create<FlowStore>()(
 
         try {
           const response = await apiConfig.makeAuthenticatedRequest(
-            apiConfig.jobs.create(),
+            apiConfig.videoJobs.create(),
             {
               method: 'POST',
               headers: {
@@ -270,10 +271,11 @@ export const useFlowStore = create<FlowStore>()(
                   theme: flowState.analysisTheme || DEFAULT_VALUES.analysisTheme
                 },
                 voice_options: {
-                  voice_id: flowState.voiceId,
-                  voice_name: flowState.voiceName,
+                  voice_code: flowState.voiceCode,
+                  voice_display_name: flowState.voiceName,
                   language: flowState.voiceLanguage || DEFAULT_VALUES.voiceLanguage,
-                  custom_voice_id: flowState.customVoiceId
+                  custom_voice_id: flowState.customVoiceId,
+                  speed: flowState.speed || 100
                 },
                 script_options: {
                   length: flowState.scriptLength || DEFAULT_VALUES.scriptLength,
@@ -316,7 +318,7 @@ export const useFlowStore = create<FlowStore>()(
 
         try {
           const response = await apiConfig.makeAuthenticatedRequest(
-            apiConfig.jobs.details(jobId)
+            apiConfig.videoJobs.details(parseInt(jobId))
           )
 
           if (response.ok) {
@@ -331,8 +333,8 @@ export const useFlowStore = create<FlowStore>()(
               analysisDepth: job.analysis_options?.depth,
               analysisCharacter: job.analysis_options?.character,
               analysisTheme: job.analysis_options?.theme,
-              voiceId: job.voice_options?.voice_id,
-              voiceName: job.voice_options?.voice_name,
+              voiceId: job.voice_options?.voice_code,
+              voiceName: job.voice_options?.voice_display_name,
               voiceLanguage: job.voice_options?.language,
               customVoiceId: job.voice_options?.custom_voice_id,
               scriptLength: job.script_options?.length,
@@ -372,7 +374,7 @@ export const useFlowStore = create<FlowStore>()(
 
         try {
           const response = await apiConfig.makeAuthenticatedRequest(
-            apiConfig.jobs.submitToQueue(flowState.jobId),
+            apiConfig.videoJobs.details(parseInt(flowState.jobId)),
             {
               method: 'POST',
               headers: {

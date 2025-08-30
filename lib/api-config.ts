@@ -35,6 +35,7 @@ class ApiConfig {
     sendVerificationCode: () => `${this.baseUrl}/auth/send-verification-code`,
     verifyPhoneNumber: () => `${this.baseUrl}/auth/verify-phone-number`,
     checkPhone: () => `${this.baseUrl}/auth/check-phone`,
+    userLimits: () => `${this.baseUrl}/auth/user/limits`,
     // Password reset endpoints
     resetPasswordRequest: () => `${this.baseUrl}/auth/reset-password-request`,
     resetPasswordConfirm: () => `${this.baseUrl}/auth/reset-password-confirm`,
@@ -165,25 +166,26 @@ class ApiConfig {
     validatePromo: () => `${this.baseUrl}/payments/validate-promo`,
     denounceVip: () => `${this.baseUrl}/payments/denounce-vip`,
     pricing: () => `${this.baseUrl}/payments/pricing`,
+    // New VIP system endpoints
+    calculateUpgradePrice: () => `${this.baseUrl}/payments/calculate-upgrade-price`,
+    vipStatus: () => `${this.baseUrl}/payments/vip-status`,
   }
 
-  // Job endpoints (legacy)
-  public jobs = {
-    base: () => `${this.baseUrl}/jobs`,
-    create: () => `${this.baseUrl}/jobs`,
-    list: () => `${this.baseUrl}/jobs`,
-    details: (id: string) => `${this.baseUrl}/jobs/${id}`,
-    update: (id: string) => `${this.baseUrl}/jobs/${id}`,
-    submitToQueue: (id: string) => `${this.baseUrl}/jobs/${id}/submit-to-queue`,
-    limits: () => `${this.baseUrl}/jobs/limits`,
-    vipStatus: () => `${this.baseUrl}/jobs/vip-status`,
-  }
-
-  // Video Job endpoints
+  // Video Job endpoints (primary job management)
   public videoJobs = {
     create: () => `${this.baseUrl}/video-jobs/`,
     list: () => `${this.baseUrl}/video-jobs/`,
     details: (id: number) => `${this.baseUrl}/video-jobs/${id}`,
+    completed: (movieId?: string, limit?: number) => {
+      const params = new URLSearchParams()
+      if (movieId) params.append('movie_id', movieId)
+      if (limit) params.append('limit', limit.toString())
+      const queryString = params.toString()
+      return `${this.baseUrl}/video-jobs/completed${queryString ? `?${queryString}` : ''}`
+    },
+    vipStatus: () => `${this.baseUrl}/video-jobs/vip-status`,
+    cancel: (id: number) => `${this.baseUrl}/video-jobs/${id}/cancel`,
+    videoUrl: (id: number) => `${this.baseUrl}/video-jobs/${id}/video-url`,
   }
 
   // Analysis endpoints
@@ -206,6 +208,9 @@ class ApiConfig {
       return `${this.baseUrl}/analysis/prompts/${promptId}?${params.toString()}`
     },
     listModels: () => `${this.baseUrl}/analysis/models`,
+    // TTS audio endpoints
+    getTtsAudio: (jobId: number, voiceId: string) => `${this.baseUrl}/analysis/jobs/${jobId}/tts-audio/${voiceId}`,
+    generateTtsAudio: (jobId: number) => `${this.baseUrl}/analysis/jobs/${jobId}/generate-tts`,
   }
 
   // Utility method to get authorization headers

@@ -24,14 +24,10 @@ interface VideoJob {
   movie_title: string
   movie_title_en?: string
   tts_text: string
-  voice_id: string
-  voice_name?: string
-  voice_language: string
+  voice_code: string
+  voice_display_name?: string
   custom_voice_id?: string
-  tts_provider: string
   status: string
-  progress: number
-  external_job_id?: string
   result_video_url?: string
   result_script_url?: string
   video_url?: string
@@ -39,6 +35,7 @@ interface VideoJob {
   narration_audio_url?: string
   error_message?: string
   resolution: string
+  speed: number // TTS speed (0-100)
   created_at: string
   updated_at: string
   completed_at?: string
@@ -290,7 +287,13 @@ export default function VideoGenerationPage() {
                         <div className="relative">
                           <img
                             src={job.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=backdrop` : "/placeholder.svg"}
-                            alt={job.movie_title}
+                            alt={(() => {
+                              if (typeof job.movie_title === 'object' && job.movie_title) {
+                                const titleObj = job.movie_title as any
+                                return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
+                              }
+                              return job.movie_title || "Movie"
+                            })()}
                             className="w-full h-32 object-cover"
                           />
                           <button
@@ -314,7 +317,13 @@ export default function VideoGenerationPage() {
                           onClick={() => router.push(`/video-generation/${job.id}`)}
                         >
                           <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
-                            {job.movie_title}
+                            {(() => {
+                              if (typeof job.movie_title === 'object' && job.movie_title) {
+                                const titleObj = job.movie_title as any
+                                return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
+                              }
+                              return job.movie_title || "Movie"
+                            })()}
                           </h3>
                           <div className="space-y-2">
                             <div className={`flex justify-between text-sm ${themeClasses.secondaryText}`}>
@@ -361,7 +370,13 @@ export default function VideoGenerationPage() {
           <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
             <DialogContent className="max-w-4xl w-full">
               <DialogHeader>
-                <DialogTitle>{selectedVideo?.movie_title}</DialogTitle>
+                <DialogTitle>{(() => {
+                  if (typeof selectedVideo?.movie_title === 'object' && selectedVideo?.movie_title) {
+                    const titleObj = selectedVideo.movie_title as any
+                    return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
+                  }
+                  return selectedVideo?.movie_title || "Movie"
+                })()}</DialogTitle>
               </DialogHeader>
               {selectedVideo && (
                 <div className="aspect-video">

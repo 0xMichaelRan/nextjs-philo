@@ -25,14 +25,10 @@ interface VideoJob {
   movie_title: string
   movie_title_en?: string
   tts_text: string
-  voice_id: string
-  voice_name?: string
-  voice_language: string
+  voice_code: string
+  voice_display_name?: string
   custom_voice_id?: string
-  tts_provider: string
   status: string
-  progress: number
-  external_job_id?: string
   result_video_url?: string
   result_script_url?: string
   video_url?: string
@@ -40,6 +36,7 @@ interface VideoJob {
   narration_audio_url?: string
   error_message?: string
   resolution: string
+  speed: number // TTS speed (0-100)
   created_at: string
   updated_at: string
   completed_at?: string
@@ -74,8 +71,31 @@ export default function VideoJobPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showTtsText, setShowTtsText] = useState(false)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
 
   const jobId = params.job_id as string
+
+  const fetchVideoUrls = async () => {
+    if (!user || !job || job.status !== 'completed') return
+
+    try {
+      const response = await apiConfig.makeAuthenticatedRequest(
+        `${apiConfig.getBaseUrl()}/video-jobs/${jobId}/video-url`,
+        { method: 'GET' }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        setVideoUrl(data.video_url)
+        setDownloadUrl(data.download_url || data.video_url)
+      } else {
+        console.error('Failed to fetch video URLs')
+      }
+    } catch (error) {
+      console.error('Error fetching video URLs:', error)
+    }
+  }
 
   const fetchJob = async () => {
     if (!user) {
@@ -142,6 +162,13 @@ export default function VideoJobPage() {
 
     return unsubscribe
   }, [user, jobId, onJobUpdate])
+
+  // Fetch video URLs when job is completed
+  useEffect(() => {
+    if (job && job.status === 'completed') {
+      fetchVideoUrls()
+    }
+  }, [job?.status, user])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -299,7 +326,13 @@ export default function VideoJobPage() {
                   {language === "zh" ? "视频生成" : "Video Generation"}
                 </h1>
                 <p className={themeClasses.secondaryText}>
-                  {job.movie_title}
+                  {(() => {
+                    if (typeof job.movie_title === 'object' && job.movie_title) {
+                      const titleObj = job.movie_title as any
+                      return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
+                    }
+                    return job.movie_title || "Movie"
+                  })()}
                 </p>
               </div>
             </div>
@@ -316,12 +349,7 @@ export default function VideoJobPage() {
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
                     <VideoPlayer
-                      src={job.video_url
-                        ? `${apiConfig.getBaseUrl()}${job.video_url}`
-                        : job.result_video_url
-                          ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
-                          : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
-                      }
+                      src={videoUrl || `${apiConfig.getBaseUrl()}/static/video/${job.id}`}
                       poster={movieData?.backdrop_url
                         ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
                         : job.thumbnail_url
@@ -336,12 +364,7 @@ export default function VideoJobPage() {
                           asChild
                           className={`flex-1 ${themeClasses.button} text-white`}
                         >
-                          <a href={job.video_url
-                            ? `${apiConfig.getBaseUrl()}${job.video_url}`
-                            : job.result_video_url
-                              ? `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/final_video.mp4`
-                              : `${apiConfig.getBaseUrl()}/static/jobs/${job.id}/output.mp4`
-                          } download>
+                          <a href={downloadUrl || `${apiConfig.getBaseUrl()}/static/video/${job.id}`} download>
                             <Download className="w-4 h-4 mr-2" />
                             {language === "zh" ? "下载视频" : "Download Video"}
                           </a>
@@ -384,12 +407,16 @@ export default function VideoJobPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {movieData.poster_url && (
+                    {(movieData.poster_url || movieData.id) && (
                       <div className="flex justify-center">
                         <img
                           src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster`}
-                          alt={movieData.title}
+                          alt={movieData.title || movieData.title_zh || movieData.title_en || "Movie"}
                           className="w-32 h-48 object-cover rounded-lg shadow-lg"
+                          onError={(e) => {
+                            // Hide image if it fails to load
+                            e.currentTarget.style.display = 'none'
+                          }}
                         />
                       </div>
                     )}
@@ -449,7 +476,7 @@ export default function VideoJobPage() {
                         {language === "zh" ? "语音" : "Voice"}
                       </span>
                       <p className={themeClasses.text}>
-                        {job.voice_name || job.voice_id}
+                        {job.voice_display_name || job.voice_code}
                       </p>
                     </div>
                     <div>

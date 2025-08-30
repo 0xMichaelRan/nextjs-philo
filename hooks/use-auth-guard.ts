@@ -74,8 +74,11 @@ export function useAuthGuard(options: UseAuthGuardOptions = {}) {
 // Helper function to check if authentication is required for a specific action
 export function checkAuthForAction(user: any, router: any, returnUrl?: string) {
   if (!user) {
-    const authUrl = `/auth${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`
-    router.push(authUrl)
+    // Store the return URL in localStorage for the auth page to use
+    if (returnUrl) {
+      localStorage.setItem('redirectAfterAuth', returnUrl)
+    }
+    router.push('/auth')
     return false
   }
   return true

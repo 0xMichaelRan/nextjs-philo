@@ -29,6 +29,7 @@ interface AnalysisJob {
   progress: number
   error_message?: string
   analysis_result?: string
+  analysis_result_edit?: string  // Add edit field
   system_instruction_combined?: string
   user_prompt_combined?: string
   model_used?: string
@@ -154,7 +155,9 @@ export default function AnalysisJobPage() {
 
   const handleEditStart = () => {
     if (analysisJob?.analysis_result) {
-      setEditedText(analysisJob.analysis_result)
+      // Use edited version if available, otherwise use original
+      const textToEdit = analysisJob.analysis_result_edit || analysisJob.analysis_result
+      setEditedText(textToEdit)
       setIsEditing(true)
     }
   }
@@ -177,14 +180,14 @@ export default function AnalysisJobPage() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            analysis_result: editedText.trim()
+            analysis_result_edit: editedText.trim()  // Save to edit field, preserve original
           })
         }
       )
 
       if (response.ok) {
-        // Update local state
-        setAnalysisJob(prev => prev ? { ...prev, analysis_result: editedText.trim() } : null)
+        // Update local state - save to edit field, preserve original
+        setAnalysisJob(prev => prev ? { ...prev, analysis_result_edit: editedText.trim() } : null)
 
         // Update flow state
         updateFlowState({
@@ -380,7 +383,7 @@ export default function AnalysisJobPage() {
                 ) : (
                   <div className={`${themeClasses.card} border border-white/20 rounded-lg p-4 max-h-96 overflow-y-auto`}>
                     <pre className={`${themeClasses.text} text-sm whitespace-pre-wrap`}>
-                      {analysisJob.analysis_result}
+                      {analysisJob.analysis_result_edit || analysisJob.analysis_result}
                     </pre>
                   </div>
                 )}

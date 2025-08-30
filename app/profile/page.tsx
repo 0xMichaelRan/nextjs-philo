@@ -54,10 +54,13 @@ export default function ProfilePage() {
     promotional: false,
   })
   const [vipStatus, setVipStatus] = useState<{
-    is_vip: boolean
-    is_active: boolean
-    days_remaining: number | null
-    expiry_date: string | null
+    is_vip: boolean,
+    is_svip: boolean,
+    is_active: boolean,
+    tier: string,
+    days_remaining: number | null,
+    expiry_date: string | null,
+    can_upgrade: boolean
   } | null>(null)
   const [isDenouncing, setIsDenouncing] = useState(false)
 
@@ -114,9 +117,12 @@ export default function ProfilePage() {
     if (user) {
       setVipStatus({
         is_vip: user.is_vip,
+        is_svip: user.is_svip,
+        tier: user.is_vip ? (user.is_svip ? "SVIP" : "VIP") : "Free",
         is_active: user.is_vip && user.vip_days_remaining !== null && user.vip_days_remaining !== undefined && user.vip_days_remaining > 0,
         days_remaining: user.vip_days_remaining ?? null,
-        expiry_date: user.vip_expiry_date ?? null
+        expiry_date: user.vip_expiry_date ?? null,
+        can_upgrade: user.is_vip && !user.is_svip
       })
     }
   }, [user])
@@ -601,7 +607,7 @@ export default function ProfilePage() {
                           </h3>
                           <VipBadge
                             isVip={user.is_vip}
-                            subscriptionStatus={user.subscription_status}
+                            isSvip={user.is_svip}
                             size="md"
                           />
                         </div>
@@ -614,8 +620,8 @@ export default function ProfilePage() {
                         {user.is_vip && (
                           <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
                             {language === "zh"
-                              ? `${user.subscription_status === "svip" ? "SVIP" : "VIP"}剩余天数`
-                              : `${user.subscription_status === "svip" ? "SVIP" : "VIP"} Days Remaining`}: {
+                              ? `剩余天数`
+                              : `Days Remaining`}: {
                               vipStatus?.days_remaining !== null
                                 ? `${vipStatus?.days_remaining || 0} ${language === "zh" ? "天" : "days"}`
                                 : (language === "zh" ? "加载中..." : "Loading...")
@@ -876,7 +882,7 @@ export default function ProfilePage() {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className={`${getThemeClass("text-gray-900", "text-white")} font-semibold`}>
-                            {language === "zh" ? "VIP会员" : "VIP Member"}
+                            {language === "zh" ? `${vipStatus?.tier}会员` : `${vipStatus?.tier} Member`}
                           </p>
                           <p className={`${getThemeClass("text-gray-600", "text-gray-300")} text-sm`}>
                             {language === "zh" ? "有效期至" : "Valid until"}: {formatVipExpiry(user.vip_expiry_date)}

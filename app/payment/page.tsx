@@ -600,7 +600,7 @@ export default function PaymentPage() {
                           </div>
                           <div className="text-right">
                             <div className={`${themeClasses.text} font-semibold`}>
-                              ¥{getPrice(selectedPlan, "monthly").price}/{t("payment.month")}
+                              ¥{getPrice(selectedPlan, "monthly").price.toFixed(2)}/{t("payment.month")}
                             </div>
                           </div>
                         </div>
@@ -621,10 +621,10 @@ export default function PaymentPage() {
                           </div>
                           <div className="text-right">
                             <div className={`${themeClasses.text} font-semibold`}>
-                              ¥{getPrice(selectedPlan, "yearly").price}/{t("payment.year")}
+                              ¥{getPrice(selectedPlan, "yearly").price.toFixed(2)}/{t("payment.year")}
                             </div>
                             <div className={`${themeClasses.secondaryText} text-sm line-through`}>
-                              ¥{getPrice(selectedPlan, "yearly").originalPrice}
+                              ¥{getPrice(selectedPlan, "yearly").originalPrice.toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -799,7 +799,7 @@ export default function PaymentPage() {
                         }
                       </span>
                       <span className={`${themeClasses.secondaryText} ${!currentPlanPricing.isUpgrade ? 'line-through' : ''}`}>
-                        ¥{currentPlanPricing.originalPrice}
+                        ¥{currentPlanPricing.originalPrice.toFixed(2)}
                       </span>
                     </div>
                     {yearlyDiscount > 0 && (
@@ -807,7 +807,7 @@ export default function PaymentPage() {
                         <span>
                           {t("payment.annualDiscount")} ({yearlyDiscount}%):
                         </span>
-                        <span>-¥{savings}</span>
+                        <span>-¥{savings.toFixed(2)}</span>
                       </div>
                     )}
                     {promoApplied && promoDiscount > 0 && (
@@ -815,14 +815,14 @@ export default function PaymentPage() {
                         <span>
                           {t("payment.promoDiscount")} ({promoCode}):
                         </span>
-                        <span>-¥{promoDiscount}</span>
+                        <span>-¥{promoDiscount.toFixed(2)}</span>
                       </div>
                     )}
                     <Separator />
                     <div className="flex justify-between">
                       <span className={`${themeClasses.text} font-semibold text-lg`}>{t("payment.total")}:</span>
                       <span className={`${themeClasses.text} font-bold text-xl ${finalPrice === 0 ? 'text-green-500' : ''}`}>
-                        ¥{finalPrice}
+                        ¥{finalPrice.toFixed(2)}
                         {finalPrice === 0 && (
                           <span className="ml-2 text-sm font-normal">
                             ({t("payment.free")})
@@ -853,7 +853,7 @@ export default function PaymentPage() {
                     ? t("payment.processing")
                     : finalPrice === 0
                       ? t("payment.getVipFree")
-                      : `${t("payment.payNow")} ¥${finalPrice}`
+                      : `${t("payment.payNow")} ¥${finalPrice.toFixed(2)}`
                   }
                 </Button>
               </div>

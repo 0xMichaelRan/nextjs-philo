@@ -17,7 +17,7 @@ import { useAuthGuard } from "@/hooks/use-auth-guard"
 // Types for notifications from backend API
 interface Notification {
   id: number
-  user_id: string
+  user_id: number
   title_zh: string
   title_en?: string
   message_zh: string
@@ -82,6 +82,10 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalNotifications, setTotalNotifications] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const notificationsPerPage = 10
 
   // Set page title
   usePageTitle('notifications')
@@ -96,19 +100,30 @@ export default function NotificationsPage() {
   }, [user, activeTab])
 
   // Fetch notifications from backend API
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (page: number = 1, append: boolean = false) => {
     try {
-      setIsLoading(true)
+      if (!append) {
+        setIsLoading(true)
+      }
       setError(null)
 
+      const offset = (page - 1) * notificationsPerPage
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.notifications.list()
+        `${apiConfig.notifications.list()}?limit=${notificationsPerPage}&offset=${offset}`
       )
 
       if (response.ok) {
         const data: NotificationList = await response.json()
-        setNotifications(data.notifications)
+
+        if (append) {
+          setNotifications(prev => [...prev, ...data.notifications])
+        } else {
+          setNotifications(data.notifications)
+        }
+
         setUnreadCount(data.unread_count)
+        setHasMore(data.notifications.length === notificationsPerPage)
+        setTotalNotifications(data.unread_count + data.notifications.filter(n => n.is_read).length)
       } else {
         throw new Error('Failed to fetch notifications')
       }
@@ -209,16 +224,17 @@ export default function NotificationsPage() {
   // Load notifications on component mount and when user changes
   useEffect(() => {
     if (user) {
-      fetchNotifications()
+      setCurrentPage(1)
+      fetchNotifications(1, false)
     }
   }, [user])
 
-  // Also load notifications when component first mounts
+  // Load more notifications when page changes
   useEffect(() => {
-    if (user) {
-      fetchNotifications()
+    if (user && currentPage > 1) {
+      fetchNotifications(currentPage, true)
     }
-  }, [])
+  }, [currentPage])
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -437,6 +453,29 @@ export default function NotificationsPage() {
                       </p>
                     </CardContent>
                   </Card>
+                )}
+
+                {/* Pagination Controls */}
+                {notifications.length > 0 && hasMore && (
+                  <div className="mt-8 text-center">
+                    <Button
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={isLoading}
+                      variant="outline"
+                      className={`${themeClasses.filterButton} px-8 py-3`}
+                    >
+                      {isLoading
+                        ? (language === "zh" ? "加载中..." : "Loading...")
+                        : (language === "zh" ? "加载更多" : "Load More")
+                      }
+                    </Button>
+                    <p className={`${themeClasses.secondaryText} text-sm mt-2`}>
+                      {language === "zh"
+                        ? `已显示 ${notifications.length} 条通知`
+                        : `Showing ${notifications.length} notifications`
+                      }
+                    </p>
+                  </div>
                 )}
               </div>
             </TabsContent>

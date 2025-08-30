@@ -18,13 +18,12 @@ import { apiConfig } from "@/lib/api-config"
 
 interface AnalysisJob {
   id: number
-  user_id: string
+  user_id: number
   movie_id: string
   prompt_library_id: number
   system_instruction_input?: any
   user_prompt_input?: any
   status: string
-  progress: number
   error_message?: string
   analysis_result?: string
   system_instruction_combined?: string
@@ -272,7 +271,6 @@ export default function AnalysisResultsPage() {
             <CardContent className="space-y-4">
               {(analysisJob.status === 'processing' || analysisJob.status === 'pending') && (
                 <div className="space-y-3">
-                  <Progress value={analysisJob.progress} className="w-full" />
                   <div className="flex justify-between items-center">
                     <p className={`${themeClasses.secondaryText} text-sm`}>
                       {language === "zh" ? `进度: ${analysisJob.progress}%` : `Progress: ${analysisJob.progress}%`}

@@ -114,21 +114,22 @@ export default function JobSubmissionPage() {
           theme: flowState.analysisTheme || "general"
         },
         voice_options: {
-          voice_id: flowState.voiceId || "zh-CN-XiaoxiaoNeural",
-          voice_name: flowState.voiceName,
+          voice_code: flowState.voiceCode || "zh-CN-XiaoxiaoNeural",
+          voice_display_name: flowState.voiceName,
           language: flowState.voiceLanguage || "zh",
-          custom_voice_id: flowState.customVoiceId
+          custom_voice_id: flowState.customVoiceId,
+          speed: flowState.speed || 100
         },
         script_options: {
           length: flowState.scriptLength || "medium",
           tone: flowState.scriptTone || "analytical"
         },
-        resolution: flowState.resolution || 480,
+        resolution: flowState.resolution || "480p",
         status: "pending"
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.create(),
+        apiConfig.videoJobs.create(),
         {
           method: 'POST',
           headers: {
@@ -155,27 +156,8 @@ export default function JobSubmissionPage() {
       const job = await response.json()
       setJobId(job.id)
 
-      // Submit job to queue
-      const submitResponse = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.submitToQueue(job.id),
-        {
-          method: 'POST',
-        }
-      )
-
-      if (!submitResponse.ok) {
-        const errorData = await submitResponse.json()
-
-        // Handle 401 Unauthorized - redirect to auth
-        if (submitResponse.status === 401) {
-          // Store current path for redirect after login
-          localStorage.setItem('redirectAfterAuth', '/job-submission')
-          router.push('/auth')
-          return
-        }
-
-        throw new Error(errorData.detail || 'Failed to submit job to queue')
-      }
+      // Job is automatically submitted to queue when created
+      // No need for separate submit step with new video jobs API
 
       // Complete submission
       setSubmissionComplete(true)

@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/language-context"
 
 interface VipBadgeProps {
   isVip: boolean
-  subscriptionStatus?: string
+  isSvip?: boolean
   daysRemaining?: number | null
   showDaysRemaining?: boolean
   size?: "sm" | "md" | "lg"
@@ -17,7 +17,7 @@ interface VipBadgeProps {
 
 export function VipBadge({
   isVip,
-  subscriptionStatus,
+  isSvip = false,
   daysRemaining,
   showDaysRemaining = false,
   size = "md",
@@ -51,14 +51,14 @@ export function VipBadge({
   }
 
   const getGradientClasses = () => {
-    if (subscriptionStatus === "svip") {
+    if (isSvip) {
       return "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
     }
     return "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
   }
 
   const getTierLabel = () => {
-    return subscriptionStatus === "svip" ? "SVIP" : "VIP"
+    return isSvip ? "SVIP" : "VIP"
   }
 
   const getDisplayText = () => {

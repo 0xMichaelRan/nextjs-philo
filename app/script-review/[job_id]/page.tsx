@@ -148,7 +148,8 @@ export default function ScriptReviewPage() {
         voiceLanguage: flowState.voiceLanguage,
         customVoiceId: flowState.customVoiceId,
         ttsProvider: flowState.ttsProvider || 'xfyun',
-        isCustom: flowState.voiceId === 'custom'
+        isCustom: flowState.voiceId === 'custom',
+        speed: flowState.speed || 100
       }
 
       console.log("Script-review - Flow state voice data:", {
@@ -217,7 +218,7 @@ export default function ScriptReviewPage() {
       
       // First, check if TTS audio already exists for this analysis job
       if (analysisJob?.tts_audio_file_path) {
-        const ttsAudioUrl = `${apiConfig.baseUrl}/static/tts-audio/${analysisJob.tts_audio_file_path}`
+        const ttsAudioUrl = `${apiConfig.getBaseUrl()}/static/tts-audio/${analysisJob.tts_audio_file_path}`
         
         try {
           const audioCheckResponse = await fetch(ttsAudioUrl)
@@ -237,11 +238,12 @@ export default function ScriptReviewPage() {
       // If we have an analysis job ID, try to generate and save TTS audio
       if (analysisJob?.id) {
         const generateTtsRequest = {
-          voice_id: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
+          voice_code: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
           voice_type: voiceConfig.isCustom ? 'custom' : 'system',
           language: 'zh',
           provider: voiceConfig.ttsProvider || 'xfyun',
-          custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null
+          custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
+          speed: flowState.speed || 100
         }
 
         console.log("TTS Generation - Frontend request:", generateTtsRequest)
@@ -249,7 +251,7 @@ export default function ScriptReviewPage() {
 
         try {
           const generateResponse = await apiConfig.makeAuthenticatedRequest(
-            apiConfig.analysis.generateTts(analysisJob.id),
+            apiConfig.analysis.generateTtsAudio(analysisJob.id),
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -281,8 +283,9 @@ export default function ScriptReviewPage() {
         provider: voiceConfig.ttsProvider,
         voice_type: voiceConfig.isCustom ? 'custom' : 'system',
         language: 'zh',
-        voice_id: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
-        custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null
+        voice_code: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
+        custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
+        speed: flowState.speed || 100
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(apiConfig.tts.synthesize(), {
@@ -387,18 +390,38 @@ export default function ScriptReviewPage() {
     }
 
     try {
-      // Check job limits first
-      const limitsResponse = await apiConfig.makeAuthenticatedRequest(
-        `${apiConfig.getBaseUrl()}/api/auth/user/limits`,
+      // Check VIP status and job limits using new system
+      const vipStatusResponse = await apiConfig.makeAuthenticatedRequest(
+        apiConfig.payments.vipStatus(),
         { method: 'GET' }
       )
 
-      if (limitsResponse.ok) {
-        const limits = await limitsResponse.json()
-        if (!limits.can_create_job) {
-          setJobLimits(limits)
-          setShowLimitsModal(true)
-          return
+      if (vipStatusResponse.ok) {
+        const vipStatus = await vipStatusResponse.json()
+        const status = vipStatus.vip_status
+
+        // Get user limits from auth endpoint
+        const limitsResponse = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.auth.userLimits(),
+          { method: 'GET' }
+        )
+
+        if (limitsResponse.ok) {
+          const limits = await limitsResponse.json()
+
+          // Check if user can create more jobs
+          const dailyLimit = status.tier === 'free' ? 1 : (status.tier === 'vip' ? 3 : 10)
+          const dailyUsed = limits.daily_jobs_used || 0
+
+          if (dailyUsed >= dailyLimit) {
+            setJobLimits({
+              daily_jobs: { used: dailyUsed, limit: dailyLimit },
+              plan: status.tier,
+              can_create_job: false
+            })
+            setShowLimitsModal(true)
+            return
+          }
         }
       }
 
@@ -406,15 +429,20 @@ export default function ScriptReviewPage() {
       const videoJobData = {
         analysis_job_id: analysisJob.id,
         movie_id: movieData.id,
-        movie_title: movieData.title_zh || movieData.title,
+        // movie_title: movieData.title_zh || movieData.title,
+        movie_title: [
+          movieData.title_zh || movieData.title,
+          movieData.title_en,
+        ].filter(Boolean),        // removes any undefined/null/empty entries
         movie_title_en: movieData.title_en,
         tts_text: analysisJob.analysis_result || llmResponse,
-        voice_id: voiceConfig?.voiceCode || voiceConfig?.voiceId || 'default',
-        voice_name: voiceConfig?.voiceName || 'Default Voice',
+        voice_code: voiceConfig?.voiceCode || voiceConfig?.voiceId || 'default',
+        voice_display_name: voiceConfig?.voiceName || 'Default Voice',
         voice_language: voiceConfig?.voiceLanguage || 'zh',
         custom_voice_id: voiceConfig?.isCustom ? voiceConfig?.customVoiceId : null,
         tts_provider: voiceConfig?.ttsProvider || 'xfyun',
-        resolution: flowState.resolution || '480p'
+        resolution: flowState.resolution || '480p',
+        speed: flowState.speed || 100
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(

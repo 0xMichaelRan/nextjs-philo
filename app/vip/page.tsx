@@ -199,7 +199,7 @@ export default function VipPage() {
     setLoading(true)
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.vipStatus()
+        apiConfig.videoJobs.vipStatus()
       )
 
       if (response.ok) {
@@ -352,10 +352,10 @@ export default function VipPage() {
                         {language === "zh" ? "专属声音" : "Custom Voices"}
                       </h4>
                       <p className={`${themeClasses.secondaryText} text-sm`}>
-                        {vipStatus.usage.custom_voices.current} / {vipStatus.usage.custom_voices.limit}
+                        {vipStatus.usage?.custom_voices?.current || 0} / {vipStatus.usage?.custom_voices?.limit || 0}
                       </p>
                       <p className={`${themeClasses.secondaryText} text-xs opacity-75`}>
-                        {language === "zh" ? `剩余 ${vipStatus.usage.custom_voices.remaining}` : `${vipStatus.usage.custom_voices.remaining} remaining`}
+                        {language === "zh" ? `剩余 ${vipStatus.usage?.custom_voices?.remaining || 0}` : `${vipStatus.usage?.custom_voices?.remaining || 0} remaining`}
                       </p>
                     </div>
 
@@ -366,10 +366,10 @@ export default function VipPage() {
                         {language === "zh" ? "视频任务" : "Video Jobs"}
                       </h4>
                       <p className={`${themeClasses.secondaryText} text-sm`}>
-                        {vipStatus.usage.monthly_jobs.current} / {vipStatus.usage.monthly_jobs.limit || "∞"}
+                        {vipStatus.usage?.monthly_jobs?.current || 0} / {vipStatus.usage?.monthly_jobs?.limit || "∞"}
                       </p>
                       <p className={`${themeClasses.secondaryText} text-xs opacity-75`}>
-                        {vipStatus.usage.monthly_jobs.remaining !== null
+                        {(vipStatus.usage?.monthly_jobs?.remaining !== null && vipStatus.usage?.monthly_jobs?.remaining !== undefined)
                           ? (language === "zh" ? `剩余 ${vipStatus.usage.monthly_jobs.remaining}` : `${vipStatus.usage.monthly_jobs.remaining} remaining`)
                           : (language === "zh" ? "无限制" : "Unlimited")
                         }
@@ -500,7 +500,7 @@ export default function VipPage() {
                             <Crown className="w-4 h-4 mr-2" />
                             {language === "zh" ? "选择此计划" : "Choose Plan"}
                           </>
-                        ) : user.is_vip && plan.id === vipStatus?.plan_code.toLowerCase() ? (
+                        ) : user.is_vip && plan.id === vipStatus?.plan_code?.toLowerCase() ? (
                           <>
                             <Crown className="w-4 h-4 mr-2" />
                             {language === "zh" ? "续费" : "Renew"}

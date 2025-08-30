@@ -77,7 +77,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
       // Fetch VIP status and usage statistics
       const vipResponse = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.jobs.vipStatus(),
+        apiConfig.videoJobs.vipStatus(),
         { method: 'GET' }
       )
 
@@ -310,7 +310,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                         {user.is_vip ? (
                           <VipBadge
                             isVip={user.is_vip}
-                            subscriptionStatus={user.subscription_status}
+                            isSvip={user.is_svip}
                             daysRemaining={user.vip_days_remaining}
                             showDaysRemaining={true}
                             size="sm"
@@ -391,7 +391,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                     </div>
                     <VipBadge
                       isVip={user.is_vip}
-                      subscriptionStatus={user.subscription_status}
+                      isSvip={user.is_svip}
                       size="sm"
                       className="flex-shrink-0"
                     />

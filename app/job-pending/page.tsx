@@ -52,7 +52,7 @@ interface Job {
   id: string
   movieTitle: string
   status: 'draft' | 'pending' | 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'
-  progress: number
+  progress?: number
   estimatedTime?: number
   queuePosition?: number
   createdAt: string
@@ -64,7 +64,6 @@ interface Job {
   video_url?: string
   thumbnail_url?: string
   error_message?: string
-  external_job_id?: string
   poster_url?: string
   backdrop_url?: string
 }
@@ -122,7 +121,14 @@ export default function JobPendingPage() {
         const mappedJobs = await Promise.all(filteredJobs.map(async (job: any) => {
           const baseJob = {
             ...job,
-            movieTitle: job.movie_title || job.movie_title_en || 'Unknown Movie',
+            movieTitle: (() => {
+              // Handle movie_title as object with language keys
+              if (typeof job.movie_title === 'object' && job.movie_title) {
+                return job.movie_title[language] || job.movie_title.en || job.movie_title.zh || 'Unknown Movie'
+              }
+              // Fallback to string fields
+              return job.movie_title || job.movie_title_en || job.movie_title_zh || 'Unknown Movie'
+            })(),
             // Keep original timestamps for calculations, add formatted versions
             createdAtFormatted: job.created_at ? formatRelativeTime(job.created_at, language) : (language === "zh" ? "时间未知" : "Unknown time"),
             updatedAtFormatted: job.updated_at ? formatRelativeTime(job.updated_at, language) : (language === "zh" ? "时间未知" : "Unknown time"),
@@ -153,7 +159,7 @@ export default function JobPendingPage() {
 
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        `${apiConfig.getBaseUrl()}/api/auth/user/limits`
+        apiConfig.auth.userLimits()
       )
 
       if (response.ok) {
@@ -225,7 +231,8 @@ export default function JobPendingPage() {
           job.id === data.job_id
             ? { ...job, status: data.status as Job['status'], progress: data.progress }
             : job
-        ).filter(job => job.status !== 'completed') // Remove completed jobs
+        )
+        // Don't filter out completed jobs - let user see completion status
       )
     })
 
