@@ -96,6 +96,7 @@ export default function VideoJobPage() {
 
         console.log('Set video URL for streaming:', streamingUrl)
         console.log('Set download URL:', data.download_url || data.video_url)
+        console.log('Streaming URL (may not work):', data.streaming_url)
       } else {
         console.error('Failed to fetch video URLs')
       }

@@ -18,6 +18,8 @@ export function VideoPlayer({ src, poster, className = "" }: VideoPlayerProps) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
+  const [hasError, setHasError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -46,7 +48,20 @@ export function VideoPlayer({ src, poster, className = "" }: VideoPlayerProps) {
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration)
+      setIsLoading(false)
+      setHasError(false)
     }
+  }
+
+  const handleError = () => {
+    console.error('Video loading error for src:', src)
+    setHasError(true)
+    setIsLoading(false)
+  }
+
+  const handleLoadStart = () => {
+    setIsLoading(true)
+    setHasError(false)
   }
 
   const handleSeek = (value: number[]) => {
@@ -88,10 +103,31 @@ export function VideoPlayer({ src, poster, className = "" }: VideoPlayerProps) {
         className="w-full h-full"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onLoadStart={handleLoadStart}
+        onError={handleError}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onClick={togglePlay}
+        preload="metadata"
+        crossOrigin="anonymous"
       />
+
+      {/* Loading indicator */}
+      {isLoading && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+          <div className="text-white text-lg">Loading video...</div>
+        </div>
+      )}
+
+      {/* Error indicator */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+          <div className="text-white text-center">
+            <div className="text-lg mb-2">Video loading failed</div>
+            <div className="text-sm opacity-75">Please try refreshing the page</div>
+          </div>
+        </div>
+      )}
 
       {/* Controls Overlay */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
