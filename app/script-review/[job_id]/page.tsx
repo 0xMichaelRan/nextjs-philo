@@ -219,7 +219,7 @@ export default function ScriptReviewPage() {
       
       // First, check if TTS audio already exists for this analysis job
       if (analysisJob?.tts_audio_file_path) {
-        const ttsAudioUrl = `${apiConfig.getBaseUrl()}/static/tts-audio/${analysisJob.tts_audio_file_path}`
+        const ttsAudioUrl = `${apiConfig.getBaseUrl()}/static/tts-audio/aj${analysisJob.id}/${analysisJob.tts_audio_file_path}`
         
         try {
           const audioCheckResponse = await fetch(ttsAudioUrl)
