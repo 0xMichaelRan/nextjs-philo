@@ -217,13 +217,15 @@ export default function ScriptReviewPage() {
     try {
       setIsGenerating(true)
       
-      // First, check if TTS audio already exists for this analysis job
-      if (analysisJob?.tts_audio_file_path) {
-        const ttsAudioUrl = `${apiConfig.getBaseUrl()}/static/tts-audio/aj${analysisJob.id}/${analysisJob.tts_audio_file_path}`
-        
+      // First, check if TTS audio already exists for this analysis job with the current voice
+      if (analysisJob?.id) {
+        const currentVoiceId = voiceConfig.isCustom ? voiceConfig.customVoiceId : voiceConfig.voiceCode
+        const ttsAudioUrl = `${apiConfig.getBaseUrl()}/static/tts-audio/aj${analysisJob.id}/${currentVoiceId}.wav`
+
         try {
           const audioCheckResponse = await fetch(ttsAudioUrl)
           if (audioCheckResponse.ok) {
+            console.log(`Using cached TTS audio for voice: ${currentVoiceId}`)
             setGeneratedAudioUrl(ttsAudioUrl)
             toast({
               title: language === "zh" ? "成功" : "Success",
@@ -232,7 +234,7 @@ export default function ScriptReviewPage() {
             return
           }
         } catch (audioCheckError) {
-          console.log("Saved TTS audio not accessible, generating new audio...")
+          console.log(`Cached TTS audio not found for voice ${currentVoiceId}, generating new audio...`)
         }
       }
 

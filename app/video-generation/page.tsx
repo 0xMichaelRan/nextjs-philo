@@ -1,15 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Clock, Play, Download, CheckCircle, AlertCircle, Plus, Crown, User, ArrowLeft, Film } from "lucide-react"
+import { Clock, Download, CheckCircle, AlertCircle, Plus, Crown, User, ArrowLeft, Film } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
-import { VideoPlayer } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -48,7 +46,7 @@ export default function VideoGenerationPage() {
   const [jobs, setJobs] = useState<VideoJob[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedVideo, setSelectedVideo] = useState<VideoJob | null>(null)
+
   const router = useRouter()
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -135,9 +133,7 @@ export default function VideoGenerationPage() {
     }
   }
 
-  const handleVideoPlay = (job: VideoJob) => {
-    setSelectedVideo(job)
-  }
+  // Remove video play handler - cards will navigate directly
 
   const formatDate = (dateString: string) => {
     try {
@@ -342,7 +338,11 @@ export default function VideoGenerationPage() {
                       </h2>
                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {groupJobs.map((job) => (
-                    <Card key={job.id} className={`${themeClasses.card} overflow-hidden hover:scale-105 transition-transform`}>
+                    <Card
+                      key={job.id}
+                      className={`${themeClasses.card} overflow-hidden hover:scale-105 transition-transform cursor-pointer`}
+                      onClick={() => router.push(`/video-generation/${job.id}`)}
+                    >
                       <CardContent className="p-0">
                         <div className="relative">
                           <img
@@ -350,15 +350,7 @@ export default function VideoGenerationPage() {
                             alt={getMovieTitle(job, language)}
                             className="w-full h-32 object-cover"
                           />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleVideoPlay(job)
-                            }}
-                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
-                          >
-                            <Play className="w-12 h-12 text-white" />
-                          </button>
+
                           <div className="absolute top-2 right-2 flex items-center space-x-1">
                             {getStatusIcon(job.status)}
                             <Badge className="bg-black/70 text-white text-xs">
@@ -366,10 +358,7 @@ export default function VideoGenerationPage() {
                             </Badge>
                           </div>
                         </div>
-                        <div
-                          className="p-4 cursor-pointer"
-                          onClick={() => router.push(`/video-generation/${job.id}`)}
-                        >
+                        <div className="p-4">
                           <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
                             {getMovieTitle(job, language)}
                           </h3>
@@ -417,23 +406,7 @@ export default function VideoGenerationPage() {
             </div>
           )}
 
-          {/* Video Player Dialog */}
-          <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-            <DialogContent className="max-w-4xl w-full">
-              <DialogHeader>
-                <DialogTitle>{selectedVideo ? getMovieTitle(selectedVideo, language) : "Movie"}</DialogTitle>
-              </DialogHeader>
-              {selectedVideo && (
-                <div className="aspect-video">
-                  <VideoPlayer
-                    src={`${apiConfig.getBaseUrl()}${selectedVideo.video_url || selectedVideo.result_video_url || ""}`}
-                    poster={selectedVideo.thumbnail_url ? `${apiConfig.getBaseUrl()}${selectedVideo.thumbnail_url}` : undefined}
-                    className="w-full h-full"
-                  />
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
+
         </div>
       </AppLayout>
     </div>

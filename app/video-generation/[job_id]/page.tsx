@@ -71,8 +71,10 @@ export default function VideoJobPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showTtsText, setShowTtsText] = useState(false)
+  const [showStreamingUrl, setShowStreamingUrl] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [streamingUrl, setStreamingUrl] = useState<string | null>(null)
 
   const jobId = params.job_id as string
 
@@ -80,6 +82,7 @@ export default function VideoJobPage() {
     if (!user || !job || job.status !== 'completed') return
 
     try {
+      // Fetch video URLs
       const response = await apiConfig.makeAuthenticatedRequest(
         `${apiConfig.getBaseUrl()}/video-jobs/${jobId}/video-url`,
         { method: 'GET' }
@@ -89,14 +92,14 @@ export default function VideoJobPage() {
         const data = await response.json()
         console.log('Video URLs received:', data)
 
-        // Prefer streaming URL, fallback to download URL
-        const streamingUrl = data.streaming_url || data.video_url || data.download_url
-        setVideoUrl(streamingUrl)
+        // Use streaming URL as primary, fallback to download URL
+        setVideoUrl(data.streaming_url || data.download_url || data.video_url)
         setDownloadUrl(data.download_url || data.video_url)
+        setStreamingUrl(data.streaming_url)
 
-        console.log('Set video URL for streaming:', streamingUrl)
+        console.log('Set video URL for playback:', data.streaming_url || data.download_url)
         console.log('Set download URL:', data.download_url || data.video_url)
-        console.log('Streaming URL (may not work):', data.streaming_url)
+        console.log('Set streaming URL:', data.streaming_url)
       } else {
         console.error('Failed to fetch video URLs')
       }
@@ -159,14 +162,28 @@ export default function VideoJobPage() {
     if (!user || !jobId) return
 
     const unsubscribe = onJobUpdate((data) => {
-      // Update job if it matches current job ID
-      if (data.job_id === jobId) {
-        setJob(prevJob => prevJob ? {
-          ...prevJob,
-          status: data.status as VideoJob['status'],
-          progress: data.progress,
-          error_message: data.error_message
-        } : null)
+      // Update job if it matches current job ID (handle both string and number comparison)
+      const currentJobId = parseInt(jobId)
+      if (Number(data.job_id) === currentJobId) {
+        console.log('Received job update for current job:', data)
+        setJob(prevJob => {
+          if (!prevJob) return null
+
+          const updatedJob = {
+            ...prevJob,
+            status: data.status as VideoJob['status'],
+            error_message: data.error_message,
+            updated_at: new Date().toISOString()
+          }
+
+          // If job just completed, trigger video URL fetch
+          if (data.status === 'completed' && prevJob.status !== 'completed') {
+            console.log('Job completed, will fetch video URLs')
+            setTimeout(() => fetchVideoUrls(), 1000) // Small delay to ensure backend is ready
+          }
+
+          return updatedJob
+        })
       }
     })
 
@@ -359,7 +376,7 @@ export default function VideoJobPage() {
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
                     <VideoPlayer
-                      src={videoUrl || downloadUrl || ''}
+                      src={streamingUrl || downloadUrl || ''}
                       poster={movieData?.backdrop_url
                         ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
                         : job.thumbnail_url
@@ -369,7 +386,7 @@ export default function VideoJobPage() {
                       className="w-full rounded-lg"
                     />
                     <div className="p-6">
-                      <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Button
                           asChild
                           className={`flex-1 ${themeClasses.button} text-white`}
@@ -399,6 +416,38 @@ export default function VideoJobPage() {
                           {language === "zh" ? "返回列表" : "Back to List"}
                         </Button>
                       </div>
+
+                      {/* Collapsible Streaming URL Info */}
+                      <div className="border-t pt-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowStreamingUrl(!showStreamingUrl)}
+                          className={`${themeClasses.text} hover:bg-white/10 mb-2`}
+                        >
+                          {showStreamingUrl ? (
+                            <>
+                              <ChevronUp className="w-4 h-4 mr-1" />
+                              {language === "zh" ? "隐藏流媒体信息" : "Hide Streaming Info"}
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-4 h-4 mr-1" />
+                              {language === "zh" ? "显示流媒体信息" : "Show Streaming Info"}
+                            </>
+                          )}
+                        </Button>
+                        {showStreamingUrl && (
+                          <div className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
+                            <p className="text-sm font-medium mb-2">
+                              {language === "zh" ? "流媒体URL (preview.m3u8):" : "Streaming URL (preview.m3u8):"}
+                            </p>
+                            <p className={`text-xs ${themeClasses.secondaryText} break-all`}>
+                              {streamingUrl || 'Not available'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -412,7 +461,67 @@ export default function VideoJobPage() {
                     <p className={`${themeClasses.secondaryText} mb-6`}>
                       {language === "zh" ? "请耐心等待，视频正在处理中" : "Please wait while your video is being processed"}
                     </p>
+                    <div className="mt-4">
+                      <p className={`text-sm ${themeClasses.secondaryText}`}>
+                        {language === "zh" ? "状态:" : "Status:"} {job.status}
+                      </p>
+                      <p className={`text-xs ${themeClasses.secondaryText} mt-1`}>
+                        {language === "zh" ? "最后更新:" : "Last updated:"} {new Date(job.updated_at).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </CardContent>
+                </Card>
+              )}
+
+              {/* TTS Audio Section - Moved to left column */}
+              {job.tts_text && (
+                <Card className={`${themeClasses.card} mt-6`}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className={`${themeClasses.text} flex items-center gap-2`}>
+                        <Volume2 className="w-5 h-5" />
+                        {language === "zh" ? "语音文本" : "TTS Audio"}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTtsText(!showTtsText)}
+                        className={`${themeClasses.text} hover:bg-white/10`}
+                      >
+                        {showTtsText ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-1" />
+                            {language === "zh" ? "收起" : "Collapse"}
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-1" />
+                            {language === "zh" ? "展开" : "Expand"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {showTtsText && (
+                    <CardContent>
+                      <div className={`p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {job.tts_text}
+                        </p>
+                      </div>
+                      {job.narration_audio_url && (
+                        <div className="mt-4">
+                          <audio
+                            controls
+                            className="w-full"
+                            src={`${apiConfig.getBaseUrl()}${job.narration_audio_url}`}
+                          >
+                            {language === "zh" ? "您的浏览器不支持音频播放" : "Your browser does not support audio playback"}
+                          </audio>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
                 </Card>
               )}
             </div>
@@ -528,57 +637,7 @@ export default function VideoJobPage() {
                 </CardContent>
               </Card>
 
-              {/* TTS Audio Section */}
-              {job.tts_text && (
-                <Card className={themeClasses.card}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className={`${themeClasses.text} flex items-center gap-2`}>
-                        <Volume2 className="w-5 h-5" />
-                        {language === "zh" ? "语音文本" : "TTS Audio"}
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowTtsText(!showTtsText)}
-                        className={`${themeClasses.text} hover:bg-white/10`}
-                      >
-                        {showTtsText ? (
-                          <>
-                            <ChevronUp className="w-4 h-4 mr-1" />
-                            {language === "zh" ? "收起" : "Collapse"}
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="w-4 h-4 mr-1" />
-                            {language === "zh" ? "展开" : "Expand"}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  {showTtsText && (
-                    <CardContent>
-                      <div className={`p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {job.tts_text}
-                        </p>
-                      </div>
-                      {job.narration_audio_url && (
-                        <div className="mt-4">
-                          <audio
-                            controls
-                            className="w-full"
-                            src={`${apiConfig.getBaseUrl()}${job.narration_audio_url}`}
-                          >
-                            {language === "zh" ? "您的浏览器不支持音频播放" : "Your browser does not support audio playback"}
-                          </audio>
-                        </div>
-                      )}
-                    </CardContent>
-                  )}
-                </Card>
-              )}
+
             </div>
           </div>
 
