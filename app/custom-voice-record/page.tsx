@@ -95,6 +95,12 @@ export default function CustomVoiceRecordPage() {
 
   const startRecording = async () => {
     try {
+      // Pause any currently playing audio
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+      }
+
       // Enhanced browser compatibility checks
       const getUserMedia = navigator.mediaDevices?.getUserMedia ||
                           (navigator as any).webkitGetUserMedia ||
@@ -184,8 +190,12 @@ export default function CustomVoiceRecordPage() {
               clearInterval(recordingIntervalRef.current)
               recordingIntervalRef.current = null
             }
-            // Stop recording as if user clicked stop button
-            stopRecording()
+            // Stop recording using setTimeout to avoid race conditions
+            setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                stopRecording()
+              }
+            }, 100)
             return RECORDING_TIME_LIMIT
           }
           return newTime

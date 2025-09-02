@@ -32,19 +32,19 @@ const formatRelativeTime = (dateString: string, language: string = 'en'): string
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
   if (diffInSeconds < 60) {
-    return language === "zh" ? `${diffInSeconds} 秒前` : `${diffInSeconds} seconds ago`
+    return language === "zh" ? `${diffInSeconds}秒前` : `${diffInSeconds}s ago`
   } else if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60)
-    return language === "zh" ? `${minutes} 分钟前` : `${minutes} minute${minutes > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${minutes}分钟前` : `${minutes}min ago`
   } else if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600)
-    return language === "zh" ? `${hours} 小时前` : `${hours} hour${hours > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${hours}小时前` : `${hours}h ago`
   } else if (diffInSeconds < 2592000) {
     const days = Math.floor(diffInSeconds / 86400)
-    return language === "zh" ? `${days} 天前` : `${days} day${days > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${days}天前` : `${days}D ago`
   } else {
     const months = Math.floor(diffInSeconds / 2592000)
-    return language === "zh" ? `${months} 个月前` : `${months} month${months > 1 ? 's' : ''} ago`
+    return language === "zh" ? `${months}个月前` : `${months}M ago`
   }
 }
 
@@ -96,6 +96,7 @@ export default function JobPendingPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [jobLimits, setJobLimits] = useState<JobLimits | null>(null)
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
   const [error, setError] = useState<string | null>(null)
   const [showFailedJobs, setShowFailedJobs] = useState(false)
   const { theme } = useTheme()
@@ -195,6 +196,33 @@ export default function JobPendingPage() {
     }
   }, [user])
 
+  // Periodic update for timestamps and job status (every 5 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdateTime(new Date())
+
+      // Update formatted timestamps for all jobs
+      setJobs(prevJobs =>
+        prevJobs.map(job => ({
+          ...job,
+          createdAtFormatted: job.createdAt ? formatRelativeTime(job.createdAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+          updatedAtFormatted: job.updatedAt ? formatRelativeTime(job.updatedAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+        }))
+      )
+
+      // Refresh job data if there are pending jobs
+      const hasPendingJobs = jobs.some(job =>
+        job.status === 'pending' || job.status === 'queued' || job.status === 'processing'
+      )
+
+      if (hasPendingJobs && user) {
+        fetchJobs()
+      }
+    }, 5000) // Update every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [jobs, user, language])
+
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
@@ -205,6 +233,7 @@ export default function JobPendingPage() {
         cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
         accent: "text-orange-600",
         button: "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700",
+        outlineButton: "border-gray-300 text-gray-700 hover:bg-gray-50",
       }
     }
     return {
@@ -215,6 +244,7 @@ export default function JobPendingPage() {
       cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
       accent: "text-orange-400",
       button: "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700",
+      outlineButton: "border-white/20 text-white hover:bg-white/10",
     }
   }
 
@@ -234,6 +264,11 @@ export default function JobPendingPage() {
         )
         // Don't filter out completed jobs - let user see completion status
       )
+
+      // Refresh job limits when job status changes (especially when completed)
+      if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
+        fetchJobLimits()
+      }
     })
 
     return unsubscribe
@@ -346,7 +381,7 @@ export default function JobPendingPage() {
               <Button
                 onClick={() => router.push('/video-generation')}
                 variant="outline"
-                className="flex items-center gap-2 bg-transparent border-white/20 text-white hover:bg-white/10"
+                className={`flex items-center gap-2 ${themeClasses.outlineButton}`}
               >
                 <Film className="h-4 w-4" />
                 {language === "zh" ? "我的视频" : "My Videos"}
@@ -515,7 +550,7 @@ export default function JobPendingPage() {
                           </p>
                           {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
                             <p className={`text-sm ${job.backdrop_url ? 'text-gray-100 font-medium' : `${themeClasses.secondaryText} font-medium`}`}>
-                              {calculateWaitingTime(job.createdAt)}
+                              {job.createdAt ? calculateWaitingTime(job.createdAt) : (language === "zh" ? "等待时间未知" : "Waiting time unknown")}
                             </p>
                           )}
                         </div>

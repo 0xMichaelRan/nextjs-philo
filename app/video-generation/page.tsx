@@ -182,6 +182,7 @@ export default function VideoGenerationPage() {
         card: "bg-white/80 border-gray-200/50",
         cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
         button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        outlineButton: "border-gray-300 text-gray-700 hover:bg-gray-50",
         accent: "text-purple-600",
         error: "text-red-600",
       }
@@ -193,6 +194,7 @@ export default function VideoGenerationPage() {
       card: "bg-white/10 border-white/20",
       cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
       button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      outlineButton: "border-white/20 text-white hover:bg-white/10",
       accent: "text-purple-400",
       error: "text-red-400",
     }
@@ -218,7 +220,7 @@ export default function VideoGenerationPage() {
               <Button
                 onClick={() => router.push('/job-pending')}
                 variant="outline"
-                className="flex items-center gap-2 bg-transparent border-white/20 text-white hover:bg-white/10"
+                className={`flex items-center gap-2 ${themeClasses.outlineButton}`}
               >
                 <ArrowLeft className="h-4 w-4" />
                 {language === "zh" ? "任务队列" : "Job Queue"}

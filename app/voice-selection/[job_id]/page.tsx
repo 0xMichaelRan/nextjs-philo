@@ -601,7 +601,7 @@ export default function VoiceSelectionWithJobPage() {
                           selectedResolution,
                           selectedSpeed
                         }))
-                        router.push(`/voice-recording?returnTo=/voice-selection/${jobId}`)
+                        router.push(`/custom-voice-record?returnTo=/voice-selection/${jobId}`)
                       }
                     }}
                     variant="default"

@@ -331,7 +331,7 @@ export default function MyVoicesPage() {
 
           {canAddMore && voicesData && (
             <div className="text-center mt-8">
-              <Link href={`/custom-voice-record?returnTo=${returnTo || 'my-voices'}`}>
+              <Link href="/custom-voice-record?returnTo=my-voices">
                 <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
                   <Plus className="w-4 h-4 mr-2" />
                   {t("myVoices.addVoice")}

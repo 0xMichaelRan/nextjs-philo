@@ -645,26 +645,7 @@ export default function ScriptReviewPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      {voiceConfig && (
-                        <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-                          {voiceConfig.isCustom ?
-                            (language === "zh" ? "自定义语音" : "Custom Voice") :
-                            voiceConfig.voiceName
-                          }
-                        </Badge>
-                      )}
-                      {voiceConfig?.ttsProvider && (
-                        <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-                          {voiceConfig.ttsProvider === 'xfyun' ? '讯飞语音' : 'IndexTTS'}
-                        </Badge>
-                      )}
-                      {generatedAudioUrl && (
-                        <Badge variant="secondary" className="text-xs bg-green-600/80 text-white">
-                          {language === "zh" ? "音频已生成" : "Audio Ready"}
-                        </Badge>
-                      )}
-                    </div>
+                    {/* Removed tags - voice info moved below */}
                   </div>
                 </div>
 
@@ -682,6 +663,18 @@ export default function ScriptReviewPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Voice Information */}
+          {voiceConfig && (
+            <div className="mb-6 flex justify-center">
+              <Badge variant="secondary" className="text-sm bg-white/20 text-white border-white/30 px-4 py-2">
+                {voiceConfig.isCustom ?
+                  (language === "zh" ? "自定义语音" : "Custom Voice") :
+                  voiceConfig.voiceName
+                }
+              </Badge>
+            </div>
+          )}
 
           {/* Analysis Result */}
           <Card className="bg-white/10 border-white/20 mb-8">

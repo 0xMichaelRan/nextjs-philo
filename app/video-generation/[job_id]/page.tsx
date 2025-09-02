@@ -141,8 +141,10 @@ export default function VideoJobPage() {
 
   // Initial job fetch
   useEffect(() => {
-    fetchJob()
-  }, [jobId, user])
+    if (user && jobId) {
+      fetchJob()
+    }
+  }, [jobId]) // Remove user dependency to prevent duplicate calls
 
   // Subscribe to real-time job updates
   useEffect(() => {
@@ -349,7 +351,7 @@ export default function VideoJobPage() {
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
                     <VideoPlayer
-                      src={videoUrl || `${apiConfig.getBaseUrl()}/static/video/${job.id}`}
+                      src={videoUrl || ''}
                       poster={movieData?.backdrop_url
                         ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
                         : job.thumbnail_url
@@ -363,8 +365,19 @@ export default function VideoJobPage() {
                         <Button
                           asChild
                           className={`flex-1 ${themeClasses.button} text-white`}
+                          disabled={!downloadUrl}
                         >
-                          <a href={downloadUrl || `${apiConfig.getBaseUrl()}/static/video/${job.id}`} download>
+                          <a
+                            href={downloadUrl || '#'}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
+                              if (!downloadUrl) {
+                                e.preventDefault()
+                              }
+                            }}
+                          >
                             <Download className="w-4 h-4 mr-2" />
                             {language === "zh" ? "下载视频" : "Download Video"}
                           </a>

@@ -259,7 +259,23 @@ export default function ProfilePage() {
         setIsEditing(false)
       } else {
         const errorData = await response.json()
-        throw new Error(errorData.detail || "Update failed")
+
+        // Handle Pydantic validation errors (422)
+        if (response.status === 422 && errorData.detail && Array.isArray(errorData.detail)) {
+          const validationErrors = errorData.detail
+          const passwordError = validationErrors.find((err: any) => err.loc && err.loc.includes('password'))
+
+          if (passwordError) {
+            throw new Error(passwordError.msg || "Password validation failed")
+          } else {
+            // Other validation errors
+            const errorMessages = validationErrors.map((err: any) => err.msg).join(', ')
+            throw new Error(errorMessages || "Validation failed")
+          }
+        } else {
+          // Other types of errors
+          throw new Error(errorData.detail || errorData.message || "Update failed")
+        }
       }
     } catch (error) {
       console.error("Error updating profile:", error)
