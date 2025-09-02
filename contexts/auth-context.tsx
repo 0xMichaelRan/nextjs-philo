@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 import { apiConfig } from "@/lib/api-config"
 
 interface User {
@@ -26,6 +26,7 @@ interface AuthContextType {
   logout: () => void
   updateUser: (userData: Partial<User>) => void
   fetchUserProfile: () => Promise<void>
+  refreshToken: () => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -33,11 +34,69 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const logout = useCallback(() => {
     setUser(null)
     localStorage.removeItem("user")
     localStorage.removeItem("access_token")
+    // Clear refresh timer
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+      refreshIntervalRef.current = null
+    }
+  }, [])
+
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem("access_token")
+      if (!token) return false
+
+      const response = await apiConfig.makeAuthenticatedRequest(
+        `${apiConfig.getBaseUrl()}/auth/refresh-token`,
+        { method: 'POST' }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        localStorage.setItem('access_token', data.access_token)
+        setUser(data.user)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        console.log('Token refreshed successfully')
+        // Restart auto-refresh timer
+        startAutoRefresh()
+        return true
+      } else {
+        console.warn('Token refresh failed:', response.status)
+        if (response.status === 401) {
+          logout()
+        }
+        return false
+      }
+    } catch (error) {
+      console.error('Error refreshing token:', error)
+      return false
+    }
+  }, [logout])
+
+  const startAutoRefresh = useCallback(() => {
+    // Clear existing timer
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+    }
+
+    // Set up auto-refresh every 4 hours (token expires in 8 hours, refresh at 50%)
+    refreshIntervalRef.current = setInterval(() => {
+      console.log('Auto-refreshing token...')
+      refreshToken()
+    }, 4 * 60 * 60 * 1000) // 4 hours in milliseconds
+  }, [refreshToken])
+
+  const stopAutoRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+      refreshIntervalRef.current = null
+    }
   }, [])
 
   const fetchUserProfile = useCallback(async (): Promise<void> => {
@@ -67,10 +126,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
-        // Only logout if it's an authentication error (401)
+        // Try to refresh token on 401 error
         if (response.status === 401) {
-          console.warn("Authentication failed, logging out user")
-          logout()
+          console.warn("Authentication failed, attempting token refresh")
+          const refreshSuccess = await refreshToken()
+          if (!refreshSuccess) {
+            console.warn("Token refresh failed, logging out user")
+            logout()
+          }
         } else {
           console.error("Failed to fetch user profile:", response.status, response.statusText)
           // Don't logout for other errors, just log them
@@ -93,6 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(JSON.parse(savedUser))
         // Optionally fetch fresh user data
         fetchUserProfile()
+        // Start auto-refresh for existing session
+        startAutoRefresh()
       } catch (error) {
         console.error("Error parsing saved user:", error)
         localStorage.removeItem("user")
@@ -100,7 +165,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setIsLoading(false)
-  }, [fetchUserProfile])
+
+    // Cleanup function to stop auto-refresh on unmount
+    return () => {
+      stopAutoRefresh()
+    }
+  }, [fetchUserProfile, startAutoRefresh, stopAutoRefresh])
 
 
 
@@ -128,10 +198,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch user profile after login and wait for it to complete
         try {
           await fetchUserProfile()
+          // Start auto-refresh timer after successful login
+          startAutoRefresh()
           return true
         } catch (profileError) {
           console.error("Failed to fetch user profile:", profileError)
           // Even if profile fetch fails, login was successful
+          // Start auto-refresh timer
+          startAutoRefresh()
           return true
         }
       } else {
@@ -165,6 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         updateUser,
         fetchUserProfile,
+        refreshToken,
       }}
     >
       {children}
