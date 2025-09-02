@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { NotificationBell } from "@/components/notification-bell"
+import { GlobalFooter } from "@/components/global-footer"
 import { apiConfig } from "@/lib/api-config"
 
 interface UserStats {
@@ -111,6 +112,9 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
         let totalGenerated = 0
         let failedJobs = 0
+        const monthlyUsed = vipData.usage?.monthly_jobs?.current || 0
+        const monthlyLimit = vipData.usage?.monthly_jobs?.limit || 0
+
         if (videosResponse.ok) {
           const videos = await videosResponse.json()
           // Only count completed and pending jobs, ignore failed jobs
@@ -509,6 +513,9 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
         {/* Page Content */}
         <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+
+        {/* Global Footer */}
+        <GlobalFooter />
       </div>
     </div>
   )

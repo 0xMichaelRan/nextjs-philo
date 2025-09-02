@@ -434,8 +434,8 @@ export default function ScriptReviewPage() {
         movie_id: movieData.id,
         // movie_title: movieData.title_zh || movieData.title,
         movie_title: [
-          movieData.title_zh || movieData.title,
-          movieData.title_en,
+          movieData.title_en || movieData.title,  // English title first (index 0)
+          movieData.title_zh || movieData.title,  // Chinese title second (index 1)
         ].filter(Boolean),        // removes any undefined/null/empty entries
         movie_title_en: movieData.title_en,
         tts_text: analysisJob.analysis_result || llmResponse,
