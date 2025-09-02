@@ -198,30 +198,35 @@ export default function JobPendingPage() {
 
   // Periodic update for timestamps and job status (every 5 seconds)
   useEffect(() => {
+    if (!user) return
+
     const interval = setInterval(() => {
       setLastUpdateTime(new Date())
 
       // Update formatted timestamps for all jobs
-      setJobs(prevJobs =>
-        prevJobs.map(job => ({
+      setJobs(prevJobs => {
+        const updatedJobs = prevJobs.map(job => ({
           ...job,
           createdAtFormatted: job.createdAt ? formatRelativeTime(job.createdAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
           updatedAtFormatted: job.updatedAt ? formatRelativeTime(job.updatedAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
         }))
-      )
 
-      // Refresh job data if there are pending jobs
-      const hasPendingJobs = jobs.some(job =>
-        job.status === 'pending' || job.status === 'queued' || job.status === 'processing'
-      )
+        // Check if there are pending jobs and refresh if needed
+        const hasPendingJobs = updatedJobs.some(job =>
+          job.status === 'pending' || job.status === 'queued' || job.status === 'processing'
+        )
 
-      if (hasPendingJobs && user) {
-        fetchJobs()
-      }
+        if (hasPendingJobs) {
+          // Use setTimeout to avoid blocking the state update
+          setTimeout(() => fetchJobs(), 100)
+        }
+
+        return updatedJobs
+      })
     }, 5000) // Update every 5 seconds
 
     return () => clearInterval(interval)
-  }, [jobs, user, language])
+  }, [user, language]) // Remove jobs dependency to prevent recreation
 
   const getThemeClasses = () => {
     if (theme === "light") {

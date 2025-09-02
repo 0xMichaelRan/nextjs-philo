@@ -622,22 +622,6 @@ export default function ScriptReviewPage() {
                   {/* Controls and info */}
                   <div className="flex items-center justify-between text-white">
                     <div className="flex items-center space-x-4">
-                      <Button
-                        onClick={handlePlayPause}
-                        disabled={isGenerating}
-                        size="sm"
-                        variant="ghost"
-                        className="text-white hover:bg-white/10 p-2"
-                      >
-                        {isGenerating ? (
-                          <RefreshCw className="w-5 h-5 animate-spin" />
-                        ) : isPlaying ? (
-                          <Pause className="w-5 h-5" />
-                        ) : (
-                          <Play className="w-5 h-5" />
-                        )}
-                      </Button>
-
                       <div className="text-sm">
                         <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
                         <span className="text-gray-400 mx-1">/</span>

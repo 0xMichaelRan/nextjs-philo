@@ -284,7 +284,7 @@ export default function ProfilePage() {
         description: error instanceof Error
           ? error.message
           : (language === "zh" ? "更新个人资料时出错" : "Error updating profile"),
-        variant: "destructive",
+        variant: "default",
       })
     } finally {
       setIsLoading(false)
