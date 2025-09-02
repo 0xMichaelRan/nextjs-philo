@@ -87,8 +87,15 @@ export default function VideoJobPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setVideoUrl(data.video_url)
+        console.log('Video URLs received:', data)
+
+        // Prefer streaming URL, fallback to download URL
+        const streamingUrl = data.streaming_url || data.video_url || data.download_url
+        setVideoUrl(streamingUrl)
         setDownloadUrl(data.download_url || data.video_url)
+
+        console.log('Set video URL for streaming:', streamingUrl)
+        console.log('Set download URL:', data.download_url || data.video_url)
       } else {
         console.error('Failed to fetch video URLs')
       }
@@ -351,7 +358,7 @@ export default function VideoJobPage() {
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
                     <VideoPlayer
-                      src={videoUrl || ''}
+                      src={videoUrl || downloadUrl || ''}
                       poster={movieData?.backdrop_url
                         ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
                         : job.thumbnail_url

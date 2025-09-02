@@ -15,14 +15,17 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
+import { getMovieTitle, type MovieTitleData } from "@/lib/movie-utils"
 
-interface VideoJob {
+interface VideoJob extends MovieTitleData {
   id: number
   user_id: number
   analysis_job_id: number
   movie_id: string
-  movie_title: string
+  movie_title?: string
   movie_title_en?: string
+  movie_title_zh?: string
+  movie_title_json?: { en?: string; zh?: string }
   tts_text: string
   voice_code: string
   voice_display_name?: string
@@ -173,6 +176,51 @@ export default function VideoGenerationPage() {
     }
   }
 
+  const getTimeGroup = (dateString: string) => {
+    try {
+      const now = new Date()
+      const date = new Date(dateString)
+      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (diffInDays === 0) {
+        return language === "zh" ? "今天" : "Today"
+      } else if (diffInDays === 1) {
+        return language === "zh" ? "昨天" : "Yesterday"
+      } else if (diffInDays <= 7) {
+        return language === "zh" ? `${diffInDays}天前` : `${diffInDays} days ago`
+      } else if (diffInDays <= 30) {
+        const weeks = Math.floor(diffInDays / 7)
+        return language === "zh" ? `${weeks}周前` : `${weeks} week${weeks > 1 ? 's' : ''} ago`
+      } else {
+        const months = Math.floor(diffInDays / 30)
+        return language === "zh" ? `${months}个月前` : `${months} month${months > 1 ? 's' : ''} ago`
+      }
+    } catch {
+      return language === "zh" ? "未知时间" : "Unknown time"
+    }
+  }
+
+  const groupJobsByTime = (jobs: VideoJob[]) => {
+    const groups: { [key: string]: VideoJob[] } = {}
+
+    jobs.forEach(job => {
+      const group = getTimeGroup(job.created_at)
+      if (!groups[group]) {
+        groups[group] = []
+      }
+      groups[group].push(job)
+    })
+
+    // Sort groups by time (most recent first)
+    const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
+      const aJob = groups[a][0]
+      const bJob = groups[b][0]
+      return new Date(bJob.created_at).getTime() - new Date(aJob.created_at).getTime()
+    })
+
+    return sortedGroups
+  }
+
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
@@ -282,20 +330,24 @@ export default function VideoGenerationPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {jobs.map((job) => (
+                <div className="space-y-8">
+                  {groupJobsByTime(jobs).map(([groupName, groupJobs]) => (
+                    <div key={groupName}>
+                      <h2 className={`text-xl font-semibold ${themeClasses.text} mb-4 flex items-center gap-2`}>
+                        <Clock className="w-5 h-5" />
+                        {groupName}
+                        <span className={`text-sm ${themeClasses.secondaryText} font-normal`}>
+                          ({groupJobs.length} {language === "zh" ? "个视频" : "videos"})
+                        </span>
+                      </h2>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {groupJobs.map((job) => (
                     <Card key={job.id} className={`${themeClasses.card} overflow-hidden hover:scale-105 transition-transform`}>
                       <CardContent className="p-0">
                         <div className="relative">
                           <img
                             src={job.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=backdrop` : "/placeholder.svg"}
-                            alt={(() => {
-                              if (typeof job.movie_title === 'object' && job.movie_title) {
-                                const titleObj = job.movie_title as any
-                                return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
-                              }
-                              return job.movie_title || "Movie"
-                            })()}
+                            alt={getMovieTitle(job, language)}
                             className="w-full h-32 object-cover"
                           />
                           <button
@@ -319,13 +371,7 @@ export default function VideoGenerationPage() {
                           onClick={() => router.push(`/video-generation/${job.id}`)}
                         >
                           <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
-                            {(() => {
-                              if (typeof job.movie_title === 'object' && job.movie_title) {
-                                const titleObj = job.movie_title as any
-                                return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
-                              }
-                              return job.movie_title || "Movie"
-                            })()}
+                            {getMovieTitle(job, language)}
                           </h3>
                           <div className="space-y-2">
                             <div className={`flex justify-between text-sm ${themeClasses.secondaryText}`}>
@@ -362,6 +408,9 @@ export default function VideoGenerationPage() {
                         </div>
                       </CardContent>
                     </Card>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -372,13 +421,7 @@ export default function VideoGenerationPage() {
           <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
             <DialogContent className="max-w-4xl w-full">
               <DialogHeader>
-                <DialogTitle>{(() => {
-                  if (typeof selectedVideo?.movie_title === 'object' && selectedVideo?.movie_title) {
-                    const titleObj = selectedVideo.movie_title as any
-                    return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
-                  }
-                  return selectedVideo?.movie_title || "Movie"
-                })()}</DialogTitle>
+                <DialogTitle>{selectedVideo ? getMovieTitle(selectedVideo, language) : "Movie"}</DialogTitle>
               </DialogHeader>
               {selectedVideo && (
                 <div className="aspect-video">

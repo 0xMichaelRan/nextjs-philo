@@ -239,7 +239,7 @@ export default function ScriptReviewPage() {
       // If we have an analysis job ID, try to generate and save TTS audio
       if (analysisJob?.id) {
         const generateTtsRequest = {
-          voice_code: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
+          voice_id: voiceConfig.isCustom ? voiceConfig.customVoiceId : voiceConfig.voiceCode,
           voice_type: voiceConfig.isCustom ? 'custom' : 'system',
           language: 'zh',
           provider: voiceConfig.ttsProvider || 'xfyun',
