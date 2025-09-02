@@ -314,9 +314,7 @@ export default function VoiceSelectionWithJobPage() {
     router.push(`/script-review/${jobId}`)
   }
 
-  const handleBack = () => {
-    router.push(`/analysis-job/${jobId}`)
-  }
+  // Back navigation removed - users cannot go back to modify TTS text after voice selection
 
   const getThemeClasses = () => {
     if (theme === "light") {
@@ -706,10 +704,8 @@ export default function VoiceSelectionWithJobPage() {
 
         {/* Bottom Navigation */}
         <BottomNavigation
-          onBack={handleBack}
           onNext={handleNext}
           nextDisabled={!selectedVoice}
-          backLabel={t("common.back")}
           nextLabel={t("voiceSelection.generateScript")}
         />
       </AppLayout>

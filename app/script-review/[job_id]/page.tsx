@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { MovieHeader } from "@/components/movie-header"
+import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -546,15 +547,6 @@ export default function ScriptReviewPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push(`/analysis-job/${analysisJob.id}`)}
-                className="text-white hover:bg-white/10 border-white/20"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {language === "zh" ? "返回分析" : "Back to Analysis"}
-              </Button>
               <h1 className="text-3xl font-bold text-white">
                 {language === "zh" ? "脚本审查" : "Script Review"}
               </h1>
@@ -713,6 +705,15 @@ export default function ScriptReviewPage() {
             </p>
           )}
         </div>
+
+        {/* Bottom Navigation */}
+        <BottomNavigation
+          onBack={() => router.push(`/voice-selection/${jobId}`)}
+          onNext={generatedAudioUrl ? handleGenerateVideo : undefined}
+          backLabel={language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
+          nextLabel={language === "zh" ? "生成视频" : "Generate Video"}
+          nextDisabled={!generatedAudioUrl || isGenerating}
+        />
 
         {/* Hidden audio element for TTS playback */}
         <audio ref={audioRef} style={{ display: 'none' }} />

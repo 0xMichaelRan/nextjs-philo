@@ -395,8 +395,12 @@ export default function AnalysisJobPage() {
         {/* Bottom Navigation */}
         <BottomNavigation
           onBack={() => {
-            // Start over - go back to movie selection
-            router.push("/movie-selection")
+            // Start over - go back to analysis config with same movie ID
+            if (analysisJob?.movie_id) {
+              router.push(`/analysis-config?movieId=${analysisJob.movie_id}`)
+            } else {
+              router.push("/analysis-config")
+            }
           }}
           backLabel={language === "zh" ? "重新开始" : "Start Over"}
           onNext={analysisJob?.status === 'completed' ? () => {
