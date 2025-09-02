@@ -84,10 +84,24 @@ export function AppLayout({ children, title }: AppLayoutProps) {
       if (vipResponse.ok) {
         const vipData = await vipResponse.json()
 
-        // Calculate daily remaining based on monthly usage
-        const monthlyUsed = vipData.usage?.monthly_jobs?.current || 0
-        const monthlyLimit = vipData.usage?.monthly_jobs?.limit
-        const dailyRemaining = monthlyLimit ? Math.max(0, monthlyLimit - monthlyUsed) : (user.is_vip ? 999 : 1)
+        // Get proper daily limits from user limits API
+        const limitsResponse = await apiConfig.makeAuthenticatedRequest(
+          apiConfig.auth.userLimits(),
+          { method: 'GET' }
+        )
+
+        let dailyRemaining = 0
+        if (limitsResponse.ok) {
+          const limits = await limitsResponse.json()
+          const dailyUsed = limits.daily_jobs_used || 0
+          const dailyLimit = limits.limits?.daily_limit || (user.is_vip ? (user.is_svip ? 99 : 10) : 2)
+          dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
+        } else {
+          // Fallback calculation
+          const monthlyUsed = vipData.usage?.monthly_jobs?.current || 0
+          const monthlyLimit = vipData.usage?.monthly_jobs?.limit
+          dailyRemaining = monthlyLimit ? Math.max(0, monthlyLimit - monthlyUsed) : (user.is_vip ? (user.is_svip ? 99 : 10) : 2)
+        }
 
         // Fetch total video count
         const videosResponse = await apiConfig.makeAuthenticatedRequest(
@@ -269,11 +283,9 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                       <div className={`flex justify-between ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>
                         <span>{language === "zh" ? "今日剩余" : "Daily Remaining"}</span>
                         <span className={getTextClasses()}>
-                          {user.is_vip
-                            ? "∞"
-                            : userStats
-                              ? `${userStats.dailyRemaining}`
-                              : "0"
+                          {userStats
+                            ? `${userStats.dailyRemaining}`
+                            : "0"
                           }
                         </span>
                       </div>

@@ -410,15 +410,15 @@ export default function ScriptReviewPage() {
         if (limitsResponse.ok) {
           const limits = await limitsResponse.json()
 
-          // Check if user can create more jobs
-          const dailyLimit = status.tier === 'free' ? 1 : (status.tier === 'vip' ? 3 : 10)
+          // Check if user can create more jobs using backend response
+          const dailyLimit = limits.limits?.daily_limit || (status.tier === 'free' ? 2 : (status.tier === 'vip' ? 10 : 99))
           const dailyUsed = limits.daily_jobs_used || 0
 
-          if (dailyUsed >= dailyLimit) {
+          if (dailyUsed >= dailyLimit || !limits.can_create_job) {
             setJobLimits({
               daily_jobs: { used: dailyUsed, limit: dailyLimit },
               plan: status.tier,
-              can_create_job: false
+              can_create_job: limits.can_create_job || false
             })
             setShowLimitsModal(true)
             return
