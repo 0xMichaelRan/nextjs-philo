@@ -192,7 +192,6 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
   const navItems = [
     { href: "/movie-selection", icon: Search, label: t("nav.movieSelection") },
-    { href: "/job-pending", icon: Clock, label: t("nav.jobPending") },
     { href: "/video-generation", icon: Film, label: t("nav.myVideos") },
     ...(user?.is_vip ? [{ href: "/my-voices", icon: Mic, label: t("nav.myVoices") }] : []),
   ]
