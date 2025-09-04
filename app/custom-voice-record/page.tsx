@@ -40,6 +40,13 @@ export default function CustomVoiceRecordPage() {
   // Recording time limit in seconds
   const RECORDING_TIME_LIMIT = 20
 
+  // Auto-stop recording when time limit is reached
+  useEffect(() => {
+    if (isRecording && recordingTime >= RECORDING_TIME_LIMIT) {
+      stopRecording()
+    }
+  }, [recordingTime, isRecording])
+
   // Use translations for sample text
   const getSampleText = () => {
     return t("customVoice.sampleText")
@@ -181,25 +188,7 @@ export default function CustomVoiceRecordPage() {
       setRecordingTime(0)
 
       recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => {
-          const newTime = prev + 1
-          // Auto-stop at time limit
-          if (newTime >= RECORDING_TIME_LIMIT) {
-            // Clear the interval first to prevent multiple calls
-            if (recordingIntervalRef.current) {
-              clearInterval(recordingIntervalRef.current)
-              recordingIntervalRef.current = null
-            }
-            // Stop recording using setTimeout to avoid race conditions
-            setTimeout(() => {
-              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                stopRecording()
-              }
-            }, 100)
-            return RECORDING_TIME_LIMIT
-          }
-          return newTime
-        })
+        setRecordingTime(prev => prev + 1)
       }, 1000)
     } catch (error) {
       console.error("Error starting recording:", error)
@@ -525,7 +514,7 @@ export default function CustomVoiceRecordPage() {
                     </p>
                   </div>
 
-                  {/* Play Progress Bar */}
+                  {/* Custom Seek Bar */}
                   {(isPlaying || playProgress > 0) && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
@@ -536,7 +525,28 @@ export default function CustomVoiceRecordPage() {
                           {formatTime(Math.floor(audioDuration || 0))}
                         </span>
                       </div>
-                      <Progress value={playProgress} className="w-full" />
+                      {/* Video Player Style Seek Bar */}
+                      <div
+                        className={`relative w-full h-2 ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'} rounded-full cursor-pointer group`}
+                        onClick={(e) => {
+                          if (audioRef.current && audioDuration > 0) {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const clickX = e.clientX - rect.left
+                            const percentage = (clickX / rect.width) * 100
+                            const newTime = (percentage / 100) * audioDuration
+                            audioRef.current.currentTime = newTime
+                            setPlayProgress(percentage)
+                          }
+                        }}
+                      >
+                        {/* Progress Track */}
+                        <div
+                          className={`absolute top-0 left-0 h-full ${theme === 'light' ? 'bg-blue-500' : 'bg-blue-400'} rounded-full transition-all duration-150`}
+                          style={{ width: `${playProgress}%` }}
+                        />
+                        {/* Hover Effect */}
+                        <div className={`absolute top-0 left-0 w-full h-full rounded-full opacity-0 group-hover:opacity-20 ${theme === 'light' ? 'bg-blue-300' : 'bg-blue-600'} transition-opacity duration-150`} />
+                      </div>
                     </div>
                   )}
 

@@ -118,7 +118,25 @@ export default function JobPendingPage() {
         // Map backend video job data to frontend Job interface and add movie images
         // Video jobs API returns array directly, not wrapped in {jobs: [...]}
         const jobsArray = Array.isArray(data) ? data : (data.jobs || [])
-        const filteredJobs = jobsArray.filter((job: any) => job.status !== 'completed') // Filter out completed jobs
+
+        // Filter jobs: include all pending jobs + completed jobs from last 1 minute
+        const now = new Date()
+        const oneMinuteAgo = new Date(now.getTime() - 60 * 1000) // 1 minute ago
+
+        const filteredJobs = jobsArray.filter((job: any) => {
+          // Include all non-completed jobs
+          if (job.status !== 'completed') {
+            return true
+          }
+
+          // Include completed jobs from last 1 minute
+          if (job.status === 'completed' && job.updated_at) {
+            const completedAt = new Date(job.updated_at)
+            return completedAt >= oneMinuteAgo
+          }
+
+          return false
+        })
         const mappedJobs = await Promise.all(filteredJobs.map(async (job: any) => {
           const baseJob = {
             ...job,
@@ -363,8 +381,20 @@ export default function JobPendingPage() {
 
   // Filter jobs by status
   const pendingJobs = jobs.filter(job => ['draft', 'pending', 'queued', 'processing'].includes(job.status))
+  const completedJobs = jobs.filter(job => job.status === 'completed')
   const failedJobs = jobs.filter(job => ['failed', 'cancelled'].includes(job.status))
-  const displayedJobs = showFailedJobs ? [...pendingJobs, ...failedJobs] : pendingJobs
+
+  // Sort completed jobs first (most recent first), then pending jobs
+  const sortedCompletedJobs = completedJobs.sort((a, b) =>
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  )
+  const sortedPendingJobs = pendingJobs.sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+
+  const displayedJobs = showFailedJobs
+    ? [...sortedCompletedJobs, ...sortedPendingJobs, ...failedJobs]
+    : [...sortedCompletedJobs, ...sortedPendingJobs]
 
   // Monthly jobs count is now provided by the API
 
@@ -401,6 +431,11 @@ export default function JobPendingPage() {
                   {language === "zh" ? "显示任务：" : "Show jobs:"}
                 </span>
                 <div className="flex items-center gap-2">
+                  {completedJobs.length > 0 && (
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      {language === "zh" ? `刚完成 (${completedJobs.length})` : `Just Completed (${completedJobs.length})`}
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="text-orange-600 border-orange-600">
                     {language === "zh" ? `待处理 (${pendingJobs.length})` : `Pending (${pendingJobs.length})`}
                   </Badge>

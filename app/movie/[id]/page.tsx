@@ -11,6 +11,7 @@ import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { VideoPlayer } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
@@ -131,6 +132,40 @@ export default function MovieHomePage() {
   const [error, setError] = useState<string | null>(null)
   const [featuredVideos, setFeaturedVideos] = useState<any[]>([])
   const [videosLoading, setVideosLoading] = useState(false)
+  const [videoUrls, setVideoUrls] = useState<{[key: string]: {streaming_url?: string, download_url?: string}}>({})
+
+  // Utility function for relative time formatting
+  const formatRelativeTime = (dateString: string): string => {
+    if (!dateString) {
+      return language === "zh" ? "时间未知" : "Unknown time"
+    }
+
+    const now = new Date()
+    const date = new Date(dateString)
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return language === "zh" ? "时间格式错误" : "Invalid time format"
+    }
+
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) {
+      return language === "zh" ? `${diffInSeconds}秒前` : `${diffInSeconds}s ago`
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60)
+      return language === "zh" ? `${minutes}分钟前` : `${minutes}min ago`
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600)
+      return language === "zh" ? `${hours}小时前` : `${hours}h ago`
+    } else if (diffInSeconds < 2592000) {
+      const days = Math.floor(diffInSeconds / 86400)
+      return language === "zh" ? `${days}天前` : `${days}D ago`
+    } else {
+      const months = Math.floor(diffInSeconds / 2592000)
+      return language === "zh" ? `${months}个月前` : `${months}M ago`
+    }
+  }
   const { theme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const { flowState, updateFlowState, clearFlowState } = useFlow()
@@ -215,7 +250,30 @@ export default function MovieHomePage() {
 
       if (response.ok) {
         const data = await response.json()
-        setFeaturedVideos(data.jobs || [])
+        const videos = data.jobs || []
+        setFeaturedVideos(videos)
+
+        // Fetch video URLs for each completed video
+        const urlPromises = videos.map(async (video: any) => {
+          if (video.status === 'completed') {
+            try {
+              const urlResponse = await apiConfig.makeAuthenticatedRequest(
+                apiConfig.videoJobs.videoUrl(video.id)
+              )
+              if (urlResponse.ok) {
+                const urlData = await urlResponse.json()
+                return { [video.id]: urlData }
+              }
+            } catch (error) {
+              console.error(`Error fetching video URL for job ${video.id}:`, error)
+            }
+          }
+          return { [video.id]: {} }
+        })
+
+        const urlResults = await Promise.all(urlPromises)
+        const urlMap = urlResults.reduce((acc, curr) => ({ ...acc, ...curr }), {})
+        setVideoUrls(urlMap)
       }
     } catch (error) {
       console.error("Error fetching featured videos:", error)
@@ -340,7 +398,7 @@ export default function MovieHomePage() {
               <Card className={`${getCardClasses()} overflow-hidden shadow-xl`}>
                 <CardContent className="p-0 relative">
                   <Image
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop` || "/placeholder.svg"}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster` || "/placeholder.svg"}
                     alt={language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
                     width={400}
                     height={600}
@@ -497,70 +555,60 @@ export default function MovieHomePage() {
               </div>
             ) : featuredVideos.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {featuredVideos.map((video) => (
-                <Card
-                  key={video.id}
-                  className={`${theme === "light" ? "bg-white/60 border-gray-200/30 hover:bg-white/80" : "bg-white/5 border-white/10 hover:bg-white/10"} transition-all duration-300 cursor-pointer group`}
-                >
-                  <CardContent className="p-0">
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => {
-                        if (video.result_video_url) {
-                          window.open(`${process.env.NEXT_PUBLIC_API_URL}${video.result_video_url}`, '_blank')
-                        }
-                      }}
+                {featuredVideos.map((video) => {
+                  const videoUrl = videoUrls[video.id]
+                  const streamingUrl = videoUrl?.streaming_url || videoUrl?.download_url
+
+                  return (
+                    <Card
+                      key={video.id}
+                      className={`${theme === "light" ? "bg-white/60 border-gray-200/30 hover:bg-white/80" : "bg-white/5 border-white/10 hover:bg-white/10"} transition-all duration-300 overflow-hidden`}
                     >
-                      <div className="relative">
-                        <Image
-                          src={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : "/placeholder.svg"}
-                          alt={(() => {
-                            if (typeof video.movie_title === 'object' && video.movie_title) {
-                              return video.movie_title[language] || video.movie_title.en || video.movie_title.zh || "Video"
-                            }
-                            return video.movie_title || "Video"
-                          })()}
-                          width={200}
-                          height={120}
-                          className="w-full h-32 object-cover rounded-t-lg"
-                        />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <Play className="w-8 h-8 text-white" />
+                      <CardContent className="p-0">
+                        <div className="relative">
+                          {/* In-place Video Player */}
+                          {streamingUrl ? (
+                            <VideoPlayer
+                              src={streamingUrl}
+                              poster={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : undefined}
+                              className="w-full h-32"
+                            />
+                          ) : (
+                            <div className="w-full h-32 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                              <Play className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
                         </div>
-                        <Badge className="absolute bottom-2 right-2 bg-black/70 text-white text-xs">
-                          {video.status === 'completed' ? (language === "zh" ? "已完成" : "Completed") : video.status}
-                        </Badge>
-                      </div>
-                      <div className="p-4">
-                        <h3 className={`${getTextClasses()} font-semibold text-sm mb-2 line-clamp-2`}>
-                          {(() => {
-                            if (typeof video.movie_title === 'object' && video.movie_title) {
-                              return video.movie_title[language] || video.movie_title.en || video.movie_title.zh || "Unknown Movie"
-                            }
-                            return video.movie_title || "Unknown Movie"
-                          })()}
-                        </h3>
-                        <div
-                          className={`flex items-center justify-between text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}
-                        >
-                          <span>{language === "zh" ? "用户分析" : "User Analysis"}</span>
-                          <span>{(() => {
-                            try {
-                              const date = new Date(video.created_at)
-                              return isNaN(date.getTime()) ? (language === "zh" ? "未知日期" : "Unknown date") : date.toLocaleDateString()
-                            } catch {
-                              return language === "zh" ? "未知日期" : "Unknown date"
-                            }
-                          })()}</span>
+                        <div className="p-4">
+                          {/* Movie Title Only */}
+                          <h3 className={`${getTextClasses()} font-semibold text-sm mb-2 line-clamp-2`}>
+                            {(() => {
+                              if (typeof video.movie_title === 'object' && video.movie_title) {
+                                return video.movie_title[language] || video.movie_title.en || video.movie_title.zh || "Unknown Movie"
+                              }
+                              return video.movie_title || "Unknown Movie"
+                            })()}
+                          </h3>
+
+                          {/* Timestamp in "xxx ago" format */}
+                          <div className={`text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}>
+                            {formatRelativeTime(video.completed_at || video.updated_at || video.created_at)}
+                          </div>
+
+                          {/* Character field with label */}
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>
+                              {language === "zh" ? "角色:" : "Character:"}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {video.character || (language === "zh" ? "哲学家" : "Philosopher")}
+                            </Badge>
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {video.character_type || (language === "zh" ? "哲学家" : "Philosopher")}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             ) : (
               <div className="text-center py-8">

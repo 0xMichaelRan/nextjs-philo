@@ -39,9 +39,7 @@ class ApiConfig {
     // Password reset endpoints
     resetPasswordRequest: () => `${this.baseUrl}/auth/reset-password-request`,
     resetPasswordConfirm: () => `${this.baseUrl}/auth/reset-password-confirm`,
-    // Legacy endpoints (deprecated)
-    forgotPassword: () => `${this.baseUrl}/auth/forgot-password`,
-    resetPassword: () => `${this.baseUrl}/auth/reset-password`,
+
   }
 
   // Notification endpoints
@@ -60,67 +58,49 @@ class ApiConfig {
     details: (id: string) => `${this.baseUrl}/movies/${id}`,
   }
 
-  // Voice endpoints (consolidated)
+  // Voice endpoints (using new unified voices system)
   public voices = {
     // Main voice listing endpoint - supports all voice types with filtering
-    list: (language?: string, provider?: string, voiceType?: string) => {
+    list: (language?: string, voiceType?: string, userId?: number, includeInactive?: boolean) => {
       const params = new URLSearchParams()
       if (language) params.append('language', language)
-      if (provider) params.append('provider', provider)
       if (voiceType) params.append('voice_type', voiceType)
+      if (userId) params.append('user_id', userId.toString())
+      if (includeInactive) params.append('include_inactive', 'true')
       const queryString = params.toString()
       return `${this.baseUrl}/voices${queryString ? `?${queryString}` : ''}`
     },
-    // Default/system voices
-    default: (language?: string, provider?: string) => {
+    // System voices only (user_id IS NULL)
+    system: (language?: string, includeInactive?: boolean) => {
       const params = new URLSearchParams()
       if (language) params.append('language', language)
-      if (provider) params.append('provider', provider)
+      if (includeInactive) params.append('include_inactive', 'true')
       const queryString = params.toString()
-      return `${this.baseUrl}/voices/default${queryString ? `?${queryString}` : ''}`
+      return `${this.baseUrl}/voices/system${queryString ? `?${queryString}` : ''}`
     },
-    defaultDetails: (voiceCode: string, language?: string) => {
+    // Custom voices only (user_id IS NOT NULL)
+    custom: (language?: string, userId?: number, includeInactive?: boolean) => {
       const params = new URLSearchParams()
       if (language) params.append('language', language)
-      const queryString = params.toString()
-      return `${this.baseUrl}/voices/default/${voiceCode}${queryString ? `?${queryString}` : ''}`
-    },
-    // Custom voices (VIP only)
-    custom: (language?: string) => {
-      const params = new URLSearchParams()
-      if (language) params.append('language', language)
+      if (userId) params.append('user_id', userId.toString())
+      if (includeInactive) params.append('include_inactive', 'true')
       const queryString = params.toString()
       return `${this.baseUrl}/voices/custom${queryString ? `?${queryString}` : ''}`
     },
+    // Get voice by VCN (Voice Code Name)
+    byVcn: (vcn: string, language?: string) => {
+      const params = new URLSearchParams()
+      if (language) params.append('language', language)
+      const queryString = params.toString()
+      return `${this.baseUrl}/voices/${vcn}${queryString ? `?${queryString}` : ''}`
+    },
+
     uploadCustom: () => `${this.baseUrl}/voices/custom`,
     deleteCustom: (id: number) => `${this.baseUrl}/voices/custom/${id}`,
-    // Legacy endpoint for backward compatibility
     details: (id: number) => `${this.baseUrl}/voices/${id}`,
   }
 
-  // Legacy default voices endpoints (deprecated - use voices.default instead)
-  public defaultVoices = {
-    list: (language?: string, provider?: string) => {
-      console.warn('defaultVoices.list is deprecated. Use voices.default instead.')
-      const params = new URLSearchParams()
-      if (language) params.append('language', language)
-      if (provider) params.append('provider', provider)
-      const queryString = params.toString()
-      return `${this.baseUrl}/voices/default${queryString ? `?${queryString}` : ''}`
-    },
-    details: (voiceCode: string) => {
-      console.warn('defaultVoices.details is deprecated. Use voices.defaultDetails instead.')
-      return `${this.baseUrl}/voices/default/${voiceCode}`
-    },
-    byProvider: (provider: string, language?: string) => {
-      console.warn('defaultVoices.byProvider is deprecated. Use voices.default with provider filter instead.')
-      const params = new URLSearchParams()
-      if (language) params.append('language', language)
-      if (provider) params.append('provider', provider)
-      const queryString = params.toString()
-      return `${this.baseUrl}/voices/default${queryString ? `?${queryString}` : ''}`
-    },
-  }
+
 
   // TTS endpoints
   public tts = {
@@ -128,15 +108,7 @@ class ApiConfig {
     health: () => `${this.baseUrl}/tts-providers/health`,
     validateVoice: () => `${this.baseUrl}/tts-providers/validate-voice`,
     synthesize: () => `${this.baseUrl}/tts-providers/synthesize`,
-    // Deprecated: use voices.list with provider filter instead
-    voices: (provider?: string, language?: string) => {
-      console.warn('tts.voices is deprecated. Use voices.list with provider filter instead.')
-      const params = new URLSearchParams()
-      if (provider) params.append('provider', provider)
-      if (language) params.append('language', language)
-      const queryString = params.toString()
-      return `${this.baseUrl}/voices${queryString ? `?${queryString}` : ''}`
-    },
+
   }
 
   // Script endpoints (to be implemented)

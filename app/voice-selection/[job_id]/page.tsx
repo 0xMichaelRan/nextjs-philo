@@ -37,13 +37,19 @@ interface DefaultVoice {
 }
 
 interface CustomVoice {
-  id: number
-  name: string
+  id: string  // Now returns string ID like "custom_123"
+  voice_code: string  // Unified voice identifier
+  voice_name: string  // Backend field name
   display_name: string
   language: string
+  voice_file?: string
+  is_active: boolean
+  is_premium: boolean
+  voice_type: string
   duration?: string
-  audio_url: string
+  audio_url?: string
   description?: string
+  created_at: string
 }
 
 export default function VoiceSelectionWithJobPage() {
@@ -80,17 +86,20 @@ export default function VoiceSelectionWithJobPage() {
 
   // Fetch custom voices for VIP users
   const fetchCustomVoices = async () => {
-    if (!user?.is_vip) return
+    if (!user?.is_vip || !user?.id) return
 
     try {
       setCustomVoicesLoading(true)
+      // Fetch custom voices for the current user
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.voices.custom()
+        apiConfig.voices.custom(language, Number(user.id))
       )
 
       if (response.ok) {
         const data = await response.json()
-        setCustomVoices(data.voices || [])
+        // Backend returns array directly for new voices API
+        const voicesArray = Array.isArray(data) ? data : (data.voices || [])
+        setCustomVoices(voicesArray)
       }
     } catch (error) {
       console.error("Error fetching custom voices:", error)
@@ -145,7 +154,8 @@ export default function VoiceSelectionWithJobPage() {
   const fetchVoices = async () => {
     try {
       setLoading(true)
-      const response = await fetch(apiConfig.voices.default())
+      // Fetch system voices (default voices where user_id is NULL)
+      const response = await fetch(apiConfig.voices.system(language))
 
       if (response.ok) {
         const data = await response.json()
@@ -153,10 +163,10 @@ export default function VoiceSelectionWithJobPage() {
         const voicesArray = Array.isArray(data) ? data : (data.voices || [])
         setVoices(voicesArray)
       } else {
-        console.error("Failed to fetch voices, status:", response.status)
+        console.error("Failed to fetch system voices, status:", response.status)
       }
     } catch (error) {
-      console.error("Error fetching voices:", error)
+      console.error("Error fetching system voices:", error)
     } finally {
       setLoading(false)
     }
@@ -509,8 +519,9 @@ export default function VoiceSelectionWithJobPage() {
                           return
                         }
                         if (voice.voice_file) {
+                          // For system voices, use the new voices path structure
                           const audioUrl = `/static/voices/${voice.voice_file}`
-                          handlePlayAudio(voice.id.toString(), audioUrl)
+                          handlePlayAudio(voice.voice_code, audioUrl)
                         }
                       }}
                       size="lg"
@@ -521,7 +532,7 @@ export default function VoiceSelectionWithJobPage() {
                           : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105"
                       } text-white`}
                     >
-                      {playingVoice === voice.id.toString() ? (
+                      {playingVoice === voice.voice_code ? (
                         <Pause className="w-5 h-5" />
                       ) : (
                         <Play className="w-5 h-5" />
@@ -620,15 +631,15 @@ export default function VoiceSelectionWithJobPage() {
                     <Card
                       key={voice.id}
                       className={`${themeClasses.card} ${themeClasses.cardHover} ${
-                        selectedVoice === voice.id.toString() ? themeClasses.selectedCard : themeClasses.hoverCard
+                        selectedVoice === voice.voice_code ? themeClasses.selectedCard : themeClasses.hoverCard
                       } cursor-pointer transition-all duration-300`}
-                      onClick={() => setSelectedVoice(voice.id.toString())}
+                      onClick={() => setSelectedVoice(voice.voice_code)}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex-1">
                             <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
-                              {voice.display_name || voice.name}
+                              {voice.display_name}
                             </h3>
                             <div className="flex flex-wrap gap-2 mb-3">
                               <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
@@ -651,16 +662,19 @@ export default function VoiceSelectionWithJobPage() {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (voice.audio_url) {
-                                const customVoiceId = voice.id.toString()
-                                handlePlayAudio(customVoiceId, voice.audio_url)
+                              if (voice.voice_file) {
+                                // For custom voices, construct the URL based on the new path structure
+                                const audioUrl = voice.voice_type === "custom"
+                                  ? `/static/new_voices/uid${user?.id}/${voice.voice_file}`
+                                  : `/static/voices/${voice.voice_file}`
+                                handlePlayAudio(voice.voice_code, audioUrl)
                               }
                             }}
                             size="lg"
                             variant="outline"
                             className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
                           >
-                            {playingVoice === voice.id.toString() ? (
+                            {playingVoice === voice.voice_code ? (
                               <Pause className="w-4 h-4 mr-2" />
                             ) : (
                               <Play className="w-4 h-4 mr-2" />
@@ -672,17 +686,17 @@ export default function VoiceSelectionWithJobPage() {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedVoice(voice.id.toString())
+                              setSelectedVoice(voice.voice_code)
                             }}
-                            variant={selectedVoice === voice.id.toString() ? "default" : "outline"}
+                            variant={selectedVoice === voice.voice_code ? "default" : "outline"}
                             size="sm"
                             className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
-                              selectedVoice === voice.id.toString()
+                              selectedVoice === voice.voice_code
                                 ? `${themeClasses.button} text-white`
                                 : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
                             }`}
                           >
-                            {selectedVoice === voice.id.toString()
+                            {selectedVoice === voice.voice_code
                               ? t("voiceSelection.selected")
                               : t("voiceSelection.select")
                             }

@@ -101,7 +101,16 @@ export default function MyVoicesPage() {
       )
       
       if (response.ok) {
-        const data: VoicesData = await response.json()
+        const voices: CustomVoice[] = await response.json()
+        // Transform API response to expected format
+        const data: VoicesData = {
+          voices: voices || [],
+          total: voices?.length || 0,
+          limits: {
+            custom_voices: vipStatus?.is_svip ? 10 : 2, // VIP: 2, SVIP: 10
+            current_plan: vipStatus?.is_svip ? "SVIP" : vipStatus?.is_vip ? "VIP" : "Free"
+          }
+        }
         setVoicesData(data)
       } else {
         throw new Error("Failed to fetch voices")
@@ -112,6 +121,15 @@ export default function MyVoicesPage() {
         title: t("common.error"),
         description: t("myVoices.fetchError"),
         variant: "destructive",
+      })
+      // Set empty data on error to prevent map errors
+      setVoicesData({
+        voices: [],
+        total: 0,
+        limits: {
+          custom_voices: vipStatus?.is_svip ? 10 : 2,
+          current_plan: vipStatus?.is_svip ? "SVIP" : vipStatus?.is_vip ? "VIP" : "Free"
+        }
       })
     } finally {
       setLoading(false)
@@ -207,11 +225,11 @@ export default function MyVoicesPage() {
     return null
   }
 
-  const canAddMore = voicesData ?
+  const canAddMore = voicesData && voicesData.voices ?
     voicesData.voices.length < voicesData.limits.custom_voices :
     false
 
-  const maxVoices = voicesData?.limits.custom_voices || 1
+  const maxVoices = voicesData?.limits?.custom_voices || 1
 
   return (
     <div className={themeClasses.background}>
@@ -229,7 +247,7 @@ export default function MyVoicesPage() {
                   {t("myVoices.subtitle")}
                 </p>
                 <span className={`text-sm px-2 py-1 rounded-full ${themeClasses.textSecondary} bg-gray-100 dark:bg-gray-800`}>
-                  {voicesData?.voices.length || 0} / {maxVoices} {t("myVoices.voicesUsed")}
+                  {voicesData?.voices?.length || 0} / {maxVoices} {t("myVoices.voicesUsed")}
                 </span>
               </div>
             </div>
@@ -242,7 +260,7 @@ export default function MyVoicesPage() {
                 {t("common.loading")}
               </p>
             </div>
-          ) : voicesData?.voices.length === 0 ? (
+          ) : voicesData?.voices?.length === 0 ? (
             <Card className={themeClasses.card}>
               <CardContent className="text-center py-12">
                 <Mic className={`w-16 h-16 ${themeClasses.textSecondary} mx-auto mb-4`} />

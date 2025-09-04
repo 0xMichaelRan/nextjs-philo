@@ -385,7 +385,7 @@ export default function VideoGenerationPage() {
                               {job.result_video_url && (
                                 <Button
                                   size="sm"
-                                  className="flex-1 bg-green-600 hover:bg-green-700"
+                                  className={`flex-1 ${themeClasses.button} text-white`}
                                   onClick={() => window.open(`${apiConfig.getBaseUrl()}${job.video_url || job.result_video_url}`, '_blank')}
                                 >
                                   <Download className="w-4 h-4 mr-2" />

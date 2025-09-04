@@ -336,11 +336,26 @@ export default function VideoJobPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  // Navigate based on job status
-                  if (job && (job.status === 'pending' || job.status === 'processing' || job.status === 'queued')) {
-                    router.push('/job-pending')
-                  } else {
-                    router.push('/video-generation')
+                  // Try router.back() first, fallback to specific pages
+                  try {
+                    if (window.history.length > 1) {
+                      router.back()
+                    } else {
+                      // Fallback navigation based on job status
+                      if (job && (job.status === 'pending' || job.status === 'processing' || job.status === 'queued')) {
+                        router.push('/job-pending')
+                      } else {
+                        router.push('/video-generation')
+                      }
+                    }
+                  } catch (error) {
+                    // Fallback if router.back() fails
+                    console.warn('Router.back() failed, using fallback navigation:', error)
+                    if (job && (job.status === 'pending' || job.status === 'processing' || job.status === 'queued')) {
+                      router.push('/job-pending')
+                    } else {
+                      router.push('/video-generation')
+                    }
                   }
                 }}
                 className={`${themeClasses.text} hover:bg-white/10`}
@@ -408,7 +423,18 @@ export default function VideoJobPage() {
                           </a>
                         </Button>
                         <Button
-                          onClick={() => router.push('/video-generation')}
+                          onClick={() => {
+                            try {
+                              if (window.history.length > 1) {
+                                router.back()
+                              } else {
+                                router.push('/video-generation')
+                              }
+                            } catch (error) {
+                              console.warn('Router.back() failed, using fallback navigation:', error)
+                              router.push('/video-generation')
+                            }
+                          }}
                           variant="outline"
                           className={`flex-1 ${themeClasses.filterButton}`}
                         >
