@@ -147,8 +147,17 @@ export default function MyVoicesPage() {
 
       setDeletingVoice(voiceId)
 
-      // Extract numeric ID from "custom_X" format
-      const numericId = parseInt(voiceId)
+      // Extract numeric ID from "custom_X" format or use as-is if already numeric
+      let numericId: number
+      if (typeof voiceId === 'string' && voiceId.startsWith('custom_')) {
+        numericId = parseInt(voiceId.replace('custom_', ''))
+      } else {
+        numericId = parseInt(voiceId.toString())
+      }
+
+      if (isNaN(numericId)) {
+        throw new Error(`Invalid voice ID: ${voiceId}`)
+      }
 
       const response = await apiConfig.makeAuthenticatedRequest(
         apiConfig.voices.deleteCustom(numericId),

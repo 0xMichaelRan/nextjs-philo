@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useImperativeHandle, forwardRef } from "react"
 import { Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -9,9 +9,14 @@ interface VideoPlayerProps {
   src: string
   poster?: string
   className?: string
+  onPlay?: () => void
 }
 
-export function VideoPlayer({ src, poster, className = "" }: VideoPlayerProps) {
+export interface VideoPlayerRef {
+  pause: () => void
+}
+
+export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -21,11 +26,24 @@ export function VideoPlayer({ src, poster, className = "" }: VideoPlayerProps) {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
+  useImperativeHandle(ref, () => ({
+    pause: () => {
+      if (videoRef.current && isPlaying) {
+        videoRef.current.pause()
+        setIsPlaying(false)
+      }
+    }
+  }))
+
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause()
       } else {
+        // Notify parent that this video is starting to play
+        if (onPlay) {
+          onPlay()
+        }
         videoRef.current.play()
       }
       setIsPlaying(!isPlaying)
@@ -163,4 +181,6 @@ export function VideoPlayer({ src, poster, className = "" }: VideoPlayerProps) {
       </div>
     </div>
   )
-}
+})
+
+VideoPlayer.displayName = "VideoPlayer"

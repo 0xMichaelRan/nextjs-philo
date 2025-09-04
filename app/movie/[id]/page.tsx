@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Play, Star, Clock, Calendar, Users, Globe, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { BottomNavigation } from "@/components/bottom-navigation"
-import { VideoPlayer } from "@/components/video-player"
+import { VideoPlayer, VideoPlayerRef } from "@/components/video-player"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
@@ -133,6 +133,16 @@ export default function MovieHomePage() {
   const [featuredVideos, setFeaturedVideos] = useState<any[]>([])
   const [videosLoading, setVideosLoading] = useState(false)
   const [videoUrls, setVideoUrls] = useState<{[key: string]: {streaming_url?: string, download_url?: string}}>({})
+  const videoRefs = useRef<{[key: string]: VideoPlayerRef | null}>({})
+
+  // Function to stop all other videos when one starts playing
+  const handleVideoPlay = (currentVideoId: string) => {
+    Object.keys(videoRefs.current).forEach(videoId => {
+      if (videoId !== currentVideoId && videoRefs.current[videoId]) {
+        videoRefs.current[videoId]?.pause()
+      }
+    })
+  }
 
   // Utility function for relative time formatting
   const formatRelativeTime = (dateString: string): string => {
@@ -569,9 +579,11 @@ export default function MovieHomePage() {
                           {/* In-place Video Player */}
                           {streamingUrl ? (
                             <VideoPlayer
+                              ref={(ref) => { videoRefs.current[video.id] = ref }}
                               src={streamingUrl}
                               poster={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : undefined}
                               className="w-full h-32"
+                              onPlay={() => handleVideoPlay(video.id.toString())}
                             />
                           ) : (
                             <div className="w-full h-32 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
@@ -580,26 +592,11 @@ export default function MovieHomePage() {
                           )}
                         </div>
                         <div className="p-4">
-                          {/* Movie Title Only */}
-                          <h3 className={`${getTextClasses()} font-semibold text-sm mb-2 line-clamp-2`}>
-                            {(() => {
-                              if (typeof video.movie_title === 'object' && video.movie_title) {
-                                return video.movie_title[language] || video.movie_title.en || video.movie_title.zh || "Unknown Movie"
-                              }
-                              return video.movie_title || "Unknown Movie"
-                            })()}
-                          </h3>
-
-                          {/* Timestamp in "xxx ago" format */}
-                          <div className={`text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"} mb-2`}>
-                            {formatRelativeTime(video.completed_at || video.updated_at || video.created_at)}
-                          </div>
-
-                          {/* Character field with label */}
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>
-                              {language === "zh" ? "角色:" : "Character:"}
-                            </span>
+                          {/* Timestamp and Character on same line */}
+                          <div className="flex items-center justify-between">
+                            <div className={`text-xs ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>
+                              {formatRelativeTime(video.completed_at || video.updated_at || video.created_at)}
+                            </div>
                             <Badge variant="outline" className="text-xs">
                               {video.character || (language === "zh" ? "哲学家" : "Philosopher")}
                             </Badge>

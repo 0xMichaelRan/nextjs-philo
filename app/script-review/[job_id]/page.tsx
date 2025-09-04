@@ -542,10 +542,10 @@ export default function ScriptReviewPage() {
       }}
     >
       {/* Backdrop overlay */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-0"></div>
 
       <AppLayout title={language === "zh" ? "脚本审查" : "Script Review"}>
-        <div className="relative z-10 container mx-auto px-6 py-8">
+        <div className="relative z-10 container mx-auto px-6 py-8 pb-24">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
@@ -689,17 +689,7 @@ export default function ScriptReviewPage() {
             </CardContent>
           </Card>
 
-          {/* Generate Video Button */}
-          <div className="flex justify-center">
-            <Button
-              onClick={handleGenerateVideo}
-              disabled={isGenerating}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-12 py-4 text-lg font-semibold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {language === "zh" ? "生成视频" : "Generate Video"}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
+          {/* Generate Video button removed - using bottom navigation instead */}
 
           {!generatedAudioUrl && !isGenerating && (
             <p className="text-center text-gray-300 text-sm mt-4">

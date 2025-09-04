@@ -387,19 +387,30 @@ export default function VideoJobPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Video Player - Main Focus */}
             <div className="lg:col-span-2">
-              {job.status === 'completed' && (job.video_url || job.result_video_url) ? (
+              {job.status === 'completed' ? (
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
-                    <VideoPlayer
-                      src={streamingUrl || downloadUrl || ''}
-                      poster={movieData?.backdrop_url
-                        ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
-                        : job.thumbnail_url
-                          ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
-                          : undefined
-                      }
-                      className="w-full rounded-lg"
-                    />
+                    {(streamingUrl || downloadUrl) ? (
+                      <VideoPlayer
+                        src={streamingUrl || downloadUrl || ''}
+                        poster={movieData?.backdrop_url
+                          ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
+                          : job.thumbnail_url
+                            ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
+                            : undefined
+                        }
+                        className="w-full rounded-lg"
+                      />
+                    ) : (
+                      <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                          <p className={`text-sm ${themeClasses.secondaryText}`}>
+                            {language === "zh" ? "正在准备视频..." : "Preparing video..."}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <div className="p-6">
                       <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Button
