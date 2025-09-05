@@ -199,6 +199,12 @@ export default function MyVoicesPage() {
       audioElement.pause()
     }
 
+    // Check if audioUrl is valid
+    if (!audioUrl) {
+      console.error('Audio URL is undefined or empty')
+      return
+    }
+
     // Ensure the audio URL is absolute
     const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${apiConfig.getBaseUrl()}${audioUrl}`
     const newAudio = new Audio(fullAudioUrl)

@@ -133,6 +133,7 @@ export default function MovieHomePage() {
   const [featuredVideos, setFeaturedVideos] = useState<any[]>([])
   const [videosLoading, setVideosLoading] = useState(false)
   const [videoUrls, setVideoUrls] = useState<{[key: string]: {streaming_url?: string, download_url?: string}}>({})
+  const [isMediumOrWideScreen, setIsMediumOrWideScreen] = useState(false)
   const videoRefs = useRef<{[key: string]: VideoPlayerRef | null}>({})
 
   // Function to stop all other videos when one starts playing
@@ -192,6 +193,18 @@ export default function MovieHomePage() {
       fetchFeaturedVideos(movieId)
     }
   }, [params])
+
+  // Check window size for responsive image display
+  useEffect(() => {
+    const checkWindowSize = () => {
+      setIsMediumOrWideScreen(window.innerWidth > 768) // mobile breakpoint
+    }
+
+    checkWindowSize()
+    window.addEventListener('resize', checkWindowSize)
+
+    return () => window.removeEventListener('resize', checkWindowSize)
+  }, [])
 
   const fetchMovieData = async (id: string) => {
     setLoading(true)
@@ -408,11 +421,11 @@ export default function MovieHomePage() {
               <Card className={`${getCardClasses()} overflow-hidden shadow-xl`}>
                 <CardContent className="p-0 relative">
                   <Image
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster` || "/placeholder.svg"}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=${isMediumOrWideScreen ? 'backdrop' : 'poster'}` || "/placeholder.svg"}
                     alt={language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
-                    width={400}
-                    height={600}
-                    className="w-full h-auto object-cover"
+                    width={isMediumOrWideScreen ? 800 : 400}
+                    height={isMediumOrWideScreen ? 450 : 600}
+                    className={`w-full h-auto object-cover ${isMediumOrWideScreen ? 'aspect-video' : 'aspect-[2/3]'}`}
                   />
                   {movieData.rating && (
                     <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-2 rounded-full flex items-center shadow-lg">

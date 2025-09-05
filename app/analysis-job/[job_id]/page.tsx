@@ -283,47 +283,6 @@ export default function AnalysisJobPage() {
     <AppLayout>
       <div className={`min-h-screen ${themeClasses.background}`}>
         <div className="container mx-auto px-6 py-8 pb-24">
-          {/* Job Status Card */}
-          <Card className={`${themeClasses.card} ${themeClasses.cardHover} mb-6`}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className={themeClasses.text}>
-                  {language === "zh" ? "分析任务状态" : "Analysis Job Status"}
-                </CardTitle>
-                {analysisJob && getStatusBadge(analysisJob.status)}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {analysisJob && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className={themeClasses.secondaryText}>
-                      {language === "zh" ? "任务ID" : "Job ID"}:
-                    </span>
-                    <span className={themeClasses.text}>{analysisJob.id}</span>
-                  </div>
-                  
-                  {analysisJob.status === 'processing' && (
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={themeClasses.secondaryText}>
-                          {language === "zh" ? "进度" : "Progress"}:
-                        </span>
-                        <span className={themeClasses.text}>{analysisJob.progress}%</span>
-                      </div>
-                      <Progress value={analysisJob.progress} className="w-full" />
-                    </div>
-                  )}
-
-                  {analysisJob.error_message && (
-                    <div className={`${themeClasses.error} text-sm`}>
-                      {language === "zh" ? "错误信息" : "Error"}: {analysisJob.error_message}
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Analysis Result */}
           {analysisJob?.status === 'completed' && analysisJob.analysis_result && (

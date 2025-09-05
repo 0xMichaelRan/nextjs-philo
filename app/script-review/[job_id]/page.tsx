@@ -532,24 +532,13 @@ export default function ScriptReviewPage() {
   const themeClasses = getThemeClasses()
 
   return (
-    <div
-      className="min-h-screen relative"
-      style={{
-        backgroundImage: movieData ? `url(${apiConfig.getBaseUrl()}/static/${movieData.id}/image?file=backdrop)` : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      {/* Backdrop overlay */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-0"></div>
-
+    <div>
       <AppLayout title={language === "zh" ? "脚本审查" : "Script Review"}>
-        <div className="relative z-10 container mx-auto px-6 py-8 pb-24">
+        <div className="container mx-auto px-6 py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
-              <h1 className="text-3xl font-bold text-white">
+              <h1 className={`text-3xl font-bold ${themeClasses.text}`}>
                 {language === "zh" ? "脚本审查" : "Script Review"}
               </h1>
             </div>
@@ -558,22 +547,22 @@ export default function ScriptReviewPage() {
           {/* Movie Header */}
           {movieData && (
             <div className="mb-8 text-center">
-              <h2 className="text-2xl font-bold text-white mb-2">
+              <h2 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>
                 {movieData.title_zh || movieData.title}
               </h2>
               {movieData.title_en && movieData.title_en !== movieData.title && (
-                <p className="text-lg text-gray-300 mb-2">{movieData.title_en}</p>
+                <p className={`text-lg text-gray-600 dark:text-gray-300 mb-2`}>{movieData.title_en}</p>
               )}
               {movieData.tagline && (
-                <p className="text-gray-400 italic">{movieData.tagline}</p>
+                <p className={`text-gray-500 dark:text-gray-400 italic`}>{movieData.tagline}</p>
               )}
             </div>
           )}
 
           {/* Video-like Audio Player */}
-          <Card className="bg-black/80 border-white/20 mb-8 overflow-hidden">
+          <Card className={`${themeClasses.card} mb-8 overflow-hidden`}>
             <CardContent className="p-0">
-              <div className="relative aspect-video bg-gradient-to-br from-gray-900 to-black">
+              <div className={`relative aspect-video ${theme === 'light' ? 'bg-gradient-to-br from-gray-100 to-gray-200' : 'bg-gradient-to-br from-gray-900 to-black'}`}>
                 {/* Video thumbnail/backdrop */}
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-30"

@@ -246,32 +246,17 @@ export default function JobPendingPage() {
     return () => clearInterval(interval)
   }, [user, language]) // Remove jobs dependency to prevent recreation
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-orange-50 via-red-50 to-pink-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
-        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
-        accent: "text-orange-600",
-        button: "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700",
-        outlineButton: "border-gray-300 text-gray-700 hover:bg-gray-50",
-      }
-    }
-    return {
-      background: "bg-gradient-to-br from-orange-900 via-red-900 to-pink-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20 backdrop-blur-md",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
-      accent: "text-orange-400",
-      button: "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700",
-      outlineButton: "border-white/20 text-white hover:bg-white/10",
-    }
+  // Use standard theme classes instead of custom ones
+  const themeClasses = {
+    background: "bg-background",
+    text: "text-foreground",
+    secondaryText: "text-muted-foreground",
+    card: "bg-card border-border",
+    cardHover: "hover:bg-accent/50 transition-all duration-300",
+    accent: "text-primary",
+    button: "bg-primary text-primary-foreground hover:bg-primary/90",
+    outlineButton: "border-input text-foreground hover:bg-accent hover:text-accent-foreground",
   }
-
-  const themeClasses = getThemeClasses()
 
   // Subscribe to real-time job updates
   useEffect(() => {
@@ -424,33 +409,38 @@ export default function JobPendingPage() {
               </Button>
             </div>
 
-            {/* Job Status Toggle */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <span className={`${themeClasses.text} text-sm`}>
-                  {language === "zh" ? "显示任务：" : "Show jobs:"}
+            {/* Job Status Filter - Responsive Design */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span className={`${themeClasses.text} text-sm font-medium`}>
+                  {language === "zh" ? "任务状态：" : "Job Status:"}
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {completedJobs.length > 0 && (
-                    <Badge variant="outline" className="text-green-600 border-green-600">
-                      {language === "zh" ? `刚完成 (${completedJobs.length})` : `Just Completed (${completedJobs.length})`}
-                    </Badge>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700/50">
+                      <CheckCircle className="w-3 h-3" />
+                      {language === "zh" ? `刚完成 ${completedJobs.length}` : `Completed ${completedJobs.length}`}
+                    </div>
                   )}
-                  <Badge variant="outline" className="text-orange-600 border-orange-600">
-                    {language === "zh" ? `待处理 (${pendingJobs.length})` : `Pending (${pendingJobs.length})`}
-                  </Badge>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700/50">
+                    <Clock className="w-3 h-3" />
+                    {language === "zh" ? `待处理 ${pendingJobs.length}` : `Pending ${pendingJobs.length}`}
+                  </div>
                   {failedJobs.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => setShowFailedJobs(!showFailedJobs)}
-                      className={`text-red-600 border-red-600 hover:bg-red-50 ${showFailedJobs ? 'bg-red-50' : ''}`}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500/50 ${
+                        showFailedJobs
+                          ? 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-600/50'
+                          : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700/30 hover:bg-red-100 dark:hover:bg-red-900/40'
+                      }`}
                     >
-                      {showFailedJobs ?
-                        (language === "zh" ? `隐藏失败任务 (${failedJobs.length})` : `Hide Failed (${failedJobs.length})`) :
-                        (language === "zh" ? `显示失败任务 (${failedJobs.length})` : `Show Failed (${failedJobs.length})`)
+                      <AlertCircle className="w-3 h-3" />
+                      {showFailedJobs
+                        ? (language === "zh" ? `隐藏失败 ${failedJobs.length}` : `Hide Failed ${failedJobs.length}`)
+                        : (language === "zh" ? `显示失败 ${failedJobs.length}` : `Show Failed ${failedJobs.length}`)
                       }
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -485,36 +475,22 @@ export default function JobPendingPage() {
           {/* VIP Limits Display */}
           {jobLimits && (
             <Card className={`${themeClasses.card} ${themeClasses.cardHover} mb-6`}>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap justify-center gap-6">
                   <div className="text-center">
-                    <h3 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
-                      {language === "zh" ? "当前计划" : "Current Plan"}
-                    </h3>
-                    <div className={`text-2xl font-bold ${themeClasses.accent}`}>
-                      {jobLimits.plan}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <h3 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
-                      {language === "zh" ? "等待中任务" : "Pending Jobs"}
-                    </h3>
-                    <div className={`text-2xl font-bold ${themeClasses.text}`}>
+                    <div className={`text-xl font-bold ${themeClasses.text}`}>
                       {jobLimits.pending_jobs.used} / {jobLimits.pending_jobs.limit}
                     </div>
                     <p className={`text-sm ${themeClasses.secondaryText}`}>
-                      {language === "zh" ? `还可创建 ${jobLimits.pending_jobs.remaining} 个` : `${jobLimits.pending_jobs.remaining} remaining`}
+                      {language === "zh" ? "等待中任务" : "Pending Jobs"}
                     </p>
                   </div>
                   <div className="text-center">
-                    <h3 className={`text-lg font-semibold ${themeClasses.text} mb-2`}>
-                      {language === "zh" ? "本月任务" : "Monthly Jobs"}
-                    </h3>
-                    <div className={`text-2xl font-bold ${themeClasses.text}`}>
-                      {jobLimits.monthly_jobs.used} / {jobLimits.monthly_jobs.limit}
+                    <div className={`text-xl font-bold ${themeClasses.text}`}>
+                      {jobLimits.monthly_jobs.remaining}
                     </div>
                     <p className={`text-sm ${themeClasses.secondaryText}`}>
-                      {language === "zh" ? `还可创建 ${jobLimits.monthly_jobs.remaining} 个` : `${jobLimits.monthly_jobs.remaining} remaining`}
+                      {language === "zh" ? "本月剩余" : "Monthly Remaining"}
                     </p>
                   </div>
                 </div>
@@ -628,43 +604,8 @@ export default function JobPendingPage() {
                     </div>
                   )}
 
-                  {/* Download button for completed jobs */}
-                  {job.status === "completed" && (job.video_url || job.downloadUrl) && (
-                    <div className="flex gap-2">
-                      {(job.video_url || job.downloadUrl) && (
-                        <Button
-                          size="sm"
-                          className="bg-blue-600 hover:bg-blue-700"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(job.video_url || job.downloadUrl, '_blank')
-                          }}
-                        >
-                          <Play className="w-4 h-4 mr-2" />
-                          {language === "zh" ? "播放" : "Play"}
-                        </Button>
-                      )}
-                      {(job.video_url || job.downloadUrl) && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const videoUrl = job.video_url || job.downloadUrl
-                            if (videoUrl) {
-                              const link = document.createElement('a')
-                              link.href = videoUrl
-                              link.download = `${job.movieTitle}_analysis.mp4`
-                              link.click()
-                            }
-                          }}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          {language === "zh" ? "下载" : "Download"}
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  {/* Completed jobs within last 1 minute should just be clickable to navigate to video-generation page */}
+                  {/* No play/download buttons - clicking the card navigates to the video page */}
 
                   {/* Error message for failed jobs */}
                   {job.status === "failed" && job.error_message && (

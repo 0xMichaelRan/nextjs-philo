@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Bell, Video, CreditCard, Newspaper, User } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,7 @@ interface Notification {
   message_zh: string
   message_en?: string
   type: string
+  cta_url?: string
   is_read: boolean
   created_at: string
 }
@@ -73,6 +75,7 @@ export default function NotificationsPage() {
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
+  const router = useRouter()
 
   // Notifications page doesn't require authentication
   useAuthGuard({ requireAuth: false })
@@ -187,6 +190,13 @@ export default function NotificationsPage() {
       setUnreadCount(prev => prev + 1)
       console.error("Error marking notification as read:", error)
     }
+  }
+
+  // Handle CTA button click with navigation stack clearing
+  const handleCtaClick = (ctaUrl: string) => {
+    // Clear navigation stack and navigate to the CTA URL
+    window.history.replaceState(null, '', ctaUrl)
+    router.push(ctaUrl)
   }
 
   // Mark all notifications as read
@@ -373,7 +383,7 @@ export default function NotificationsPage() {
                         {error}
                       </p>
                       <button
-                        onClick={fetchNotifications}
+                        onClick={() => fetchNotifications()}
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                       >
                         {language === "zh" ? "重试" : "Retry"}
@@ -428,12 +438,28 @@ export default function NotificationsPage() {
                               </div>
                             </div>
 
-                            <p className={`${themeClasses.secondaryText} leading-relaxed`}>
+                            <p className={`${themeClasses.secondaryText} leading-relaxed mb-3`}>
                               {language === "zh"
                                 ? notification.message_zh
                                 : (notification.message_en || notification.message_zh)
                               }
                             </p>
+
+                            {/* CTA Button */}
+                            {notification.cta_url && (
+                              <div className="mt-4">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCtaClick(notification.cta_url!)
+                                  }}
+                                  size="sm"
+                                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                                >
+                                  {language === "zh" ? "查看详情" : "View Details"}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -462,7 +488,7 @@ export default function NotificationsPage() {
                       onClick={() => setCurrentPage(prev => prev + 1)}
                       disabled={isLoading}
                       variant="outline"
-                      className={`${themeClasses.filterButton} px-8 py-3`}
+                      className="px-8 py-3"
                     >
                       {isLoading
                         ? (language === "zh" ? "加载中..." : "Loading...")
