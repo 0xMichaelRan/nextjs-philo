@@ -22,8 +22,8 @@ interface CustomVoice {
   display_name: string
   language: string
   created_at: string
-  file_size_mb: number
-  audio_url: string
+  file_size_mb?: number
+  voice_file: string  // The actual field returned by the API
   duration?: string
 }
 
@@ -334,7 +334,13 @@ export default function MyVoicesPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => playVoice(voice.id, voice.audio_url)}
+                          onClick={() => {
+                            if (voice.voice_file && user?.id) {
+                              // Construct audio URL for custom voices
+                              const audioUrl = `/static/new_voices/uid${user.id}/${voice.voice_file}`
+                              playVoice(voice.id, audioUrl)
+                            }
+                          }}
                           className="flex-1"
                         >
                           {playingVoice === voice.id ? (

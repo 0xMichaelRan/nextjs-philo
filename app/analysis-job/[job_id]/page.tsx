@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 
 import { AppLayout } from "@/components/app-layout"
+import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -351,24 +352,56 @@ export default function AnalysisJobPage() {
           )}
         </div>
 
-        {/* Bottom Navigation */}
-        <BottomNavigation
-          onBack={() => {
-            // Start over - go back to analysis config with same movie ID
-            if (analysisJob?.movie_id) {
-              router.push(`/analysis-config?movieId=${analysisJob.movie_id}`)
-            } else {
-              router.push("/analysis-config")
-            }
-          }}
-          backLabel={language === "zh" ? "重新开始" : "Start Over"}
-          onNext={analysisJob?.status === 'completed' ? () => {
-            // Navigate to voice selection with job ID
-            router.push(`/voice-selection/${jobId}`)
-          } : undefined}
-          nextLabel={language === "zh" ? "选择语音" : "Select Voice"}
-        />
+        {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
+        <div className="pt-6 hidden md:block">
+          <BottomNavigation
+            onBack={() => {
+              // Start over - go back to analysis config with same movie ID
+              if (analysisJob?.movie_id) {
+                router.push(`/analysis-config?movieId=${analysisJob.movie_id}`)
+              } else {
+                router.push("/analysis-config")
+              }
+            }}
+            backLabel={language === "zh" ? "重新开始" : "Start Over"}
+            onNext={analysisJob?.status === 'completed' ? () => {
+              // Navigate to voice selection with job ID
+              router.push(`/voice-selection/${jobId}`)
+            } : undefined}
+            nextLabel={language === "zh" ? "选择语音" : "Select Voice"}
+          />
+        </div>
       </div>
+
+      {/* Mobile Bottom Bar */}
+      <MobileBottomBar>
+        <div className="flex space-x-3 w-full">
+          <Button
+            onClick={() => {
+              // Start over - go back to analysis config with same movie ID
+              if (analysisJob?.movie_id) {
+                router.push(`/analysis-config?movieId=${analysisJob.movie_id}`)
+              } else {
+                router.push("/analysis-config")
+              }
+            }}
+            variant="outline"
+            size="lg"
+            className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            {language === "zh" ? "重新开始" : "Start Over"}
+          </Button>
+          {analysisJob?.status === 'completed' && (
+            <Button
+              onClick={() => router.push(`/voice-selection/${jobId}`)}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4"
+            >
+              {language === "zh" ? "选择语音" : "Select Voice"}
+            </Button>
+          )}
+        </div>
+      </MobileBottomBar>
     </AppLayout>
   )
 }

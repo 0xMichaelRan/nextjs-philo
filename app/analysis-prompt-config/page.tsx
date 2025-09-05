@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AppLayout } from "@/components/app-layout"
+import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -687,13 +688,37 @@ export default function AnalysisPromptConfigPage() {
 
         </div>
 
-        {/* Bottom Navigation */}
-        <BottomNavigation
-          onBack={() => router.push("/analysis-config")}
-          onNext={handleSubmit}
-          nextDisabled={isSubmitting}
-          nextLabel={isSubmitting ? (language === "zh" ? "分析中..." : "Analyzing...") : (language === "zh" ? "开始分析" : "Start Analysis")}
-        />
+        {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
+        <div className="pt-6 hidden md:block">
+          <BottomNavigation
+            onBack={() => router.push("/analysis-config")}
+            onNext={handleSubmit}
+            nextDisabled={isSubmitting}
+            nextLabel={isSubmitting ? (language === "zh" ? "分析中..." : "Analyzing...") : (language === "zh" ? "开始分析" : "Start Analysis")}
+          />
+        </div>
+
+        {/* Mobile Bottom Bar */}
+        <MobileBottomBar>
+          <div className="flex space-x-3 w-full">
+            <Button
+              onClick={() => router.push("/analysis-config")}
+              variant="outline"
+              size="lg"
+              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {language === "zh" ? "返回" : "Back"}
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 disabled:opacity-50"
+            >
+              {isSubmitting ? (language === "zh" ? "分析中..." : "Analyzing...") : (language === "zh" ? "开始分析" : "Start Analysis")}
+            </Button>
+          </div>
+        </MobileBottomBar>
       </AppLayout>
     </div>
   )

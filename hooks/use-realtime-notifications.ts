@@ -10,6 +10,8 @@ interface JobUpdateData {
   progress: number
   updated_at: string
   error_message?: string
+  pending_jobs_count?: number
+  estimated_processing_time?: number
 }
 
 interface NotificationUpdateData {

@@ -99,6 +99,10 @@ export default function JobPendingPage() {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date())
   const [error, setError] = useState<string | null>(null)
   const [showFailedJobs, setShowFailedJobs] = useState(false)
+  const [queueMetrics, setQueueMetrics] = useState<{pendingJobsCount: number, estimatedProcessingTime: number}>({
+    pendingJobsCount: 0,
+    estimatedProcessingTime: 300 // Default 5 minutes
+  })
   const { theme } = useTheme()
   const { language } = useLanguage()
   const { user } = useAuth()
@@ -273,6 +277,14 @@ export default function JobPendingPage() {
         // Don't filter out completed jobs - let user see completion status
       )
 
+      // Update queue metrics if provided in the job update
+      if (data.pending_jobs_count !== undefined && data.estimated_processing_time !== undefined) {
+        setQueueMetrics({
+          pendingJobsCount: data.pending_jobs_count,
+          estimatedProcessingTime: data.estimated_processing_time
+        })
+      }
+
       // Refresh job limits when job status changes (especially when completed)
       if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
         fetchJobLimits()
@@ -351,16 +363,41 @@ export default function JobPendingPage() {
     const diffMs = now.getTime() - created.getTime()
     const diffMins = Math.floor(diffMs / (1000 * 60))
 
+    // Calculate estimated remaining time based on queue metrics
+    const { pendingJobsCount, estimatedProcessingTime } = queueMetrics
+    const estimatedRemainingSeconds = pendingJobsCount * estimatedProcessingTime
+    const estimatedRemainingMins = Math.ceil(estimatedRemainingSeconds / 60)
+
     if (diffMins < 1) {
+      if (estimatedRemainingMins > 0) {
+        return language === "zh"
+          ? `预计还需 ${estimatedRemainingMins} 分钟`
+          : `Est. ${estimatedRemainingMins} min remaining`
+      }
       return language === "zh" ? "刚刚创建" : "Just created"
     } else if (diffMins < 60) {
-      return language === "zh" ? `等待了 ${diffMins} 分钟` : `Waiting for ${diffMins} min`
+      const waitingText = language === "zh" ? `等待了 ${diffMins} 分钟` : `Waiting for ${diffMins} min`
+      if (estimatedRemainingMins > 0) {
+        const remainingText = language === "zh"
+          ? `, 预计还需 ${estimatedRemainingMins} 分钟`
+          : `, est. ${estimatedRemainingMins} min left`
+        return waitingText + remainingText
+      }
+      return waitingText
     } else {
       const diffHours = Math.floor(diffMins / 60)
       const remainingMins = diffMins % 60
-      return language === "zh"
+      const waitingText = language === "zh"
         ? `等待了 ${diffHours} 小时 ${remainingMins} 分钟`
         : `Waiting for ${diffHours}h ${remainingMins}m`
+
+      if (estimatedRemainingMins > 0) {
+        const remainingText = language === "zh"
+          ? `, 预计还需 ${estimatedRemainingMins} 分钟`
+          : `, est. ${estimatedRemainingMins} min left`
+        return waitingText + remainingText
+      }
+      return waitingText
     }
   }
 

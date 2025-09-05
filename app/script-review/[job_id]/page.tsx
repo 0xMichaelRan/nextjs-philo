@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { MovieHeader } from "@/components/movie-header"
+import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -687,14 +688,16 @@ export default function ScriptReviewPage() {
           )}
         </div>
 
-        {/* Bottom Navigation */}
-        <BottomNavigation
-          onBack={() => router.push(`/voice-selection/${jobId}`)}
-          onNext={generatedAudioUrl ? handleGenerateVideo : undefined}
-          backLabel={language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
-          nextLabel={language === "zh" ? "生成视频" : "Generate Video"}
-          nextDisabled={!generatedAudioUrl || isGenerating}
-        />
+        {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
+        <div className="pt-6 hidden md:block">
+          <BottomNavigation
+            onBack={() => router.push(`/voice-selection/${jobId}`)}
+            onNext={generatedAudioUrl ? handleGenerateVideo : undefined}
+            backLabel={language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
+            nextLabel={language === "zh" ? "生成视频" : "Generate Video"}
+            nextDisabled={!generatedAudioUrl || isGenerating}
+          />
+        </div>
 
         {/* Hidden audio element for TTS playback */}
         <audio ref={audioRef} style={{ display: 'none' }} />
@@ -738,6 +741,30 @@ export default function ScriptReviewPage() {
             </Card>
           </div>
         )}
+
+        {/* Mobile Bottom Bar */}
+        <MobileBottomBar>
+          <div className="flex space-x-3 w-full">
+            <Button
+              onClick={() => router.push(`/voice-selection/${jobId}`)}
+              variant="outline"
+              size="lg"
+              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
+            </Button>
+            {generatedAudioUrl && (
+              <Button
+                onClick={handleGenerateVideo}
+                disabled={isGenerating}
+                size="lg"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 disabled:opacity-50"
+              >
+                {language === "zh" ? "生成视频" : "Generate Video"}
+              </Button>
+            )}
+          </div>
+        </MobileBottomBar>
       </AppLayout>
     </div>
   )

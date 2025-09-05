@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
+import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -535,12 +536,36 @@ export default function AnalysisConfigPage() {
             </div>
           </div>
 
-          {/* Bottom Navigation */}
-          <BottomNavigation
-            onBack={() => router.push(`/movie/${movieId}`)}
-            onNext={handleNext}
-          />
+          {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
+          <div className="pt-6 hidden md:block">
+            <BottomNavigation
+              onBack={() => router.push(`/movie/${movieId}`)}
+              onNext={handleNext}
+              nextLabel={language === "zh" ? "下一步" : "Next"}
+            />
+          </div>
         </div>
+
+        {/* Mobile Bottom Bar */}
+        <MobileBottomBar>
+          <div className="flex space-x-3 w-full">
+            <Button
+              onClick={() => router.push(`/movie/${movieId}`)}
+              variant="outline"
+              size="lg"
+              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {language === "zh" ? "返回" : "Back"}
+            </Button>
+            <Button
+              onClick={handleNext}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4"
+            >
+              {language === "zh" ? "下一步" : "Next"}
+            </Button>
+          </div>
+        </MobileBottomBar>
       </AppLayout>
     </div>
   )
