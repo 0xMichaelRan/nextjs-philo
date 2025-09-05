@@ -326,38 +326,20 @@ export default function VoiceSelectionWithJobPage() {
 
   // Back navigation removed - users cannot go back to modify TTS text after voice selection
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
-        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
-        selectedCard: "border-purple-500 bg-purple-50 ring-2 ring-purple-500/20",
-        hoverCard: "hover:border-purple-300",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-        accent: "text-purple-600",
-        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80",
-        activeFilterButton: "bg-purple-100 border-purple-300 text-purple-700"
-      }
-    }
-    return {
-      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20 backdrop-blur-md",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
-      selectedCard: "border-purple-400 bg-purple-900/30 ring-2 ring-purple-400/30",
-      hoverCard: "hover:border-purple-400/50",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-      accent: "text-purple-400",
-      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20",
-      activeFilterButton: "bg-purple-900/50 border-purple-400 text-purple-300"
-    }
+  // Use standard Tailwind theme classes instead of custom theme system
+  const themeClasses = {
+    background: "bg-background",
+    text: "text-foreground",
+    secondaryText: "text-muted-foreground",
+    card: "bg-card border-border",
+    cardHover: "hover:bg-accent/50 transition-all duration-300",
+    hoverCard: "hover:border-accent",
+    selectedCard: "border-primary ring-2 ring-primary/20 bg-primary/10",
+    button: "bg-primary text-primary-foreground hover:bg-primary/90",
+    accent: "text-primary",
+    filterButton: "border-input text-foreground hover:bg-accent hover:text-accent-foreground",
+    activeFilterButton: "bg-primary text-primary-foreground"
   }
-
-  const themeClasses = getThemeClasses()
 
   if (loading) {
     return (
@@ -556,8 +538,8 @@ export default function VoiceSelectionWithJobPage() {
                         voice.is_premium && !user?.is_vip
                           ? "opacity-50 cursor-not-allowed"
                           : selectedVoice === voice.voice_code
-                            ? `${themeClasses.button} text-white`
-                            : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                            ? ""  // Use default variant styling
+                            : ""  // Use outline variant styling
                       }`}
                     >
                       {voice.is_premium && !user?.is_vip
@@ -690,11 +672,7 @@ export default function VoiceSelectionWithJobPage() {
                             }}
                             variant={selectedVoice === voice.voice_code ? "default" : "outline"}
                             size="sm"
-                            className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
-                              selectedVoice === voice.voice_code
-                                ? `${themeClasses.button} text-white`
-                                : `border-gray-300 dark:border-gray-600 ${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`
-                            }`}
+                            className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
                           >
                             {selectedVoice === voice.voice_code
                               ? t("voiceSelection.selected")

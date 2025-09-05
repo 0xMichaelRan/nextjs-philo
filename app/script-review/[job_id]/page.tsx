@@ -749,7 +749,7 @@ export default function ScriptReviewPage() {
               onClick={() => router.push(`/voice-selection/${jobId}`)}
               variant="outline"
               size="lg"
-              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="flex-1 py-4"
             >
               {language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
             </Button>

@@ -389,7 +389,7 @@ export default function PaymentPage() {
                 // Update local user state
                 updateUser({
                   is_vip: true,
-                  vip_expiry_date: new Date(Date.now() + (billingCycle === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString()
+                  vip_expiry_date: new Date(Date.now() + (billingCycle === "weekly" ? 7 : billingCycle === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString()
                 })
 
                 toast({
@@ -586,6 +586,26 @@ export default function PaymentPage() {
                       <div className="space-y-3">
                         <div
                           className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all hover:bg-opacity-50 ${
+                            billingCycle === "weekly"
+                              ? "border-green-500 ring-2 ring-green-500/20"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => setBillingCycle("weekly")}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <RadioGroupItem value="weekly" id="weekly" />
+                            <Label htmlFor="weekly" className={`${themeClasses.text} cursor-pointer`}>
+                              {language === "zh" ? "每周付费" : "Weekly Billing"}
+                            </Label>
+                          </div>
+                          <div className="text-right">
+                            <div className={`${themeClasses.text} font-semibold`}>
+                              {getPrice(selectedPlan, "weekly").price}
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all hover:bg-opacity-50 ${
                             billingCycle === "monthly"
                               ? "border-green-500 ring-2 ring-green-500/20"
                               : "border-gray-200 hover:border-gray-300"
@@ -766,9 +786,13 @@ export default function PaymentPage() {
                           ? language === "zh"
                             ? "1年"
                             : "1 year"
-                          : language === "zh"
-                            ? "1个月"
-                            : "1 month"}
+                          : billingCycle === "monthly"
+                            ? language === "zh"
+                              ? "1个月"
+                              : "1 month"
+                            : language === "zh"
+                              ? "1周"
+                              : "1 week"}
                       </span>
                     </div>
                     {currentPlanPricing.isUpgrade && (

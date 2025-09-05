@@ -553,7 +553,7 @@ export default function AnalysisConfigPage() {
               onClick={() => router.push(`/movie/${movieId}`)}
               variant="outline"
               size="lg"
-              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="flex-1 py-4"
             >
               {language === "zh" ? "返回" : "Back"}
             </Button>

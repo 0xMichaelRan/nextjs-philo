@@ -279,10 +279,16 @@ export default function JobPendingPage() {
 
       // Update queue metrics if provided in the job update
       if (data.pending_jobs_count !== undefined && data.estimated_processing_time !== undefined) {
+        console.log('Received queue metrics:', {
+          pending_jobs_count: data.pending_jobs_count,
+          estimated_processing_time: data.estimated_processing_time
+        })
         setQueueMetrics({
           pendingJobsCount: data.pending_jobs_count,
           estimatedProcessingTime: data.estimated_processing_time
         })
+      } else {
+        console.log('No queue metrics in job update:', data)
       }
 
       // Refresh job limits when job status changes (especially when completed)
