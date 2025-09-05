@@ -341,6 +341,15 @@ export default function AnalysisConfigPage() {
       constructedSystemInstruction = constructedSystemInstruction.replace(new RegExp(placeholder, 'g'), value || '')
     })
 
+    // Add additional content guidelines to the system instruction (English and Chinese)
+    const additionalGuidelines = `
+      ${language === 'zh'
+        ? `请用纯中文讲述，只给连贯段落，不要标题、分点或旁白，句句健康明亮、悄悄给人启发，适合青少年与认真思考的成年人聆听。`
+        : `Speak only in English. Return pure narration—no titles, bullets, or commentary—just flowing paragraphs ready for TTS. Keep every sentence safe, upbeat, and quietly inspiring for curious teens and thoughtful adults.`
+      }`;
+
+    constructedSystemInstruction += additionalGuidelines
+
     console.log('=== CONSTRUCTED SYSTEM INSTRUCTION ===')
     console.log(constructedSystemInstruction)
     console.log('=== END SYSTEM INSTRUCTION ===')

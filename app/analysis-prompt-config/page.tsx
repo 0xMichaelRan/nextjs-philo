@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, ArrowRight, Play } from "lucide-react"
+import { ArrowLeft, ArrowRight, Play, Loader2, Brain, Sparkles } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -262,6 +262,16 @@ export default function AnalysisPromptConfigPage() {
       constructedInstruction = constructedInstruction.replace(new RegExp(placeholder, 'g'), value || '')
     })
 
+    // Add additional content guidelines to the system instruction
+    const additionalGuidelines = `
+
+IMPORTANT OUTPUT REQUIREMENTS:
+1. Language: The output should be written in ${language === 'zh' ? 'Chinese (中文)' : 'English'} based on the current language configuration.
+2. Format: The output should be narration text only. Exclude titles, bullet points, explanatory text - just provide the paragraph content. The output will be used directly for TTS voice generation.
+3. Content Policy: The output should not contain inappropriate content for children or political views. Assume the audience are young people and thoughtful adults. Keep the content educational, inspiring, and suitable for general audiences.`
+
+    constructedInstruction += additionalGuidelines
+
     return constructedInstruction || (language === "zh" ? "系统指令为空" : "System instruction is empty")
   }
 
@@ -470,6 +480,53 @@ export default function AnalysisPromptConfigPage() {
                 <p className={themeClasses.text}>
                   {language === "zh" ? "加载配置..." : "Loading configuration..."}
                 </p>
+              </div>
+            </div>
+          </div>
+        </AppLayout>
+      </div>
+    )
+  }
+
+  // Waiting UI for analysis job creation
+  if (isSubmitting) {
+    return (
+      <div className={themeClasses.background}>
+        <AppLayout>
+          <div className="container mx-auto px-6 py-8">
+            <div className="flex items-center justify-center min-h-[600px]">
+              <div className="text-center max-w-md">
+                <div className="relative mb-8">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto"></div>
+                  <Brain className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-purple-600" />
+                </div>
+
+                <h2 className={`${themeClasses.text} text-2xl font-bold mb-4`}>
+                  {language === "zh" ? "AI 正在分析中..." : "AI is Analyzing..."}
+                </h2>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-center space-x-2">
+                    <Sparkles className="h-4 w-4 text-purple-500 animate-pulse" />
+                    <p className={`${themeClasses.secondaryText} text-sm`}>
+                      {language === "zh" ? "正在处理您的分析请求" : "Processing your analysis request"}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <Loader2 className="h-4 w-4 text-purple-500 animate-spin" />
+                    <p className={`${themeClasses.secondaryText} text-sm`}>
+                      {language === "zh" ? "调用大语言模型进行深度分析" : "Calling LLM for deep analysis"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`${themeClasses.card} rounded-lg p-4 border border-purple-200`}>
+                  <p className={`${themeClasses.secondaryText} text-xs`}>
+                    {language === "zh"
+                      ? "这可能需要几分钟时间，请耐心等待。AI 正在根据您的配置生成专业的电影分析内容。"
+                      : "This may take a few minutes. AI is generating professional movie analysis content based on your configuration."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
