@@ -14,9 +14,10 @@ interface VipUpgradeModalProps {
   onClose: () => void
   feature: string
   onUpgrade?: () => void
+  currentUserTier?: 'free' | 'vip' | 'svip'  // Add user tier information
 }
 
-export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade }: VipUpgradeModalProps) {
+export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade, currentUserTier = 'free' }: VipUpgradeModalProps) {
   const router = useRouter()
   const { language, t } = useLanguage()
   const { theme } = useTheme()
@@ -43,6 +44,29 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade }: VipUpgr
   }
 
   const themeClasses = getThemeClasses()
+
+  // Determine upgrade messaging based on current user tier
+  const getUpgradeInfo = () => {
+    if (currentUserTier === 'vip') {
+      return {
+        title: language === "zh" ? "升级到SVIP" : "Upgrade to SVIP",
+        description: language === "zh" ? "解锁更多专属功能和更高限额" : "Unlock more exclusive features and higher limits",
+        buttonText: language === "zh" ? "升级到SVIP" : "Upgrade to SVIP",
+        price: "¥39",
+        period: language === "zh" ? "/月" : "/month"
+      }
+    } else {
+      return {
+        title: language === "zh" ? "升级到VIP" : "Upgrade to VIP",
+        description: language === "zh" ? "立即升级VIP，解锁所有专属功能" : "Upgrade to VIP now and unlock all exclusive features",
+        buttonText: language === "zh" ? "立即升级" : "Upgrade Now",
+        price: "¥19",
+        period: language === "zh" ? "/月" : "/month"
+      }
+    }
+  }
+
+  const upgradeInfo = getUpgradeInfo()
 
   const handleUpgrade = () => {
     onClose()
@@ -154,14 +178,14 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade }: VipUpgr
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg">
             <div className="text-center">
               <p className={`text-sm ${themeClasses.secondaryText} mb-2`}>
-                {language === "zh" ? "立即升级VIP，解锁所有专属功能" : "Upgrade to VIP now and unlock all exclusive features"}
+                {upgradeInfo.description}
               </p>
               <div className="flex items-center justify-center space-x-2">
                 <span className={`text-lg font-bold ${themeClasses.accent}`}>
-                  ¥19
+                  {upgradeInfo.price}
                 </span>
                 <span className={`text-sm ${themeClasses.secondaryText}`}>
-                  /{language === "zh" ? "月" : "month"}
+                  {upgradeInfo.period}
                 </span>
               </div>
             </div>
@@ -180,7 +204,7 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade }: VipUpgr
               className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
               <Crown className="w-4 h-4 mr-2" />
-              {language === "zh" ? "立即升级" : "Upgrade Now"}
+              {upgradeInfo.buttonText}
             </Button>
           </div>
         </CardContent>

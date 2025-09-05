@@ -708,6 +708,12 @@ export default function VoiceSelectionWithJobPage() {
         onClose={() => setShowVipModal(false)}
         feature="custom-voice"
         onUpgrade={() => router.push('/vip')}
+        currentUserTier={
+          !user ? 'free' :
+          user.is_svip ? 'svip' :
+          user.is_vip ? 'vip' :
+          'free'
+        }
       />
     </div>
   )
