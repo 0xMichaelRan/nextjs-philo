@@ -326,20 +326,38 @@ export default function VoiceSelectionWithJobPage() {
 
   // Back navigation removed - users cannot go back to modify TTS text after voice selection
 
-  // Use standard Tailwind theme classes instead of custom theme system
-  const themeClasses = {
-    background: "bg-background",
-    text: "text-foreground",
-    secondaryText: "text-muted-foreground",
-    card: "bg-card border-border",
-    cardHover: "hover:bg-accent/50 transition-all duration-300",
-    hoverCard: "hover:border-accent",
-    selectedCard: "border-primary ring-2 ring-primary/20 bg-primary/10",
-    button: "bg-primary text-primary-foreground hover:bg-primary/90",
-    accent: "text-primary",
-    filterButton: "border-input text-foreground hover:bg-accent hover:text-accent-foreground",
-    activeFilterButton: "bg-primary text-primary-foreground"
+  const getThemeClasses = () => {
+    if (theme === "light") {
+      return {
+        background: "bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400",
+        text: "text-gray-900",
+        secondaryText: "text-gray-600",
+        card: "bg-white/90 backdrop-blur-sm border-white/20",
+        cardHover: "hover:bg-white/95 hover:shadow-lg transition-all duration-300",
+        selectedCard: "ring-2 ring-purple-500 bg-purple-50/90",
+        hoverCard: "hover:shadow-lg",
+        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80",
+        activeFilterButton: "bg-gradient-to-r from-purple-600 to-pink-600 text-white",
+        accent: "text-purple-600"
+      }
+    }
+    return {
+      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
+      text: "text-white",
+      secondaryText: "text-gray-300",
+      card: "bg-white/10 backdrop-blur-sm border-white/20",
+      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      selectedCard: "ring-2 ring-purple-400 bg-purple-900/30",
+      hoverCard: "hover:shadow-xl",
+      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20",
+      activeFilterButton: "bg-gradient-to-r from-purple-600 to-pink-600 text-white",
+      accent: "text-purple-400"
+    }
   }
+
+  const themeClasses = getThemeClasses()
 
   if (loading) {
     return (

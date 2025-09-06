@@ -65,27 +65,31 @@ export default function AnalysisJobPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50",
-        text: "text-gray-800",
+        background: "bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400",
+        text: "text-gray-900",
         secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
-        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        card: "bg-white/90 backdrop-blur-sm border-white/20",
+        cardHover: "hover:bg-white/95 hover:shadow-lg transition-all duration-300",
         accent: "text-purple-600",
         success: "text-green-600",
         error: "text-red-600",
-        warning: "text-yellow-600"
+        warning: "text-yellow-600",
+        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        outlineButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80"
       }
     }
     return {
       background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20 backdrop-blur-md",
+      card: "bg-white/10 backdrop-blur-sm border-white/20",
       cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
       accent: "text-purple-400",
       success: "text-green-400",
       error: "text-red-400",
-      warning: "text-yellow-400"
+      warning: "text-yellow-400",
+      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      outlineButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20"
     }
   }
 
@@ -268,7 +272,7 @@ export default function AnalysisJobPage() {
                 </div>
                 <Button
                   onClick={() => router.push('/movie-selection')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  className={`${themeClasses.button} text-white`}
                 >
                   {language === "zh" ? "返回电影选择" : "Back to Movie Selection"}
                 </Button>
@@ -298,7 +302,7 @@ export default function AnalysisJobPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleEditStart}
-                      className={`${themeClasses.text} border-white/20 hover:bg-white/10`}
+                      className={themeClasses.outlineButton}
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       {language === "zh" ? "编辑" : "Edit"}
@@ -332,7 +336,7 @@ export default function AnalysisJobPage() {
                         variant="outline"
                         onClick={handleEditCancel}
                         disabled={isSaving}
-                        className={`${themeClasses.text} border-white/20 hover:bg-white/10`}
+                        className={themeClasses.outlineButton}
                         size="sm"
                       >
                         <X className="w-4 h-4 mr-2" />
@@ -395,7 +399,7 @@ export default function AnalysisJobPage() {
             <Button
               onClick={() => router.push(`/voice-selection/${jobId}`)}
               size="lg"
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4"
+              className={`flex-1 ${themeClasses.button} text-white font-semibold py-4`}
             >
               {language === "zh" ? "选择语音" : "Select Voice"}
             </Button>
