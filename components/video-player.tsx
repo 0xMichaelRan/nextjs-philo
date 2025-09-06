@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useImperativeHandle, forwardRef } from "react"
-import { Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react"
+import { Play, Pause, Volume2, VolumeX, Maximize, Subtitles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 
@@ -10,13 +10,16 @@ interface VideoPlayerProps {
   poster?: string
   className?: string
   onPlay?: () => void
+  subtitleSrc?: string
+  showSubtitles?: boolean
+  onSubtitleToggle?: (show: boolean) => void
 }
 
 export interface VideoPlayerRef {
   pause: () => void
 }
 
-export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay }, ref) => {
+export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay, subtitleSrc, showSubtitles = false, onSubtitleToggle }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -106,6 +109,20 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
     }
   }
 
+  const toggleSubtitles = () => {
+    if (videoRef.current && subtitleSrc) {
+      const tracks = videoRef.current.textTracks
+      if (tracks.length > 0) {
+        const track = tracks[0]
+        const newShowState = track.mode === 'hidden'
+        track.mode = newShowState ? 'showing' : 'hidden'
+        if (onSubtitleToggle) {
+          onSubtitleToggle(newShowState)
+        }
+      }
+    }
+  }
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60)
     const seconds = Math.floor(time % 60)
@@ -128,7 +145,17 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
         onClick={togglePlay}
         preload="metadata"
         crossOrigin="anonymous"
-      />
+      >
+        {subtitleSrc && (
+          <track
+            kind="subtitles"
+            src={subtitleSrc}
+            srcLang="zh"
+            label="中文字幕"
+            default={showSubtitles}
+          />
+        )}
+      </video>
 
       {/* Loading indicator */}
       {isLoading && !hasError && (
@@ -174,9 +201,22 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
             </div>
           </div>
 
-          <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-white hover:bg-white/20">
-            <Maximize className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            {subtitleSrc && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSubtitles}
+                className={`text-white hover:bg-white/20 ${showSubtitles ? 'bg-white/20' : ''}`}
+              >
+                <Subtitles className="w-5 h-5" />
+              </Button>
+            )}
+
+            <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-white hover:bg-white/20">
+              <Maximize className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

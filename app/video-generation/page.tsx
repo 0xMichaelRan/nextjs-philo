@@ -33,7 +33,6 @@ interface VideoJob extends MovieTitleData {
   result_script_url?: string
   video_url?: string
   thumbnail_url?: string
-  narration_audio_url?: string
   error_message?: string
   resolution: string
   speed: number // TTS speed (0-100)

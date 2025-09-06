@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Clock, Play, Download, CheckCircle, AlertCircle, ArrowLeft, RefreshCw, ChevronDown, ChevronUp, Volume2 } from "lucide-react"
+import { Clock, Play, Download, CheckCircle, AlertCircle, ArrowLeft, RefreshCw, ChevronDown, ChevronUp, Volume2, Subtitles, VolumeX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -33,7 +33,6 @@ interface VideoJob {
   result_script_url?: string
   video_url?: string
   thumbnail_url?: string
-  narration_audio_url?: string
   error_message?: string
   resolution: string
   speed: number // TTS speed (0-100)
@@ -61,7 +60,7 @@ export default function VideoJobPage() {
   const params = useParams()
   const router = useRouter()
   const { theme } = useTheme()
-  const { language } = useLanguage()
+  const { language, t } = useLanguage()
   const { user } = useAuth()
   const { onJobUpdate } = useRealtimeNotifications()
   const { toast } = useToast()
@@ -71,10 +70,11 @@ export default function VideoJobPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showTtsText, setShowTtsText] = useState(false)
-  const [showStreamingUrl, setShowStreamingUrl] = useState(false)
+  const [showSubtitles, setShowSubtitles] = useState(true)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [streamingUrl, setStreamingUrl] = useState<string | null>(null)
+  const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null)
 
   const jobId = params.job_id as string
 
@@ -96,10 +96,12 @@ export default function VideoJobPage() {
         setVideoUrl(data.streaming_url || data.download_url || data.video_url)
         setDownloadUrl(data.download_url || data.video_url)
         setStreamingUrl(data.streaming_url)
+        setSubtitleUrl(data.subtitle_url)
 
         console.log('Set video URL for playback:', data.streaming_url || data.download_url)
         console.log('Set download URL:', data.download_url || data.video_url)
         console.log('Set streaming URL:', data.streaming_url)
+        console.log('Set subtitle URL:', data.subtitle_url)
       } else {
         console.error('Failed to fetch video URLs')
       }
@@ -138,13 +140,13 @@ export default function VideoJobPage() {
           }
         }
       } else if (response.status === 404) {
-        setError(language === "zh" ? "视频任务未找到" : "Video job not found")
+        setError(t("videoGeneration.jobNotFound") || (language === "zh" ? "视频任务未找到" : "Video job not found"))
       } else {
-        setError(language === "zh" ? "获取任务信息失败" : "Failed to fetch job information")
+        setError(t("videoGeneration.fetchFailed") || (language === "zh" ? "获取任务信息失败" : "Failed to fetch job information"))
       }
     } catch (err) {
       console.error('Error fetching video job:', err)
-      setError(language === "zh" ? "网络错误" : "Network error")
+      setError(t("common.networkError") || (language === "zh" ? "网络错误" : "Network error"))
     } finally {
       setLoading(false)
     }
@@ -262,7 +264,7 @@ export default function VideoJobPage() {
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
               <p className={themeClasses.text}>
-                {language === "zh" ? "加载中..." : "Loading..."}
+                {t("common.loading") || (language === "zh" ? "加载中..." : "Loading...")}
               </p>
             </div>
           </div>
@@ -279,7 +281,7 @@ export default function VideoJobPage() {
             <div className="text-center py-8">
               <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
               <h2 className={`${themeClasses.text} text-2xl font-bold mb-4`}>
-                {language === "zh" ? "出错了" : "Something went wrong"}
+                {t("common.error") || (language === "zh" ? "出错了" : "Something went wrong")}
               </h2>
               <p className={`${themeClasses.secondaryText} mb-6`}>
                 {error}
@@ -297,11 +299,11 @@ export default function VideoJobPage() {
                   variant="outline"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {language === "zh" ? "返回" : "Go Back"}
+                  {t("common.goBack") || (language === "zh" ? "返回" : "Go Back")}
                 </Button>
                 <Button onClick={fetchJob}>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  {language === "zh" ? "重试" : "Retry"}
+                  {t("common.retry") || (language === "zh" ? "重试" : "Retry")}
                 </Button>
               </div>
             </div>
@@ -361,11 +363,11 @@ export default function VideoJobPage() {
                 className={`${themeClasses.text} hover:bg-white/10`}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                {language === "zh" ? "返回" : "Back"}
+                {t("common.back") || (language === "zh" ? "返回" : "Back")}
               </Button>
               <div>
                 <h1 className={`${themeClasses.text} text-2xl font-bold`}>
-                  {language === "zh" ? "视频生成" : "Video Generation"}
+                  {t("videoGeneration.title") || (language === "zh" ? "视频生成" : "Video Generation")}
                 </h1>
                 <p className={themeClasses.secondaryText}>
                   {(() => {
@@ -399,6 +401,9 @@ export default function VideoJobPage() {
                             ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
                             : undefined
                         }
+                        subtitleSrc={subtitleUrl || undefined}
+                        showSubtitles={showSubtitles}
+                        onSubtitleToggle={setShowSubtitles}
                         className="w-full rounded-lg"
                       />
                     ) : (
@@ -406,7 +411,7 @@ export default function VideoJobPage() {
                         <div className="text-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
                           <p className={`text-sm ${themeClasses.secondaryText}`}>
-                            {language === "zh" ? "正在准备视频..." : "Preparing video..."}
+                            {t("videoGeneration.preparingVideo") || (language === "zh" ? "正在准备视频..." : "Preparing video...")}
                           </p>
                         </div>
                       </div>
@@ -430,7 +435,7 @@ export default function VideoJobPage() {
                             }}
                           >
                             <Download className="w-4 h-4 mr-2" />
-                            {language === "zh" ? "下载视频" : "Download Video"}
+                            {t("videoGeneration.download") || (language === "zh" ? "下载视频" : "Download Video")}
                           </a>
                         </Button>
                         <Button
@@ -450,41 +455,46 @@ export default function VideoJobPage() {
                           className={`flex-1 ${themeClasses.filterButton}`}
                         >
                           <ArrowLeft className="w-4 h-4 mr-2" />
-                          {language === "zh" ? "返回列表" : "Back to List"}
+                          {t("common.backToList") || (language === "zh" ? "返回列表" : "Back to List")}
                         </Button>
                       </div>
 
-                      {/* Collapsible Streaming URL Info */}
-                      <div className="border-t pt-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowStreamingUrl(!showStreamingUrl)}
-                          className={`${themeClasses.text} hover:bg-white/10 mb-2`}
-                        >
-                          {showStreamingUrl ? (
-                            <>
-                              <ChevronUp className="w-4 h-4 mr-1" />
-                              {language === "zh" ? "隐藏流媒体信息" : "Hide Streaming Info"}
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="w-4 h-4 mr-1" />
-                              {language === "zh" ? "显示流媒体信息" : "Show Streaming Info"}
-                            </>
-                          )}
-                        </Button>
-                        {showStreamingUrl && (
-                          <div className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
-                            <p className="text-sm font-medium mb-2">
-                              {language === "zh" ? "流媒体URL (preview.m3u8):" : "Streaming URL (preview.m3u8):"}
-                            </p>
-                            <p className={`text-xs ${themeClasses.secondaryText} break-all`}>
-                              {streamingUrl || 'Not available'}
+                      {/* Subtitle Text Display */}
+                      {job.tts_text && (
+                        <div className="border-t pt-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className={`text-sm font-medium ${themeClasses.text} flex items-center gap-2`}>
+                              <Subtitles className="w-4 h-4" />
+                              {t("videoGeneration.subtitleText") || (language === "zh" ? "字幕文本" : "Subtitle Text")}
+                            </h4>
+                            {subtitleUrl && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowSubtitles(!showSubtitles)}
+                                className={`${themeClasses.text} hover:bg-white/10 text-xs`}
+                              >
+                                {showSubtitles ? (
+                                  <>
+                                    <VolumeX className="w-3 h-3 mr-1" />
+                                    {t("videoGeneration.hideSubtitles") || (language === "zh" ? "隐藏字幕" : "Hide Subtitles")}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Subtitles className="w-3 h-3 mr-1" />
+                                    {t("videoGeneration.showSubtitles") || (language === "zh" ? "显示字幕" : "Show Subtitles")}
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                          <div className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text} max-h-32 overflow-y-auto`}>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                              {job.tts_text}
                             </p>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -493,72 +503,20 @@ export default function VideoJobPage() {
                   <CardContent className="p-12 text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
                     <h3 className={`text-xl font-semibold ${themeClasses.text} mb-3`}>
-                      {language === "zh" ? "视频生成中..." : "Generating Video..."}
+                      {t("videoGeneration.generating") || (language === "zh" ? "视频生成中..." : "Generating Video...")}
                     </h3>
                     <p className={`${themeClasses.secondaryText} mb-6`}>
-                      {language === "zh" ? "请耐心等待，视频正在处理中" : "Please wait while your video is being processed"}
+                      {t("videoGeneration.pleaseWait") || (language === "zh" ? "请耐心等待，视频正在处理中" : "Please wait while your video is being processed")}
                     </p>
                     <div className="mt-4">
                       <p className={`text-sm ${themeClasses.secondaryText}`}>
-                        {language === "zh" ? "状态:" : "Status:"} {job.status}
+                        {t("videoGeneration.status") || (language === "zh" ? "状态:" : "Status:")} {job.status}
                       </p>
                       <p className={`text-xs ${themeClasses.secondaryText} mt-1`}>
-                        {language === "zh" ? "最后更新:" : "Last updated:"} {new Date(job.updated_at).toLocaleTimeString()}
+                        {t("common.lastUpdated") || (language === "zh" ? "最后更新:" : "Last updated:")} {new Date(job.updated_at).toLocaleTimeString()}
                       </p>
                     </div>
                   </CardContent>
-                </Card>
-              )}
-
-              {/* TTS Audio Section - Moved to left column */}
-              {job.tts_text && (
-                <Card className={`${themeClasses.card} mt-6`}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className={`${themeClasses.text} flex items-center gap-2`}>
-                        <Volume2 className="w-5 h-5" />
-                        {language === "zh" ? "语音文本" : "TTS Audio"}
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowTtsText(!showTtsText)}
-                        className={`${themeClasses.text} hover:bg-white/10`}
-                      >
-                        {showTtsText ? (
-                          <>
-                            <ChevronUp className="w-4 h-4 mr-1" />
-                            {language === "zh" ? "收起" : "Collapse"}
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="w-4 h-4 mr-1" />
-                            {language === "zh" ? "展开" : "Expand"}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  {showTtsText && (
-                    <CardContent>
-                      <div className={`p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {job.tts_text}
-                        </p>
-                      </div>
-                      {job.narration_audio_url && (
-                        <div className="mt-4">
-                          <audio
-                            controls
-                            className="w-full"
-                            src={`${apiConfig.getBaseUrl()}${job.narration_audio_url}`}
-                          >
-                            {language === "zh" ? "您的浏览器不支持音频播放" : "Your browser does not support audio playback"}
-                          </audio>
-                        </div>
-                      )}
-                    </CardContent>
-                  )}
                 </Card>
               )}
             </div>
@@ -570,7 +528,7 @@ export default function VideoJobPage() {
                 <Card className={themeClasses.card}>
                   <CardHeader>
                     <CardTitle className={themeClasses.text}>
-                      {language === "zh" ? "电影信息" : "Movie Information"}
+                      {t("movieSelection.movieInfo") || (language === "zh" ? "电影信息" : "Movie Information")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -616,7 +574,7 @@ export default function VideoJobPage() {
                         size="sm"
                         className={themeClasses.filterButton}
                       >
-                        {language === "zh" ? "查看电影详情" : "View Movie Details"}
+                        {t("movieSelection.viewDetails") || (language === "zh" ? "查看电影详情" : "View Movie Details")}
                       </Button>
                     </div>
                   </CardContent>
@@ -627,20 +585,20 @@ export default function VideoJobPage() {
               <Card className={themeClasses.card}>
                 <CardHeader>
                   <CardTitle className={themeClasses.text}>
-                    {language === "zh" ? "任务信息" : "Job Information"}
+                    {t("videoGeneration.jobInfo") || (language === "zh" ? "任务信息" : "Job Information")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div>
                       <span className={themeClasses.secondaryText}>
-                        {language === "zh" ? "分辨率" : "Resolution"}
+                        {t("videoGeneration.resolution") || (language === "zh" ? "分辨率" : "Resolution")}
                       </span>
                       <p className={themeClasses.text}>{job.resolution}</p>
                     </div>
                     <div>
                       <span className={themeClasses.secondaryText}>
-                        {language === "zh" ? "语音" : "Voice"}
+                        {t("voiceSelection.voice") || (language === "zh" ? "语音" : "Voice")}
                       </span>
                       <p className={themeClasses.text}>
                         {job.voice_display_name || job.voice_code}
@@ -648,7 +606,7 @@ export default function VideoJobPage() {
                     </div>
                     <div>
                       <span className={themeClasses.secondaryText}>
-                        {language === "zh" ? "创建时间" : "Created"}
+                        {t("common.created") || (language === "zh" ? "创建时间" : "Created")}
                       </span>
                       <p className={themeClasses.text}>
                         {new Date(job.created_at).toLocaleDateString()}
@@ -657,7 +615,7 @@ export default function VideoJobPage() {
                     {job.completed_at && (
                       <div>
                         <span className={themeClasses.secondaryText}>
-                          {language === "zh" ? "完成时间" : "Completed"}
+                          {t("common.completed") || (language === "zh" ? "完成时间" : "Completed")}
                         </span>
                         <p className={themeClasses.text}>
                           {new Date(job.completed_at).toLocaleDateString()}
