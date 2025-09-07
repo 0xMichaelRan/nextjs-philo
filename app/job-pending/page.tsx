@@ -278,16 +278,17 @@ export default function JobPendingPage() {
     return () => clearInterval(interval)
   }, [user?.id, language]) // Remove jobs dependency to prevent recreation
 
-  // Use standard theme classes instead of custom ones
+  // Centralized theme classes
   const themeClasses = {
-    background: "bg-background",
-    text: "text-foreground",
-    secondaryText: "text-muted-foreground",
-    card: "bg-card border-border",
-    cardHover: "hover:bg-accent/50 transition-all duration-300",
-    accent: "text-primary",
-    button: "bg-primary text-primary-foreground hover:bg-primary/90",
-    outlineButton: "border-input text-foreground hover:bg-accent hover:text-accent-foreground",
+    background: theme === "light" ? "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 gradient-float" : "theme-gradient-hero",
+    text: "theme-text-primary",
+    secondaryText: "theme-text-secondary",
+    mutedText: "theme-text-muted",
+    card: theme === "light" ? "theme-bg-elevated theme-border" : "theme-surface-elevated theme-border",
+    cardHover: "hover:shadow-lg transition-all duration-300",
+    accent: "theme-brand-primary",
+    button: "theme-button-primary",
+    outlineButton: "theme-button-secondary",
   }
 
   // Subscribe to real-time job updates
@@ -348,37 +349,37 @@ export default function JobPendingPage() {
     const badges = {
       draft: {
         text: language === "zh" ? "草稿" : "Draft",
-        color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+        color: theme === "light" ? "bg-gray-100 text-gray-800" : "bg-gray-800/50 text-gray-200",
         icon: <Clock className="w-4 h-4" />
       },
       pending: {
         text: language === "zh" ? "待处理" : "Pending",
-        color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+        color: theme === "light" ? "bg-orange-100 text-orange-800" : "bg-orange-900/30 text-orange-200",
         icon: <Clock className="w-4 h-4" />
       },
       queued: {
         text: language === "zh" ? "排队中" : "Queued",
-        color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+        color: theme === "light" ? "bg-yellow-100 text-yellow-800" : "bg-yellow-900/30 text-yellow-200",
         icon: <Clock className="w-4 h-4" />
       },
       processing: {
         text: language === "zh" ? "处理中" : "Processing",
-        color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+        color: theme === "light" ? "bg-blue-100 text-blue-800" : "bg-blue-900/30 text-blue-200",
         icon: <RefreshCw className="w-4 h-4 animate-spin" />
       },
       completed: {
         text: language === "zh" ? "已完成" : "Completed",
-        color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+        color: theme === "light" ? "bg-green-100 text-green-800" : "bg-green-900/30 text-green-200",
         icon: <CheckCircle className="w-4 h-4" />
       },
       failed: {
         text: language === "zh" ? "失败" : "Failed",
-        color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+        color: theme === "light" ? "bg-red-100 text-red-800" : "bg-red-900/30 text-red-200",
         icon: <AlertCircle className="w-4 h-4" />
       },
       cancelled: {
         text: language === "zh" ? "已取消" : "Cancelled",
-        color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+        color: theme === "light" ? "bg-gray-100 text-gray-800" : "bg-gray-800/50 text-gray-200",
         icon: <AlertCircle className="w-4 h-4" />
       }
     }
@@ -510,7 +511,7 @@ export default function JobPendingPage() {
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
                   {completedJobs.length > 0 && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700/50">
+                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border ${theme === "light" ? "bg-green-100 text-green-700 border-green-200" : "bg-green-900/30 text-green-300 border-green-700/50"}`}>
                       <CheckCircle className="w-3 h-3" />
                       {language === "zh" ? `刚完成 ${completedJobs.length}` : `Completed ${completedJobs.length}`}
                     </div>
@@ -522,10 +523,10 @@ export default function JobPendingPage() {
                   {failedJobs.length > 0 && (
                     <button
                       onClick={() => setShowFailedJobs(!showFailedJobs)}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500/50 ${
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500/50 border ${
                         showFailedJobs
-                          ? 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-600/50'
-                          : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700/30 hover:bg-red-100 dark:hover:bg-red-900/40'
+                          ? (theme === "light" ? 'bg-red-100 text-red-800 border-red-300' : 'bg-red-900/50 text-red-200 border-red-600/50')
+                          : (theme === "light" ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-red-900/20 text-red-400 border-red-700/30 hover:bg-red-900/40')
                       }`}
                     >
                       <AlertCircle className="w-3 h-3" />
@@ -545,12 +546,12 @@ export default function JobPendingPage() {
             <Card className={`${themeClasses.card} mb-6 border-red-500`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  <AlertCircle className={`h-5 w-5 ${theme === "light" ? "text-red-500" : "text-red-400"}`} />
                   <div>
-                    <h3 className="font-semibold text-red-600">
+                    <h3 className={`font-semibold ${theme === "light" ? "text-red-600" : "text-red-400"}`}>
                       {language === "zh" ? "提交失败" : "Submission Failed"}
                     </h3>
-                    <p className="text-sm text-red-600">{error}</p>
+                    <p className={`text-sm ${theme === "light" ? "text-red-600" : "text-red-400"}`}>{error}</p>
                   </div>
                   <Button
                     variant="ghost"
@@ -651,12 +652,12 @@ export default function JobPendingPage() {
                           <h3 className={`text-lg font-semibold ${job.backdrop_url ? 'text-white' : themeClasses.text}`}>
                             {job.movieTitle}
                           </h3>
-                          <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
+                          <p className={`text-sm ${job.backdrop_url ? 'text-white/90' : themeClasses.secondaryText}`}>
                             {t("jobPending.createdAt")} {job.createdAtFormatted}
                           </p>
                           {/* For pending jobs: show created time + estimated wait */}
                           {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
-                            <p className={`text-sm ${job.backdrop_url ? 'text-gray-100 font-medium' : `${themeClasses.secondaryText} font-medium`}`}>
+                            <p className={`text-sm font-medium ${job.backdrop_url ? 'text-white/80' : themeClasses.secondaryText}`}>
                               {queueMetrics.pendingJobsCount > 0 && queueMetrics.estimatedProcessingTime > 0
                                 ? t("jobPending.estimatedWaitMinutes", {
                                     minutes: Math.ceil((queueMetrics.pendingJobsCount * queueMetrics.estimatedProcessingTime) / 60)
@@ -667,7 +668,7 @@ export default function JobPendingPage() {
                           )}
                           {/* For recently completed jobs: show created time + completed time */}
                           {job.status === "completed" && isRecentlyCompleted(job) && (
-                            <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
+                            <p className={`text-sm ${job.backdrop_url ? 'text-white/90' : themeClasses.secondaryText}`}>
                               {t("jobPending.completedAgo")} {job.updatedAtFormatted}
                             </p>
                           )}
@@ -711,8 +712,8 @@ export default function JobPendingPage() {
 
                   {/* Error message for failed jobs */}
                   {job.status === "failed" && job.error_message && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                      <p className="text-red-700 dark:text-red-300 text-sm">
+                    <div className={`mt-4 p-3 rounded-lg border ${theme === "light" ? "bg-red-50 border-red-200" : "bg-red-900/20 border-red-800"}`}>
+                      <p className={`text-sm ${theme === "light" ? "text-red-700" : "text-red-300"}`}>
                         {job.error_message}
                       </p>
                     </div>

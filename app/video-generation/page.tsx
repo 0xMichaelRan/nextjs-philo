@@ -103,15 +103,29 @@ export default function VideoGenerationPage() {
   }
 
   const getStatusIcon = (status: string) => {
+    const iconClasses = theme === "light"
+      ? {
+          completed: "text-green-600",
+          processing: "text-blue-600",
+          pending: "text-yellow-600",
+          failed: "text-red-600"
+        }
+      : {
+          completed: "text-green-400",
+          processing: "text-blue-400",
+          pending: "text-yellow-400",
+          failed: "text-red-400"
+        }
+
     switch (status) {
       case "completed":
-        return <CheckCircle className="w-5 h-5 text-green-500" />
+        return <CheckCircle className={`w-5 h-5 ${iconClasses.completed}`} />
       case "processing":
-        return <Clock className="w-5 h-5 text-blue-500" />
+        return <Clock className={`w-5 h-5 ${iconClasses.processing}`} />
       case "pending":
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />
+        return <AlertCircle className={`w-5 h-5 ${iconClasses.pending}`} />
       case "failed":
-        return <AlertCircle className="w-5 h-5 text-red-500" />
+        return <AlertCircle className={`w-5 h-5 ${iconClasses.failed}`} />
       default:
         return null
     }
@@ -220,26 +234,27 @@ export default function VideoGenerationPage() {
     if (theme === "light") {
       return {
         background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-        outlineButton: "border-gray-300 text-gray-700 hover:bg-gray-50",
-        accent: "text-purple-600",
-        error: "text-red-600",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        button: "theme-button-primary",
+        outlineButton: "theme-button-secondary",
+        accent: "theme-brand-primary",
+        error: "theme-status-error",
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-      outlineButton: "border-white/20 text-white hover:bg-white/10",
-      accent: "text-purple-400",
-      error: "text-red-400",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      button: "theme-button-primary",
+      outlineButton: "theme-button-secondary",
+      accent: "theme-brand-primary",
+      error: "theme-status-error",
     }
   }
 
@@ -276,7 +291,7 @@ export default function VideoGenerationPage() {
           {loading && (
             <Card className={`${themeClasses.card} ${themeClasses.cardHover}`}>
               <CardContent className="p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${theme === "light" ? "border-purple-600" : "border-violet-400"}`}></div>
                 <p className={themeClasses.secondaryText}>
                   {language === "zh" ? "加载中..." : "Loading videos..."}
                 </p>

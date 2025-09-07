@@ -205,12 +205,28 @@ export default function VideoJobPage() {
   }, [job?.status, user])
 
   const getStatusColor = (status: string) => {
+    const colors = theme === "light"
+      ? {
+          completed: 'bg-green-500',
+          failed: 'bg-red-500',
+          processing: 'bg-blue-500',
+          queued: 'bg-yellow-500',
+          default: 'bg-gray-500'
+        }
+      : {
+          completed: 'bg-green-400',
+          failed: 'bg-red-400',
+          processing: 'bg-blue-400',
+          queued: 'bg-yellow-400',
+          default: 'bg-gray-400'
+        }
+
     switch (status) {
-      case 'completed': return 'bg-green-500'
-      case 'failed': return 'bg-red-500'
-      case 'processing': return 'bg-blue-500'
-      case 'queued': return 'bg-yellow-500'
-      default: return 'bg-gray-500'
+      case 'completed': return colors.completed
+      case 'failed': return colors.failed
+      case 'processing': return colors.processing
+      case 'queued': return colors.queued
+      default: return colors.default
     }
   }
 
@@ -239,23 +255,24 @@ export default function VideoJobPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400",
-        card: "bg-white/90 backdrop-blur-sm border-white/20",
-        text: "text-gray-900",
-        secondaryText: "text-gray-600",
-        accent: "from-purple-600 to-pink-600",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80"
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 gradient-float",
+        card: "theme-bg-elevated backdrop-blur-sm theme-border",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        accent: "theme-brand-primary",
+        button: "theme-button-primary",
+        filterButton: "theme-button-secondary"
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
-      card: "bg-white/10 backdrop-blur-sm border-white/20",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      accent: "from-orange-500 to-red-600",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20"
+      background: "theme-gradient-hero",
+      card: "theme-surface-elevated theme-border",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      accent: "theme-brand-primary",
+      button: "theme-button-primary",
+      filterButton: "theme-button-secondary"
     }
   }
 
@@ -267,7 +284,7 @@ export default function VideoJobPage() {
         <AppLayout>
           <div className="container mx-auto px-6 py-8">
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${theme === "light" ? "border-purple-600" : "border-violet-400"}`}></div>
               <p className={themeClasses.text}>
                 {t("common.loading") || (language === "zh" ? "加载中..." : "Loading...")}
               </p>
@@ -284,7 +301,7 @@ export default function VideoJobPage() {
         <AppLayout>
           <div className="container mx-auto px-6 py-8">
             <div className="text-center py-8">
-              <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <AlertCircle className={`w-16 h-16 mx-auto mb-4 ${theme === "light" ? "text-red-600" : "text-red-400"}`} />
               <h2 className={`${themeClasses.text} text-2xl font-bold mb-4`}>
                 {t("common.error") || (language === "zh" ? "出错了" : "Something went wrong")}
               </h2>
@@ -421,14 +438,13 @@ export default function VideoJobPage() {
 
                         {/* Current Sentence Display - Right under video player */}
                         {job.status === 'completed' && (streamingUrl || downloadUrl) && (
-                          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-                            <CurrentSentenceDisplay
-                              subtitleUrl={subtitleUrl || undefined}
-                              currentTime={currentVideoTime}
-                              isPlaying={isVideoPlaying}
-                              videoEnded={videoEnded}
-                            />
-                          </div>
+                          <CurrentSentenceDisplay
+                            subtitleUrl={subtitleUrl || undefined}
+                            currentTime={currentVideoTime}
+                            isPlaying={isVideoPlaying}
+                            videoEnded={videoEnded}
+                            className="mt-4"
+                          />
                         )}
 
 
@@ -440,7 +456,7 @@ export default function VideoJobPage() {
                     ) : (
                       <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
                         <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                          <div className={`animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2 ${theme === "light" ? "border-purple-600" : "border-violet-400"}`}></div>
                           <p className={`text-sm ${themeClasses.secondaryText}`}>
                             {t("videoGeneration.preparingVideo")}
                           </p>
@@ -452,7 +468,7 @@ export default function VideoJobPage() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
-                              className={`${themeClasses.button} text-white`}
+                              className={themeClasses.button}
                               disabled={!downloadUrl && !subtitleUrl}
                             >
                               <Download className="w-4 h-4 mr-2" />
@@ -460,7 +476,7 @@ export default function VideoJobPage() {
                               <ChevronDown className="w-4 h-4 ml-2" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="center" className="w-48">
+                          <DropdownMenuContent align="center" className={`w-48 ${themeClasses.card}`}>
                             {downloadUrl && (
                               <DropdownMenuItem asChild>
                                 <a
@@ -468,7 +484,7 @@ export default function VideoJobPage() {
                                   download
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center w-full"
+                                  className={`flex items-center w-full ${themeClasses.text} hover:${themeClasses.secondaryText}`}
                                 >
                                   <FileVideo className="w-4 h-4 mr-2" />
                                   {t("videoGeneration.downloadVideo") || "Download Video"}
@@ -482,7 +498,7 @@ export default function VideoJobPage() {
                                   download={`${job.movie_id}_subtitles.srt`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center w-full"
+                                  className={`flex items-center w-full ${themeClasses.text} hover:${themeClasses.secondaryText}`}
                                 >
                                   <FileText className="w-4 h-4 mr-2" />
                                   {t("videoGeneration.downloadSubtitles") || "Download Subtitles"}
@@ -500,7 +516,7 @@ export default function VideoJobPage() {
               ) : (
                 <Card className={themeClasses.card}>
                   <CardContent className="p-12 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${theme === "light" ? "border-purple-600" : "border-violet-400"}`}></div>
                     <h3 className={`text-xl font-semibold ${themeClasses.text} mb-3`}>
                       {t("videoGeneration.generating")}
                     </h3>
@@ -519,16 +535,6 @@ export default function VideoJobPage() {
                 </Card>
               )}
 
-              {/* Subtitle Display - Only show for completed videos */}
-              {/*job.status === 'completed' && (streamingUrl || downloadUrl) && (
-                <SubtitleDisplay
-                  subtitleUrl={subtitleUrl || undefined}
-                  currentTime={currentVideoTime}
-                  isPlaying={isVideoPlaying}
-                  movieId={job.movie_id}
-                  className="mt-6"
-                />
-              )*/}
             </div>
 
             {/* Sidebar - Movie Info & Job Details */}
@@ -544,13 +550,13 @@ export default function VideoJobPage() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {/* Speed Tag */}
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${theme === "light" ? "bg-blue-100 text-blue-800" : "bg-blue-900/50 text-blue-200"}`}>
                         <span className="mr-1">🎵</span>
                         {language === "zh" ? "语速" : "Speed"}: {job.speed}%
                       </div>
 
                       {/* Resolution Tag */}
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${theme === "light" ? "bg-green-100 text-green-800" : "bg-green-900/50 text-green-200"}`}>
                         <span className="mr-1">📺</span>
                         {language === "zh" ? "分辨率" : "Resolution"}: {job.resolution}
                       </div>
@@ -663,8 +669,8 @@ export default function VideoJobPage() {
                   </div>
 
                   {job.error_message && (
-                    <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                      <p className="text-red-400 text-sm">{job.error_message}</p>
+                    <div className={`p-3 rounded-lg border ${theme === "light" ? "bg-red-50 border-red-200" : "bg-red-500/20 border-red-500/30"}`}>
+                      <p className={`text-sm ${theme === "light" ? "text-red-700" : "text-red-400"}`}>{job.error_message}</p>
                     </div>
                   )}
                 </CardContent>
