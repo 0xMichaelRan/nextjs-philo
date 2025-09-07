@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useImperativeHandle, forwardRef } from "react"
+import { useRef, useState, useImperativeHandle, forwardRef, useEffect } from "react"
 import { Play, Pause, Volume2, VolumeX, Maximize, Subtitles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -38,6 +38,18 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
     }
   }))
 
+  // Handle subtitle state changes from parent
+  useEffect(() => {
+    if (videoRef.current && subtitleSrc && videoRef.current.textTracks.length > 0) {
+      const track = videoRef.current.textTracks[0]
+      track.mode = showSubtitles ? 'showing' : 'hidden'
+      console.log('Subtitle state updated from parent:', {
+        showSubtitles,
+        trackMode: track.mode
+      })
+    }
+  }, [showSubtitles, subtitleSrc])
+
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -71,6 +83,17 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
       setDuration(videoRef.current.duration)
       setIsLoading(false)
       setHasError(false)
+
+      // Initialize subtitle track mode
+      if (subtitleSrc && videoRef.current.textTracks.length > 0) {
+        const track = videoRef.current.textTracks[0]
+        track.mode = showSubtitles ? 'showing' : 'hidden'
+        console.log('Subtitle track initialized:', {
+          mode: track.mode,
+          showSubtitles,
+          src: subtitleSrc
+        })
+      }
     }
   }
 
@@ -114,8 +137,13 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
       const tracks = videoRef.current.textTracks
       if (tracks.length > 0) {
         const track = tracks[0]
-        const newShowState = track.mode === 'hidden'
+        const newShowState = !showSubtitles
         track.mode = newShowState ? 'showing' : 'hidden'
+        console.log('Toggling subtitles:', {
+          from: showSubtitles,
+          to: newShowState,
+          trackMode: track.mode
+        })
         if (onSubtitleToggle) {
           onSubtitleToggle(newShowState)
         }
@@ -153,6 +181,20 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
             srcLang="zh"
             label="中文字幕"
             default={showSubtitles}
+            onError={(e) => {
+              console.error('Subtitle track error:', e)
+              console.error('Subtitle URL:', subtitleSrc)
+            }}
+            onLoad={() => {
+              console.log('Subtitle track loaded successfully')
+              console.log('Subtitle URL:', subtitleSrc)
+              // Ensure proper mode is set after loading
+              if (videoRef.current && videoRef.current.textTracks.length > 0) {
+                const track = videoRef.current.textTracks[0]
+                track.mode = showSubtitles ? 'showing' : 'hidden'
+                console.log('Subtitle mode set after load:', track.mode)
+              }
+            }}
           />
         )}
       </video>

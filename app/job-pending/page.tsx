@@ -271,7 +271,13 @@ export default function JobPendingPage() {
       setJobs(prevJobs =>
         prevJobs.map(job =>
           job.id === data.job_id
-            ? { ...job, status: data.status as Job['status'], progress: data.progress }
+            ? {
+                ...job,
+                status: data.status as Job['status'],
+                progress: data.progress,
+                updatedAt: data.updated_at || new Date().toISOString(),
+                updatedAtFormatted: formatRelativeTime(data.updated_at || new Date().toISOString(), language)
+              }
             : job
         )
         // Don't filter out completed jobs - let user see completion status

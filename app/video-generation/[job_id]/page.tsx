@@ -393,19 +393,97 @@ export default function VideoJobPage() {
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
                     {(streamingUrl || downloadUrl) ? (
-                      <VideoPlayer
-                        src={streamingUrl || downloadUrl || ''}
-                        poster={movieData?.backdrop_url
-                          ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
-                          : job.thumbnail_url
-                            ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
-                            : undefined
-                        }
-                        subtitleSrc={subtitleUrl || undefined}
-                        showSubtitles={showSubtitles}
-                        onSubtitleToggle={setShowSubtitles}
-                        className="w-full rounded-lg"
-                      />
+                      <div className="space-y-4">
+                        {/* Main Video Player */}
+                        <div>
+                          <h3 className={`text-sm font-medium ${themeClasses.text} mb-2`}>
+                            Main Video Player (Custom Component)
+                          </h3>
+                          <VideoPlayer
+                            src={streamingUrl || downloadUrl || ''}
+                            poster={movieData?.backdrop_url
+                              ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
+                              : job.thumbnail_url
+                                ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
+                                : undefined
+                            }
+                            subtitleSrc={subtitleUrl || undefined}
+                            showSubtitles={showSubtitles}
+                            onSubtitleToggle={setShowSubtitles}
+                            className="w-full rounded-lg"
+                          />
+                        </div>
+
+                        {/* Debug: Native HTML5 Video Player */}
+                        <div>
+                          <h3 className={`text-sm font-medium ${themeClasses.text} mb-2`}>
+                            Debug: Native HTML5 Video Player
+                          </h3>
+                          <video
+                            controls
+                            className="w-full rounded-lg"
+                            poster={movieData?.backdrop_url
+                              ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
+                              : job.thumbnail_url
+                                ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
+                                : undefined
+                            }
+                          >
+                            <source src={streamingUrl || downloadUrl || ''} type="video/mp4" />
+                            {subtitleUrl && (
+                              <track
+                                kind="subtitles"
+                                src={subtitleUrl}
+                                srcLang="zh"
+                                label="中文字幕"
+                                default
+                              />
+                            )}
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+
+                        {/* Debug: Video with Crossorigin */}
+                        <div>
+                          <h3 className={`text-sm font-medium ${themeClasses.text} mb-2`}>
+                            Debug: Video with Crossorigin
+                          </h3>
+                          <video
+                            controls
+                            crossOrigin="anonymous"
+                            className="w-full rounded-lg"
+                            poster={movieData?.backdrop_url
+                              ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
+                              : job.thumbnail_url
+                                ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
+                                : undefined
+                            }
+                          >
+                            <source src={streamingUrl || downloadUrl || ''} type="video/mp4" />
+                            {subtitleUrl && (
+                              <track
+                                kind="subtitles"
+                                src={subtitleUrl}
+                                srcLang="zh"
+                                label="中文字幕"
+                                default
+                              />
+                            )}
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+
+                        {/* Debug Info */}
+                        <div className={`p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
+                          <h4 className="font-medium mb-2">Debug Information:</h4>
+                          <div className="text-xs space-y-1">
+                            <p><strong>Video URL:</strong> {streamingUrl || downloadUrl || 'Not available'}</p>
+                            <p><strong>Subtitle URL:</strong> {subtitleUrl || 'Not available'}</p>
+                            <p><strong>Show Subtitles:</strong> {showSubtitles ? 'Yes' : 'No'}</p>
+                            <p><strong>Job Status:</strong> {job.status}</p>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
                         <div className="text-center">
@@ -467,26 +545,46 @@ export default function VideoJobPage() {
                               <Subtitles className="w-4 h-4" />
                               {t("videoGeneration.subtitleText") || (language === "zh" ? "字幕文本" : "Subtitle Text")}
                             </h4>
-                            {subtitleUrl && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowSubtitles(!showSubtitles)}
-                                className={`${themeClasses.text} hover:bg-white/10 text-xs`}
-                              >
-                                {showSubtitles ? (
-                                  <>
-                                    <VolumeX className="w-3 h-3 mr-1" />
-                                    {t("videoGeneration.hideSubtitles") || (language === "zh" ? "隐藏字幕" : "Hide Subtitles")}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Subtitles className="w-3 h-3 mr-1" />
-                                    {t("videoGeneration.showSubtitles") || (language === "zh" ? "显示字幕" : "Show Subtitles")}
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {subtitleUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setShowSubtitles(!showSubtitles)}
+                                  className={`${themeClasses.text} hover:bg-white/10 text-xs`}
+                                >
+                                  {showSubtitles ? (
+                                    <>
+                                      <VolumeX className="w-3 h-3 mr-1" />
+                                      {t("videoGeneration.hideSubtitles") || (language === "zh" ? "隐藏字幕" : "Hide Subtitles")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Subtitles className="w-3 h-3 mr-1" />
+                                      {t("videoGeneration.showSubtitles") || (language === "zh" ? "显示字幕" : "Show Subtitles")}
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                              {subtitleUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  asChild
+                                  className={`${themeClasses.text} hover:bg-white/10 text-xs`}
+                                >
+                                  <a
+                                    href={subtitleUrl}
+                                    download={`${job.movie_id}_subtitles.srt`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Download className="w-3 h-3 mr-1" />
+                                    {t("videoGeneration.downloadSubtitles") || (language === "zh" ? "下载字幕" : "Download SRT")}
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
                           </div>
                           <div className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text} max-h-32 overflow-y-auto`}>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">

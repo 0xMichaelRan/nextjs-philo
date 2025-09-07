@@ -192,7 +192,7 @@ export default function MovieHomePage() {
       fetchMovieData(movieId)
       fetchFeaturedVideos(movieId)
     }
-  }, [params])
+  }, [params.id])
 
   // Check window size for responsive image display
   useEffect(() => {
@@ -267,39 +267,52 @@ export default function MovieHomePage() {
   const fetchFeaturedVideos = async (movieId: string) => {
     setVideosLoading(true)
     try {
+      // Use the new public API that doesn't require authentication
       const response = await fetch(
-        apiConfig.videoJobs.completed(movieId, 3)
+        `${apiConfig.getBaseUrl()}/movies/${movieId}/public-videos`
       )
 
       if (response.ok) {
         const data = await response.json()
-        const videos = data.jobs || []
-        setFeaturedVideos(videos)
+        const videos = data.videos || []
 
-        // Fetch video URLs for each completed video
-        const urlPromises = videos.map(async (video: any) => {
-          if (video.status === 'completed') {
-            try {
-              const urlResponse = await apiConfig.makeAuthenticatedRequest(
-                apiConfig.videoJobs.videoUrl(video.id)
-              )
-              if (urlResponse.ok) {
-                const urlData = await urlResponse.json()
-                return { [video.id]: urlData }
-              }
-            } catch (error) {
-              console.error(`Error fetching video URL for job ${video.id}:`, error)
-            }
+        // Transform the public API response to match the expected format
+        const transformedVideos = videos.map((video: any) => ({
+          id: video.job_id,
+          status: 'completed',
+          created_at: video.created_at,
+          resolution: video.resolution,
+          voice_code: video.voice_code,
+          thumbnail_url: video.thumbnail_url,
+        }))
+
+        setFeaturedVideos(transformedVideos)
+
+        // Create URL map from the public API response
+        const urlMap = videos.reduce((acc: any, video: any) => {
+          acc[video.job_id] = {
+            download_url: video.download_url,
+            streaming_url: video.streaming_url,
+            subtitle_url: video.subtitle_url,
+            video_url: video.download_url, // Fallback for compatibility
           }
-          return { [video.id]: {} }
-        })
+          return acc
+        }, {})
 
-        const urlResults = await Promise.all(urlPromises)
-        const urlMap = urlResults.reduce((acc, curr) => ({ ...acc, ...curr }), {})
         setVideoUrls(urlMap)
+
+        console.log(`Loaded ${videos.length} public videos for movie ${movieId}`)
+      } else {
+        console.warn(`Public videos API returned ${response.status}`)
+        // Fallback to empty state
+        setFeaturedVideos([])
+        setVideoUrls({})
       }
     } catch (error) {
-      console.error("Error fetching featured videos:", error)
+      console.error("Error fetching public videos:", error)
+      // Fallback to empty state
+      setFeaturedVideos([])
+      setVideoUrls({})
     } finally {
       setVideosLoading(false)
     }
