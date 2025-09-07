@@ -6,8 +6,7 @@ import { Download, AlertCircle, ArrowLeft, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import Link from "next/link"
+
 import { AppLayout } from "@/components/app-layout"
 import { VideoPlayer } from "@/components/video-player"
 import { SubtitleDisplay } from "@/components/subtitle-display"
@@ -15,7 +14,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
-import { useToast } from "@/hooks/use-toast"
+
 import { apiConfig } from "@/lib/api-config"
 
 interface VideoJob {
@@ -64,13 +63,10 @@ export default function VideoJobPage() {
   const { language, t } = useLanguage()
   const { user } = useAuth()
   const { onJobUpdate } = useRealtimeNotifications()
-  const { toast } = useToast()
-
   const [job, setJob] = useState<VideoJob | null>(null)
   const [movieData, setMovieData] = useState<MovieData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [streamingUrl, setStreamingUrl] = useState<string | null>(null)
   const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null)
@@ -94,7 +90,6 @@ export default function VideoJobPage() {
         console.log('Video URLs received:', data)
 
         // Use streaming URL as primary, fallback to download URL
-        setVideoUrl(data.streaming_url || data.download_url || data.video_url)
         setDownloadUrl(data.download_url || data.video_url)
         setStreamingUrl(data.streaming_url)
         setSubtitleUrl(data.subtitle_url)
@@ -395,11 +390,8 @@ export default function VideoJobPage() {
                   <CardContent className="p-0">
                     {(streamingUrl || downloadUrl) ? (
                       <div className="space-y-4">
-                        {/* Main Video Player */}
-                        <div>
-                          <h3 className={`text-sm font-medium ${themeClasses.text} mb-2`}>
-                            Main Video Player (Custom Component)
-                          </h3>
+                        {/* Video Player */}
+                        <div className="relative">
                           <VideoPlayer
                             src={streamingUrl || downloadUrl || ''}
                             poster={movieData?.backdrop_url
@@ -414,76 +406,11 @@ export default function VideoJobPage() {
                           />
                         </div>
 
-                        {/* Debug: Native HTML5 Video Player */}
-                        <div>
-                          <h3 className={`text-sm font-medium ${themeClasses.text} mb-2`}>
-                            Debug: Native HTML5 Video Player
-                          </h3>
-                          <video
-                            controls
-                            className="w-full rounded-lg"
-                            poster={movieData?.backdrop_url
-                              ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
-                              : job.thumbnail_url
-                                ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
-                                : undefined
-                            }
-                          >
-                            <source src={streamingUrl || downloadUrl || ''} type="video/mp4" />
-                            {subtitleUrl && (
-                              <track
-                                kind="subtitles"
-                                src={subtitleUrl}
-                                srcLang="zh"
-                                label="中文字幕"
-                                default
-                              />
-                            )}
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
 
-                        {/* Debug: Video with Crossorigin */}
-                        <div>
-                          <h3 className={`text-sm font-medium ${themeClasses.text} mb-2`}>
-                            Debug: Video with Crossorigin
-                          </h3>
-                          <video
-                            controls
-                            crossOrigin="anonymous"
-                            className="w-full rounded-lg"
-                            poster={movieData?.backdrop_url
-                              ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
-                              : job.thumbnail_url
-                                ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
-                                : undefined
-                            }
-                          >
-                            <source src={streamingUrl || downloadUrl || ''} type="video/mp4" />
-                            {subtitleUrl && (
-                              <track
-                                kind="subtitles"
-                                src={subtitleUrl}
-                                srcLang="zh"
-                                label="中文字幕"
-                                default
-                              />
-                            )}
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
 
-                        {/* Debug Info */}
-                        <div className={`p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${themeClasses.text}`}>
-                          <h4 className="font-medium mb-2">Debug Information:</h4>
-                          <div className="text-xs space-y-1">
-                            <p><strong>Video URL:</strong> {streamingUrl || downloadUrl || 'Not available'}</p>
-                            <p><strong>Subtitle URL:</strong> {subtitleUrl || 'Not available'}</p>
-                            <p><strong>Current Time:</strong> {currentVideoTime.toFixed(1)}s</p>
-                            <p><strong>Playing:</strong> {isVideoPlaying ? 'Yes' : 'No'}</p>
-                            <p><strong>Job Status:</strong> {job.status}</p>
-                          </div>
-                        </div>
+
+
+
                       </div>
                     ) : (
                       <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">

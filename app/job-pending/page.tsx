@@ -16,9 +16,9 @@ import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
 
 // Utility function for relative time formatting
-const formatRelativeTime = (dateString: string, language: string = 'en'): string => {
+const formatRelativeTime = (dateString: string, t: (key: string, params?: any) => string): string => {
   if (!dateString) {
-    return language === "zh" ? "时间未知" : "Unknown time"
+    return t("jobPending.timeUnknown")
   }
 
   const now = new Date()
@@ -26,25 +26,25 @@ const formatRelativeTime = (dateString: string, language: string = 'en'): string
 
   // Check if date is valid
   if (isNaN(date.getTime())) {
-    return language === "zh" ? "时间格式错误" : "Invalid time format"
+    return t("jobPending.invalidTimeFormat")
   }
 
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
   if (diffInSeconds < 60) {
-    return language === "zh" ? `${diffInSeconds}秒前` : `${diffInSeconds}s ago`
+    return t("jobPending.secondsAgo", { seconds: diffInSeconds })
   } else if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60)
-    return language === "zh" ? `${minutes}分钟前` : `${minutes}min ago`
+    return t("jobPending.minutesAgo", { minutes })
   } else if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600)
-    return language === "zh" ? `${hours}小时前` : `${hours}h ago`
+    return t("jobPending.hoursAgo", { hours })
   } else if (diffInSeconds < 2592000) {
     const days = Math.floor(diffInSeconds / 86400)
-    return language === "zh" ? `${days}天前` : `${days}D ago`
+    return t("jobPending.daysAgo", { days })
   } else {
     const months = Math.floor(diffInSeconds / 2592000)
-    return language === "zh" ? `${months}个月前` : `${months}M ago`
+    return t("jobPending.monthsAgo", { months })
   }
 }
 
@@ -104,7 +104,7 @@ export default function JobPendingPage() {
     estimatedProcessingTime: 300 // Default 5 minutes
   })
   const { theme } = useTheme()
-  const { language } = useLanguage()
+  const { language, t } = useLanguage()
   const { user } = useAuth()
   const { onJobUpdate } = useRealtimeNotifications()
 
@@ -156,8 +156,8 @@ export default function JobPendingPage() {
               return job.movie_title || job.movie_title_en || job.movie_title_zh || 'Unknown Movie'
             })(),
             // Add formatted versions
-            createdAtFormatted: (job.created_at || job.createdAt) ? formatRelativeTime(job.created_at || job.createdAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
-            updatedAtFormatted: (job.updated_at || job.updatedAt) ? formatRelativeTime(job.updated_at || job.updatedAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+            createdAtFormatted: (job.created_at || job.createdAt) ? formatRelativeTime(job.created_at || job.createdAt, t) : t("jobPending.timeUnknown"),
+            updatedAtFormatted: (job.updated_at || job.updatedAt) ? formatRelativeTime(job.updated_at || job.updatedAt, t) : t("jobPending.timeUnknown"),
           }
 
           // Add movie images if movie_id exists
@@ -232,8 +232,8 @@ export default function JobPendingPage() {
       setJobs(prevJobs => {
         const updatedJobs = prevJobs.map(job => ({
           ...job,
-          createdAtFormatted: job.createdAt ? formatRelativeTime(job.createdAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
-          updatedAtFormatted: job.updatedAt ? formatRelativeTime(job.updatedAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+          createdAtFormatted: job.createdAt ? formatRelativeTime(job.createdAt, t) : t("jobPending.timeUnknown"),
+          updatedAtFormatted: job.updatedAt ? formatRelativeTime(job.updatedAt, t) : t("jobPending.timeUnknown"),
         }))
 
         // Check if there are pending jobs and refresh if needed
@@ -279,7 +279,7 @@ export default function JobPendingPage() {
                 status: data.status as Job['status'],
                 progress: data.progress,
                 updatedAt: data.updated_at || new Date().toISOString(),
-                updatedAtFormatted: formatRelativeTime(data.updated_at || new Date().toISOString(), language)
+                updatedAtFormatted: formatRelativeTime(data.updated_at || new Date().toISOString(), t)
               }
             : job
         )

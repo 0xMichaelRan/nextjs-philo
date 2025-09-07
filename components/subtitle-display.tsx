@@ -35,6 +35,7 @@ export function SubtitleDisplay({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const lastScrolledSubtitleId = useRef<number | null>(null)
 
   const themeClasses = {
     background: theme === 'dark' ? 'bg-gray-900/95' : 'bg-white/95',
@@ -72,18 +73,32 @@ export function SubtitleDisplay({
     loadSubtitles()
   }, [subtitleUrl, t])
 
-  // Auto-scroll to current subtitle
+  // Auto-scroll to current subtitle (throttled to prevent excessive scrolling)
   useEffect(() => {
     if (!isPlaying || subtitles.length === 0) return
 
     const current = getCurrentSubtitle(subtitles, currentTime)
-    if (current && scrollContainerRef.current) {
+    if (current && scrollContainerRef.current && current.id !== lastScrolledSubtitleId.current) {
       const currentElement = scrollContainerRef.current.querySelector(`[data-subtitle-id="${current.id}"]`)
       if (currentElement) {
-        currentElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        })
+        // Check if element is already visible in the container
+        const container = scrollContainerRef.current
+        const containerRect = container.getBoundingClientRect()
+        const elementRect = currentElement.getBoundingClientRect()
+
+        // Only scroll if element is not visible or partially visible
+        const isVisible = (
+          elementRect.top >= containerRect.top &&
+          elementRect.bottom <= containerRect.bottom
+        )
+
+        if (!isVisible) {
+          currentElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          })
+          lastScrolledSubtitleId.current = current.id
+        }
       }
     }
   }, [currentTime, isPlaying, subtitles])

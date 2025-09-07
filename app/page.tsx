@@ -20,32 +20,24 @@ export default function HomePage() {
 
   const sections = [
     {
-      title: language === "zh" ? "电影哲学家" : "Movie Philosopher",
-      subtitle: language === "zh" ? "AI驱动的电影分析视频生成器" : "AI-Powered Movie Analysis Video Generator",
-      description:
-        language === "zh" ? "让人工智能为您创作深度电影分析视频" : "Let AI create deep movie analysis videos for you",
+      title: t("home.title"),
+      subtitle: t("home.subtitle"),
+      description: t("home.description"),
     },
     {
-      title: language === "zh" ? "深度分析" : "Deep Analysis",
-      subtitle: language === "zh" ? "专业的电影解读" : "Professional Movie Interpretation",
-      description:
-        language === "zh"
-          ? "从多个维度解析电影的艺术价值和深层含义"
-          : "Analyze artistic value and deep meanings from multiple dimensions",
+      title: t("home.deepAnalysis.title"),
+      subtitle: t("home.deepAnalysis.subtitle"),
+      description: t("home.deepAnalysis.description"),
     },
     {
-      title: language === "zh" ? "个性定制" : "Personalized",
-      subtitle: language === "zh" ? "量身打造的分析风格" : "Tailored Analysis Style",
-      description:
-        language === "zh"
-          ? "选择您喜欢的叙述语调、分析角度和配音风格"
-          : "Choose your preferred narrative tone, analysis angle, and voice style",
+      title: t("home.personalized.title"),
+      subtitle: t("home.personalized.subtitle"),
+      description: t("home.personalized.description"),
     },
     {
-      title: language === "zh" ? "一键生成" : "One-Click Generation",
-      subtitle: language === "zh" ? "简单快捷的创作流程" : "Simple and Fast Creation Process",
-      description:
-        language === "zh" ? "几分钟内获得专业级的电影分析视频" : "Get professional movie analysis videos in minutes",
+      title: t("home.oneClick.title"),
+      subtitle: t("home.oneClick.subtitle"),
+      description: t("home.oneClick.description"),
     },
   ]
 
@@ -161,12 +153,12 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <Play className="w-8 h-8 text-orange-400" />
               <span className="text-white font-bold text-xl">
-                {language === "zh" ? "电影哲学家" : "Movie Philosopher"}
+                {t("home.title")}
               </span>
             </div>
             <Link href="/auth?redirect=movie-selection">
               <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 relative z-10">
-                {language === "zh" ? "登录" : "Login"}
+                {t("home.login")}
               </Button>
             </Link>
           </div>
@@ -197,7 +189,7 @@ export default function HomePage() {
                           size="lg"
                           className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-12 py-4 text-xl font-semibold rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
                         >
-                          {language === "zh" ? "选个电影" : "Pick a Movie"}
+                          {t("home.pickMovie")}
                         </Button>
                       </Link>
                     </div>
