@@ -12,6 +12,7 @@ interface VideoPlayerProps {
   onPlay?: () => void
   onTimeUpdate?: (currentTime: number) => void
   onPlayingStateChange?: (isPlaying: boolean) => void
+  onEnded?: () => void
   subtitleSrc?: string
   showSubtitles?: boolean
   onSubtitleToggle?: (show: boolean) => void
@@ -21,7 +22,7 @@ export interface VideoPlayerRef {
   pause: () => void
 }
 
-export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay, onTimeUpdate, onPlayingStateChange, subtitleSrc, showSubtitles = false, onSubtitleToggle }, ref) => {
+export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay, onTimeUpdate, onPlayingStateChange, onEnded, subtitleSrc, showSubtitles = false, onSubtitleToggle }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -160,6 +161,11 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
         onPause={() => {
           setIsPlaying(false)
           if (onPlayingStateChange) onPlayingStateChange(false)
+        }}
+        onEnded={() => {
+          setIsPlaying(false)
+          if (onPlayingStateChange) onPlayingStateChange(false)
+          if (onEnded) onEnded()
         }}
         onClick={togglePlay}
         preload="metadata"

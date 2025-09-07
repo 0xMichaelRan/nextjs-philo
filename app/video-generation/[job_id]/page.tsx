@@ -79,6 +79,7 @@ export default function VideoJobPage() {
   const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null)
   const [currentVideoTime, setCurrentVideoTime] = useState(0)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const [videoEnded, setVideoEnded] = useState(false)
 
   const jobId = params.job_id as string
 
@@ -408,7 +409,11 @@ export default function VideoJobPage() {
                                 : undefined
                             }
                             onTimeUpdate={setCurrentVideoTime}
-                            onPlayingStateChange={setIsVideoPlaying}
+                            onPlayingStateChange={(playing) => {
+                              setIsVideoPlaying(playing)
+                              if (playing) setVideoEnded(false) // Reset when video starts playing
+                            }}
+                            onEnded={() => setVideoEnded(true)}
                             className="w-full rounded-lg"
                           />
                         </div>
@@ -420,6 +425,7 @@ export default function VideoJobPage() {
                               subtitleUrl={subtitleUrl || undefined}
                               currentTime={currentVideoTime}
                               isPlaying={isVideoPlaying}
+                              videoEnded={videoEnded}
                             />
                           </div>
                         )}

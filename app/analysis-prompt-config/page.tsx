@@ -409,6 +409,9 @@ IMPORTANT OUTPUT REQUIREMENTS:
   const handleSubmit = async () => {
     if (isSubmitting) return
 
+    // Scroll to top when starting API request
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
     setIsSubmitting(true)
     try {
       // Save current state to flow

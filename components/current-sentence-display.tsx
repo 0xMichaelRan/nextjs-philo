@@ -14,13 +14,15 @@ interface CurrentSentenceDisplayProps {
   subtitleUrl?: string
   currentTime: number
   isPlaying: boolean
+  videoEnded?: boolean
   className?: string
 }
 
-export function CurrentSentenceDisplay({ 
-  subtitleUrl, 
-  currentTime, 
+export function CurrentSentenceDisplay({
+  subtitleUrl,
+  currentTime,
   isPlaying,
+  videoEnded = false,
   className = ""
 }: CurrentSentenceDisplayProps) {
   const { theme } = useTheme()
@@ -64,6 +66,11 @@ export function CurrentSentenceDisplay({
   }, [subtitleUrl, t])
 
   const currentSubtitle = getCurrentSubtitle(subtitles, currentTime)
+
+  // Hide the component when video has ended
+  if (videoEnded) {
+    return null
+  }
 
   if (loading) {
     return (

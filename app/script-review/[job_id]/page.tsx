@@ -632,15 +632,71 @@ export default function ScriptReviewPage() {
             </CardContent>
           </Card>
 
-          {/* Voice Information */}
+          {/* Configuration Review Section */}
           {voiceConfig && (
-            <div className="mb-6 flex justify-center">
-              <Badge variant="secondary" className="text-sm bg-white/20 text-white border-white/30 px-4 py-2">
-                {voiceConfig.isCustom ?
-                  (language === "zh" ? "自定义语音" : "Custom Voice") :
-                  voiceConfig.voiceName
-                }
-              </Badge>
+            <div className="mb-6 space-y-4">
+              <h3 className="text-lg font-semibold text-white text-center mb-4">
+                {language === "zh" ? "配置确认" : "Configuration Review"}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Voice Configuration */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                  <div className="text-sm text-white/70 mb-1">
+                    {language === "zh" ? "语音配置" : "Voice"}
+                  </div>
+                  <div className="text-white font-medium">
+                    {voiceConfig.isCustom ?
+                      (language === "zh" ? "自定义语音" : "Custom Voice") :
+                      voiceConfig.voiceName
+                    }
+                  </div>
+                  {voiceConfig.ttsProvider && (
+                    <div className="text-xs text-white/60 mt-1">
+                      {language === "zh" ? "提供商" : "Provider"}: {voiceConfig.ttsProvider}
+                    </div>
+                  )}
+                </div>
+
+                {/* Speed Configuration */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                  <div className="text-sm text-white/70 mb-1">
+                    {language === "zh" ? "播放速度" : "Speed"}
+                  </div>
+                  <div className="text-white font-medium">
+                    {(() => {
+                      const speed = flowState.speed || 50;
+                      if (speed < 30) return language === "zh" ? "较慢" : "Slower";
+                      if (speed < 45) return language === "zh" ? "慢" : "Slow";
+                      if (speed <= 55) return language === "zh" ? "正常" : "Normal";
+                      if (speed < 70) return language === "zh" ? "快" : "Fast";
+                      return language === "zh" ? "较快" : "Faster";
+                    })()}
+                  </div>
+                  <div className="text-xs text-white/60 mt-1">
+                    {language === "zh" ? "数值" : "Value"}: {flowState.speed || 50}
+                  </div>
+                </div>
+
+                {/* Resolution Configuration */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                  <div className="text-sm text-white/70 mb-1">
+                    {language === "zh" ? "视频分辨率" : "Resolution"}
+                  </div>
+                  <div className="text-white font-medium">
+                    {flowState.resolution || '480p'}
+                  </div>
+                  <div className="text-xs text-white/60 mt-1">
+                    {(() => {
+                      const res = flowState.resolution || '480p';
+                      if (res === '480p') return language === "zh" ? "标清画质" : "Standard Quality";
+                      if (res === '720p') return language === "zh" ? "高清画质" : "HD Quality";
+                      if (res === '1080p') return language === "zh" ? "全高清画质" : "Full HD Quality";
+                      return language === "zh" ? "标准画质" : "Standard Quality";
+                    })()}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
