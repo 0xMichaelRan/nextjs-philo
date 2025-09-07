@@ -455,6 +455,12 @@ IMPORTANT OUTPUT REQUIREMENTS:
       } else {
         const errorData = await response.json()
         console.error("Failed to create analysis job:", errorData)
+
+        // Show user-friendly error message
+        alert(language === "zh"
+          ? "创建分析任务失败，请稍后重试。如果问题持续存在，请联系客服。"
+          : "Failed to create analysis job. Please try again later. If the problem persists, please contact support.")
+
         // Fallback to old URL format for debugging
         const params = new URLSearchParams({
           movieId: movieId!,
@@ -467,6 +473,11 @@ IMPORTANT OUTPUT REQUIREMENTS:
       }
     } catch (error) {
       console.error("Error submitting:", error)
+
+      // Show user-friendly error message
+      alert(language === "zh"
+        ? "网络错误，请检查网络连接后重试。"
+        : "Network error. Please check your connection and try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -663,14 +674,14 @@ IMPORTANT OUTPUT REQUIREMENTS:
                       <span className="text-red-500">*</span>
                     </Label>
                     <Select value={useMock.toString()} onValueChange={(value) => setUseMock(value === "true")}>
-                      <SelectTrigger className={`${themeClasses.card} border-white/30`}>
+                      <SelectTrigger className={`${themeClasses.card} ${themeClasses.border} ${themeClasses.text}`}>
                         <SelectValue placeholder={language === "zh" ? "选择分析模式" : "Select analysis mode"} />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="false">
+                      <SelectContent className={`${themeClasses.card} ${themeClasses.border}`}>
+                        <SelectItem value="false" className={`${themeClasses.text} hover:${themeClasses.cardHover}`}>
                           {language === "zh" ? "真实模式 (llm call)" : "Real Mode (AI Analysis)"}
                         </SelectItem>
-                        <SelectItem value="true">
+                        <SelectItem value="true" className={`${themeClasses.text} hover:${themeClasses.cardHover}`}>
                           {language === "zh" ? "模拟模式 (mock)" : "Mock Mode (Fast Testing)"}
                         </SelectItem>
                       </SelectContent>

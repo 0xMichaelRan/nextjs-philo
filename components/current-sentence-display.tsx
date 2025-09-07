@@ -32,12 +32,13 @@ export function CurrentSentenceDisplay({
   const [error, setError] = useState<string | null>(null)
 
   const themeClasses = {
-    background: theme === 'dark' ? 'bg-gray-900/95' : 'bg-white/95',
-    border: theme === 'dark' ? 'border-gray-700' : 'border-gray-200',
-    text: theme === 'dark' ? 'text-white' : 'text-gray-900',
-    secondaryText: theme === 'dark' ? 'text-gray-300' : 'text-gray-600',
-    currentBg: theme === 'dark' ? 'bg-purple-900/50' : 'bg-purple-100',
-    currentBorder: theme === 'dark' ? 'border-purple-500' : 'border-purple-400',
+    background: theme === 'dark' ? 'theme-bg-elevated' : 'theme-bg-elevated',
+    border: theme === 'dark' ? 'border-white/20' : 'border-gray-200',
+    text: 'theme-text-primary',
+    secondaryText: 'theme-text-secondary',
+    mutedText: 'theme-text-muted',
+    brandColor: 'theme-brand-primary',
+    progressBg: theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200',
   }
 
   // Load subtitles when URL changes
@@ -75,7 +76,7 @@ export function CurrentSentenceDisplay({
   if (loading) {
     return (
       <div className={`${className} flex items-center justify-center py-4`}>
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+        <div className={`animate-spin rounded-full h-4 w-4 border-b-2 mr-2 ${theme === 'dark' ? 'border-white' : 'border-gray-900'}`}></div>
         <span className={`text-sm ${themeClasses.secondaryText}`}>
           {t('videoGeneration.loadingSubtitles') || 'Loading subtitles...'}
         </span>
@@ -86,7 +87,7 @@ export function CurrentSentenceDisplay({
   if (error) {
     return (
       <div className={`${className} text-center py-4`}>
-        <p className={`text-sm ${themeClasses.secondaryText}`}>
+        <p className={`text-sm theme-status-error`}>
           {error}
         </p>
       </div>
@@ -96,7 +97,7 @@ export function CurrentSentenceDisplay({
   if (!currentSubtitle) {
     return (
       <div className={`${className} text-center py-4`}>
-        <p className={`text-sm ${themeClasses.secondaryText}`}>
+        <p className={`text-sm ${themeClasses.mutedText}`}>
           {t('videoGeneration.noCurrentSubtitle') || 'No current subtitle'}
         </p>
       </div>
@@ -104,33 +105,36 @@ export function CurrentSentenceDisplay({
   }
 
   return (
-    <div className={`${className}`}>
-      <div className="flex items-start justify-between mb-2">
+    <div className={`${className} ${themeClasses.background} ${themeClasses.border} border rounded-lg p-4`}>
+      <div className="flex items-start justify-between mb-3">
         <span className={`text-xs font-medium ${themeClasses.text} opacity-75`}>
           {t('videoGeneration.currentSubtitle') || 'Current Sentence'}
         </span>
-        <span className={`text-xs ${themeClasses.secondaryText}`}>
+        <span className={`text-xs ${themeClasses.mutedText}`}>
           #{currentSubtitle.id}
         </span>
       </div>
-      
-      <p className={`${themeClasses.text} leading-relaxed mb-3 text-lg`}>
+
+      <p className={`${themeClasses.text} leading-relaxed mb-4 text-lg font-medium`}>
         {currentSubtitle.text}
       </p>
-      
+
       {/* Progress bar for current subtitle */}
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-        <div 
-          className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-          style={{ width: `${getSubtitleProgress(currentSubtitle, currentTime)}%` }}
+      <div className={`w-full ${themeClasses.progressBg} rounded-full h-2 mb-2`}>
+        <div
+          className={`h-2 rounded-full transition-all duration-300 ${themeClasses.brandColor}`}
+          style={{
+            width: `${getSubtitleProgress(currentSubtitle, currentTime)}%`,
+            backgroundColor: theme === 'dark' ? 'var(--brand-primary)' : 'var(--brand-primary)'
+          }}
         />
       </div>
-      
-      <div className="flex justify-between mt-1">
-        <span className={`text-xs ${themeClasses.secondaryText}`}>
+
+      <div className="flex justify-between">
+        <span className={`text-xs ${themeClasses.mutedText}`}>
           {Math.floor(currentSubtitle.startTime)}s
         </span>
-        <span className={`text-xs ${themeClasses.secondaryText}`}>
+        <span className={`text-xs ${themeClasses.mutedText}`}>
           {Math.floor(currentSubtitle.endTime)}s
         </span>
       </div>

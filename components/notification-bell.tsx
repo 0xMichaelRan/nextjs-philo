@@ -106,9 +106,10 @@ export function NotificationBell({ className }: NotificationBellProps) {
         className={`relative ${theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10"} ${className}`}
       >
         <Bell className="w-5 h-5" />
+        {/* dark-theme refactor */}
         {hasNew && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse">
-            <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full animate-pulse">
+            <div className="absolute inset-0 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
           </div>
         )}
       </Button>

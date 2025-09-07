@@ -9,12 +9,13 @@ export function GlobalFooter() {
   const { theme } = useTheme()
   const { language } = useLanguage()
 
+  /* dark-theme refactor */
   const themeClasses = {
-    bg: theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-gray-850 border-gray-800',
+    bg: theme === 'light' ? 'bg-gray-50 border-gray-200' : 'theme-surface-primary border-white/20',
     text: theme === 'light' ? 'text-gray-900' : 'text-white',
-    secondaryText: theme === 'light' ? 'text-gray-600' : 'text-gray-500',
-    border: theme === 'light' ? 'border-gray-200' : 'border-gray-800',
-    link: theme === 'light' ? 'text-blue-600 hover:text-blue-800' : 'text-gray-500 hover:text-white'
+    secondaryText: theme === 'light' ? 'text-gray-600' : 'text-gray-300',
+    border: theme === 'light' ? 'border-gray-200' : 'border-white/20',
+    link: theme === 'light' ? 'text-blue-600 hover:text-blue-800' : 'text-violet-400 hover:text-cyan-400'
   }
 
   // AI Characters/Features for the middle column
