@@ -39,90 +39,7 @@ interface MovieData {
   tagline?: string
 }
 
-const mockMoviesData = {
-  "1": {
-    id: 1,
-    titleCn: "肖申克的救赎",
-    titleEn: "The Shawshank Redemption",
-    director: "弗兰克·德拉邦特",
-    genre: ["剧情", "犯罪"],
-    duration: "142分钟",
-    releaseDate: "1994-09-23",
-    rating: 9.7,
-    description:
-      "一个银行家因为妻子和她的情人被杀而被判终身监禁。他在肖申克监狱中逐渐获得狱友的信任，并且逐渐在监狱中找到了自己的价值。同时，他也策划着为自己的清白而复仇。",
-    cast: ["蒂姆·罗宾斯", "摩根·弗里曼", "鲍勃·冈顿"],
-    poster: "/placeholder.svg?height=450&width=300",
-    sampleVideos: [
-      {
-        id: 1,
-        title: "希望与救赎的哲学思考",
-        author: "电影爱好者A",
-        duration: "8分32秒",
-        views: 1234,
-        thumbnail: "/placeholder.svg?height=120&width=200",
-        style: "哲学思辨",
-        videoUrl: "https://example.com/video1.mp4",
-      },
-      {
-        id: 2,
-        title: "监狱制度的社会批判",
-        author: "影评人B",
-        duration: "12分15秒",
-        views: 856,
-        thumbnail: "/placeholder.svg?height=120&width=200",
-        style: "学术严谨",
-        videoUrl: "https://example.com/video2.mp4",
-      },
-      {
-        id: 3,
-        title: "友谊与人性的温暖解读",
-        author: "文艺青年C",
-        duration: "6分48秒",
-        views: 2341,
-        thumbnail: "/placeholder.svg?height=120&width=200",
-        style: "情感共鸣",
-        videoUrl: "https://example.com/video3.mp4",
-      },
-    ],
-  },
-  "2": {
-    id: 2,
-    titleCn: "霸王别姬",
-    titleEn: "Farewell My Concubine",
-    director: "陈凯歌",
-    genre: ["剧情", "爱情", "历史"],
-    duration: "171分钟",
-    releaseDate: "1993-01-01",
-    rating: 9.6,
-    description:
-      "段小楼与程蝶衣是一对打小一起长大的师兄弟，两人一个演生，一个演旦，一向配合天衣无缝，尤其一出《霸王别姬》，更是誉满京城。但两人对戏剧与人生关系的理解有本质不同，段小楼深知戏非人生，程蝶衣则是人戏不分。",
-    cast: ["张国荣", "巩俐", "张丰毅"],
-    poster: "/placeholder.svg?height=450&width=300",
-    sampleVideos: [
-      {
-        id: 1,
-        title: "中国传统戏曲的艺术魅力",
-        author: "戏曲爱好者",
-        duration: "10分12秒",
-        views: 2134,
-        thumbnail: "/placeholder.svg?height=120&width=200",
-        style: "学术严谨",
-        videoUrl: "https://example.com/video4.mp4",
-      },
-      {
-        id: 2,
-        title: "历史变迁中的人物命运",
-        author: "历史研究者",
-        duration: "15分45秒",
-        views: 1856,
-        thumbnail: "/placeholder.svg?height=120&width=200",
-        style: "哲学思辨",
-        videoUrl: "https://example.com/video5.mp4",
-      },
-    ],
-  },
-}
+
 
 export default function MovieHomePage() {
   const params = useParams()
@@ -218,47 +135,11 @@ export default function MovieHomePage() {
         const data: MovieData = await response.json()
         setMovieData(data)
       } else {
-        // Fallback to mock data if API fails
-        if (mockMoviesData[id as keyof typeof mockMoviesData]) {
-          const mockData = mockMoviesData[id as keyof typeof mockMoviesData]
-          setMovieData({
-            id: mockData.id.toString(),
-            title: mockData.titleCn,
-            title_en: mockData.titleEn,
-            title_zh: mockData.titleCn,
-            year: parseInt(mockData.releaseDate.split('-')[0]),
-            genre: mockData.genre,
-            director: mockData.director,
-            duration_minutes: parseInt(mockData.duration.replace('分钟', '')),
-            rating: mockData.rating,
-            description: mockData.description,
-            poster_url: mockData.poster
-          })
-        } else {
-          setError(language === "zh" ? "无法加载电影信息" : "Unable to load movie information")
-        }
+        setError(language === "zh" ? "无法加载电影信息" : "Unable to load movie information")
       }
     } catch (err) {
       console.error("Error fetching movie data:", err)
-      // Fallback to mock data
-      if (mockMoviesData[id as keyof typeof mockMoviesData]) {
-        const mockData = mockMoviesData[id as keyof typeof mockMoviesData]
-        setMovieData({
-          id: mockData.id.toString(),
-          title: mockData.titleCn,
-          title_en: mockData.titleEn,
-          title_zh: mockData.titleCn,
-          year: parseInt(mockData.releaseDate.split('-')[0]),
-          genre: mockData.genre,
-          director: mockData.director,
-          duration_minutes: parseInt(mockData.duration.replace('分钟', '')),
-          rating: mockData.rating,
-          description: mockData.description,
-          poster_url: mockData.poster
-        })
-      } else {
-        setError(language === "zh" ? "网络错误，请稍后重试" : "Network error, please try again later")
-      }
+      setError(language === "zh" ? "网络错误，请稍后重试" : "Network error, please try again later")
     } finally {
       setLoading(false)
     }
@@ -608,11 +489,11 @@ export default function MovieHomePage() {
                               ref={(ref) => { videoRefs.current[video.id] = ref }}
                               src={streamingUrl}
                               poster={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : undefined}
-                              className="w-full h-32"
+                              className="w-full aspect-video"
                               onPlay={() => handleVideoPlay(video.id.toString())}
                             />
                           ) : (
-                            <div className="w-full h-32 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                            <div className="w-full aspect-video bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
                               <Play className="w-8 h-8 text-gray-400" />
                             </div>
                           )}
