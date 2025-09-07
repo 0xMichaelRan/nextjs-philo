@@ -10,6 +10,8 @@ interface VideoPlayerProps {
   poster?: string
   className?: string
   onPlay?: () => void
+  onTimeUpdate?: (currentTime: number) => void
+  onPlayingStateChange?: (isPlaying: boolean) => void
   subtitleSrc?: string
   showSubtitles?: boolean
   onSubtitleToggle?: (show: boolean) => void
@@ -19,7 +21,7 @@ export interface VideoPlayerRef {
   pause: () => void
 }
 
-export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay, subtitleSrc, showSubtitles = false, onSubtitleToggle }, ref) => {
+export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay, onTimeUpdate, onPlayingStateChange, subtitleSrc, showSubtitles = false, onSubtitleToggle }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -67,7 +69,11 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime)
+      const time = videoRef.current.currentTime
+      setCurrentTime(time)
+      if (onTimeUpdate) {
+        onTimeUpdate(time)
+      }
     }
   }
 
@@ -147,8 +153,14 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
         onLoadedMetadata={handleLoadedMetadata}
         onLoadStart={handleLoadStart}
         onError={handleError}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => {
+          setIsPlaying(true)
+          if (onPlayingStateChange) onPlayingStateChange(true)
+        }}
+        onPause={() => {
+          setIsPlaying(false)
+          if (onPlayingStateChange) onPlayingStateChange(false)
+        }}
         onClick={togglePlay}
         preload="metadata"
         crossOrigin="anonymous"

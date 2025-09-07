@@ -144,6 +144,9 @@ export default function JobPendingPage() {
         const mappedJobs = await Promise.all(filteredJobs.map(async (job: any) => {
           const baseJob = {
             ...job,
+            // Map snake_case to camelCase for consistency
+            createdAt: job.created_at || job.createdAt,
+            updatedAt: job.updated_at || job.updatedAt,
             movieTitle: (() => {
               // Handle movie_title as object with language keys
               if (typeof job.movie_title === 'object' && job.movie_title) {
@@ -152,9 +155,9 @@ export default function JobPendingPage() {
               // Fallback to string fields
               return job.movie_title || job.movie_title_en || job.movie_title_zh || 'Unknown Movie'
             })(),
-            // Keep original timestamps for calculations, add formatted versions
-            createdAtFormatted: job.created_at ? formatRelativeTime(job.created_at, language) : (language === "zh" ? "时间未知" : "Unknown time"),
-            updatedAtFormatted: job.updated_at ? formatRelativeTime(job.updated_at, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+            // Add formatted versions
+            createdAtFormatted: (job.created_at || job.createdAt) ? formatRelativeTime(job.created_at || job.createdAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
+            updatedAtFormatted: (job.updated_at || job.updatedAt) ? formatRelativeTime(job.updated_at || job.updatedAt, language) : (language === "zh" ? "时间未知" : "Unknown time"),
           }
 
           // Add movie images if movie_id exists
