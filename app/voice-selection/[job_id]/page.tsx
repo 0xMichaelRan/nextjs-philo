@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Play, Pause, Mic } from "lucide-react"
+import { Play, Pause, Mic, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -329,31 +329,34 @@ export default function VoiceSelectionWithJobPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400",
-        text: "text-gray-900",
-        secondaryText: "text-gray-600",
-        card: "bg-white/90 backdrop-blur-sm border-white/20",
-        cardHover: "hover:bg-white/95 hover:shadow-lg transition-all duration-300",
-        selectedCard: "ring-2 ring-purple-500 bg-purple-50/90",
-        hoverCard: "hover:shadow-lg",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80",
-        activeFilterButton: "bg-gradient-to-r from-purple-600 to-pink-600 text-white",
-        accent: "text-purple-600"
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        selectedCard: "theme-gradient-brand text-white border-indigo-500 shadow-xl",
+        hoverCard: "hover:shadow-lg hover:border-gray-300",
+        button: "theme-button-primary",
+        filterButton: "theme-button-secondary",
+        activeFilterButton: "theme-button-primary",
+        accent: "theme-brand-primary",
+        unselectedIndicator: "border-2 border-dashed border-gray-300"
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 backdrop-blur-sm border-white/20",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
-      selectedCard: "ring-2 ring-purple-400 bg-purple-900/30",
-      hoverCard: "hover:shadow-xl",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20",
-      activeFilterButton: "bg-gradient-to-r from-purple-600 to-pink-600 text-white",
-      accent: "text-purple-400"
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      selectedCard: "theme-gradient-brand text-white border-indigo-400 shadow-xl",
+      hoverCard: "hover:shadow-xl hover:border-white/40",
+      button: "theme-button-primary",
+      filterButton: "theme-button-secondary",
+      activeFilterButton: "theme-button-primary",
+      accent: "theme-brand-primary",
+      unselectedIndicator: "border-2 border-dashed border-white/30"
     }
   }
 
@@ -483,90 +486,73 @@ export default function VoiceSelectionWithJobPage() {
                     return
                   }
                   setSelectedVoice(voice.voice_code)
+                  // Auto-play voice sample when selected
+                  if (voice.voice_file) {
+                    const audioUrl = `/static/voices/${voice.voice_file}`
+                    handlePlayAudio(voice.voice_code, audioUrl)
+                  }
                 }}
               >
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
+                  {/* Selection Indicator */}
+                  {selectedVoice === voice.voice_code ? (
+                    <div className="absolute top-4 right-4">
+                      <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <Check className="w-4 h-4 text-indigo-600" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${themeClasses.unselectedIndicator}`} />
+                  )}
+
+                  {/* Voice Info */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className={`${selectedVoice === voice.voice_code ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
                         {voice.display_name}
                       </h3>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                        >
                           {voice.language === "zh" ? "中文" : "English"}
                         </Badge>
                         {voice.gender && (
-                          <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                          >
                             {voice.gender === "male" ? (language === "zh" ? "男声" : "Male") : (language === "zh" ? "女声" : "Female")}
                           </Badge>
                         )}
-                        <Badge 
+                        <Badge
                           className={`text-xs ${voice.is_premium ? "bg-yellow-500 text-black" : "bg-green-500 text-white"}`}
                         >
                           {voice.is_premium ? (language === "zh" ? "VIP" : "VIP") : (language === "zh" ? "免费" : "Free")}
                         </Badge>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center space-x-3">
-                    {/* Play Button */}
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (voice.is_premium && !user?.is_vip) {
-                          setShowVipModal(true)
-                          return
-                        }
-                        if (voice.voice_file) {
-                          // For system voices, use the new voices path structure
-                          const audioUrl = `/static/voices/${voice.voice_file}`
-                          handlePlayAudio(voice.voice_code, audioUrl)
-                        }
-                      }}
-                      size="lg"
-                      disabled={(voice.is_premium && !user?.is_vip) || !voice.voice_file}
-                      className={`w-12 h-12 rounded-full p-0 shadow-lg flex-shrink-0 transition-all duration-200 ${
-                        voice.is_premium && !user?.is_vip
-                          ? "bg-gray-400 cursor-not-allowed opacity-50"
-                          : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105"
-                      } text-white`}
-                    >
-                      {playingVoice === voice.voice_code ? (
-                        <Pause className="w-5 h-5" />
+                    {/* Status Text */}
+                    <div className="text-center">
+                      {voice.is_premium && !user?.is_vip ? (
+                        <span className={`text-sm ${selectedVoice === voice.voice_code ? 'text-white/80' : themeClasses.secondaryText}`}>
+                          {language === "zh" ? "需要VIP会员" : "VIP Required"}
+                        </span>
+                      ) : selectedVoice === voice.voice_code ? (
+                        <span className="text-white/90 text-sm font-medium">
+                          {playingVoice === voice.voice_code
+                            ? (language === "zh" ? "正在播放..." : "Playing...")
+                            : (language === "zh" ? "已选择" : "Selected")
+                          }
+                        </span>
                       ) : (
-                        <Play className="w-5 h-5" />
+                        <span className={`text-sm ${themeClasses.secondaryText}`}>
+                          {language === "zh" ? "点击选择并试听" : "Click to select and preview"}
+                        </span>
                       )}
-                    </Button>
-
-                    {/* Select Button */}
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (voice.is_premium && !user?.is_vip) {
-                          setShowVipModal(true)
-                          return
-                        }
-                        setSelectedVoice(voice.voice_code)
-                      }}
-                      variant={selectedVoice === voice.voice_code ? "default" : "outline"}
-                      size="sm"
-                      disabled={voice.is_premium && !user?.is_vip}
-                      className={`flex-1 text-xs md:text-sm px-3 py-2 h-10 ${
-                        voice.is_premium && !user?.is_vip
-                          ? "opacity-50 cursor-not-allowed"
-                          : selectedVoice === voice.voice_code
-                            ? ""  // Use default variant styling
-                            : ""  // Use outline variant styling
-                      }`}
-                    >
-                      {voice.is_premium && !user?.is_vip
-                        ? (language === "zh" ? "需要VIP" : "VIP Required")
-                        : selectedVoice === voice.voice_code
-                          ? t("voiceSelection.selected")
-                          : t("voiceSelection.select")
-                      }
-                    </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -633,70 +619,71 @@ export default function VoiceSelectionWithJobPage() {
                       className={`${themeClasses.card} ${themeClasses.cardHover} ${
                         selectedVoice === voice.voice_code ? themeClasses.selectedCard : themeClasses.hoverCard
                       } cursor-pointer transition-all duration-300`}
-                      onClick={() => setSelectedVoice(voice.voice_code)}
+                      onClick={() => {
+                        setSelectedVoice(voice.voice_code)
+                        // Auto-play custom voice sample when selected
+                        if (voice.voice_file) {
+                          const audioUrl = voice.voice_type === "custom"
+                            ? `/static/new_voices/uid${user?.id}/${voice.voice_file}`
+                            : `/static/voices/${voice.voice_file}`
+                          handlePlayAudio(voice.voice_code, audioUrl)
+                        }
+                      }}
                     >
                       <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className={`${themeClasses.text} font-semibold text-lg mb-2`}>
+                        {/* Selection Indicator */}
+                        {selectedVoice === voice.voice_code ? (
+                          <div className="absolute top-4 right-4">
+                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg">
+                              <Check className="w-4 h-4 text-indigo-600" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${themeClasses.unselectedIndicator}`} />
+                        )}
+
+                        {/* Voice Info */}
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className={`${selectedVoice === voice.voice_code ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
                               {voice.display_name}
                             </h3>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                              >
                                 {voice.language === "zh" ? "中文" : "English"}
                               </Badge>
                               <Badge className="text-xs bg-purple-500 text-white">
                                 {language === "zh" ? "自定义" : "Custom"}
                               </Badge>
                               {voice.duration && (
-                                <Badge variant="outline" className={`text-xs ${themeClasses.text} border-gray-300 dark:border-gray-600`}>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                                >
                                   {voice.duration}
                                 </Badge>
                               )}
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center space-x-3">
-                          {/* Play Button */}
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (voice.voice_file) {
-                                // For custom voices, construct the URL based on the new path structure
-                                const audioUrl = voice.voice_type === "custom"
-                                  ? `/static/new_voices/uid${user?.id}/${voice.voice_file}`
-                                  : `/static/voices/${voice.voice_file}`
-                                handlePlayAudio(voice.voice_code, audioUrl)
-                              }
-                            }}
-                            size="lg"
-                            variant="outline"
-                            className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
-                          >
-                            {playingVoice === voice.voice_code ? (
-                              <Pause className="w-4 h-4 mr-2" />
+                          {/* Status Text */}
+                          <div className="text-center">
+                            {selectedVoice === voice.voice_code ? (
+                              <span className="text-white/90 text-sm font-medium">
+                                {playingVoice === voice.voice_code
+                                  ? (language === "zh" ? "正在播放..." : "Playing...")
+                                  : (language === "zh" ? "已选择" : "Selected")
+                                }
+                              </span>
                             ) : (
-                              <Play className="w-4 h-4 mr-2" />
+                              <span className={`text-sm ${themeClasses.secondaryText}`}>
+                                {language === "zh" ? "点击选择并试听" : "Click to select and preview"}
+                              </span>
                             )}
-                            {language === "zh" ? "试听" : "Preview"}
-                          </Button>
-
-                          {/* Select Button */}
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedVoice(voice.voice_code)
-                            }}
-                            variant={selectedVoice === voice.voice_code ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1 text-xs md:text-sm px-3 py-2 h-10"
-                          >
-                            {selectedVoice === voice.voice_code
-                              ? t("voiceSelection.selected")
-                              : t("voiceSelection.select")
-                            }
-                          </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
