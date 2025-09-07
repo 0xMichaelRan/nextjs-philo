@@ -30,6 +30,14 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Format time in MM:SS format
+  const formatTime = (time: number): string => {
+    if (isNaN(time) || time < 0) return "0:00"
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
   useImperativeHandle(ref, () => ({
     pause: () => {
       if (videoRef.current && isPlaying) {
@@ -231,6 +239,11 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
             <Button variant="ghost" size="sm" onClick={togglePlay} className="text-white hover:bg-white/20">
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
+
+            {/* Time Display */}
+            <div className="text-white text-sm font-mono">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">

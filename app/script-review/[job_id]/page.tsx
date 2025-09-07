@@ -729,18 +729,31 @@ export default function ScriptReviewPage() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm" className="text-xs bg-white/10 border-white/20 text-white hover:bg-white/20">
                         <Settings className="w-3 h-3 mr-1" />
-                        {language === "zh" ? "语速" : "Speed"}: {flowState.speed || 50}%
+                        {language === "zh" ? "语速" : "Speed"}: {(() => {
+                          const speed = flowState.speed || 50;
+                          if (speed < 30) return language === "zh" ? "较慢" : "Slower";
+                          if (speed < 45) return language === "zh" ? "慢" : "Slow";
+                          if (speed <= 55) return language === "zh" ? "正常" : "Normal";
+                          if (speed < 70) return language === "zh" ? "快" : "Fast";
+                          return language === "zh" ? "较快" : "Faster";
+                        })()} ({flowState.speed || 50})
                         <ChevronDown className="w-3 h-3 ml-1" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-32">
+                    <DropdownMenuContent align="end" className="w-40">
                       {[30, 40, 50, 60, 70, 80].map((speed) => (
                         <DropdownMenuItem
                           key={speed}
                           onClick={() => updateFlowState({ speed })}
                           className={flowState.speed === speed ? "bg-blue-100 dark:bg-blue-900" : ""}
                         >
-                          {speed}%
+                          {(() => {
+                            if (speed < 30) return language === "zh" ? "较慢" : "Slower";
+                            if (speed < 45) return language === "zh" ? "慢" : "Slow";
+                            if (speed <= 55) return language === "zh" ? "正常" : "Normal";
+                            if (speed < 70) return language === "zh" ? "快" : "Fast";
+                            return language === "zh" ? "较快" : "Faster";
+                          })()} ({speed})
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>

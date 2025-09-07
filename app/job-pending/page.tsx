@@ -50,8 +50,9 @@ const formatRelativeTime = (dateString: string, t: (key: string, params?: Record
 
 // Function to calculate estimated waiting time based on queue metrics
 const calculateEstimatedWaitTime = (pendingJobs: number, estimatedTime: number, t: (key: string, params?: Record<string, string | number>) => string): string => {
+  // If no queue metrics available, default to 1 hour
   if (!pendingJobs || !estimatedTime) {
-    return t("jobPending.waitingTimeUnknown")
+    return t("jobPending.estimatedWaitMinutes", { minutes: 60 })
   }
 
   const waitMinutes = Math.ceil((pendingJobs * estimatedTime) / 60)
@@ -128,7 +129,12 @@ export default function JobPendingPage() {
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user } = useAuth()
-  const { onJobUpdate } = useRealtimeNotifications()
+  const { onJobUpdate, isConnected, connectionError } = useRealtimeNotifications()
+
+  // Debug: Log connection status
+  useEffect(() => {
+    console.log('SSE Connection Status:', { isConnected, connectionError })
+  }, [isConnected, connectionError])
 
   const fetchJobs = async () => {
     if (!user) return
@@ -289,16 +295,16 @@ export default function JobPendingPage() {
     if (!user?.id) return
 
     const unsubscribe = onJobUpdate((data) => {
-      console.log('Received job update:', data)
+      console.log('🔄 Received job update in job-pending page:', data)
 
       // Update specific job in the list
-      setJobs(prevJobs =>
-        prevJobs.map(job => {
+      setJobs(prevJobs => {
+        const updatedJobs = prevJobs.map(job => {
           // Handle both string and number job ID comparison
           const jobIdMatch = String(job.id) === String(data.job_id) || Number(job.id) === Number(data.job_id)
 
           if (jobIdMatch) {
-            console.log(`Updating job ${job.id} status from ${job.status} to ${data.status}`)
+            console.log(`✅ Updating job ${job.id} status from ${job.status} to ${data.status}`)
             return {
               ...job,
               status: data.status as Job['status'],
@@ -309,8 +315,11 @@ export default function JobPendingPage() {
           }
           return job
         })
+
+        console.log('📋 Jobs after update:', updatedJobs.map(j => ({ id: j.id, status: j.status })))
+        return updatedJobs
         // Don't filter out completed jobs - let user see completion status
-      )
+      })
 
       // Update queue metrics if provided in the job update
       if (data.pending_jobs_count !== undefined && data.estimated_processing_time !== undefined) {
@@ -390,7 +399,7 @@ export default function JobPendingPage() {
 
   const calculateWaitingTime = (createdAt: string) => {
     if (!createdAt) {
-      return language === "zh" ? "时间未知" : "Unknown time"
+      return language === "zh" ? "预计还需 60 分钟" : "~60 min remaining"
     }
 
     const created = new Date(createdAt)
@@ -398,7 +407,7 @@ export default function JobPendingPage() {
 
     // Check if date is valid
     if (isNaN(created.getTime())) {
-      return language === "zh" ? "时间格式错误" : "Invalid time format"
+      return language === "zh" ? "预计还需 60 分钟" : "~60 min remaining"
     }
 
     const diffMs = now.getTime() - created.getTime()
@@ -409,22 +418,19 @@ export default function JobPendingPage() {
     const estimatedRemainingSeconds = pendingJobsCount * estimatedProcessingTime
     const estimatedRemainingMins = Math.ceil(estimatedRemainingSeconds / 60)
 
+    // Default to 60 minutes if no queue metrics available
+    const defaultEstimatedMins = estimatedRemainingMins > 0 ? estimatedRemainingMins : 60
+
     if (diffMins < 1) {
-      if (estimatedRemainingMins > 0) {
-        return language === "zh"
-          ? `预计还需 ${estimatedRemainingMins} 分钟`
-          : `Est. ${estimatedRemainingMins} min remaining`
-      }
-      return language === "zh" ? "刚刚创建" : "Just created"
+      return language === "zh"
+        ? `预计还需 ${defaultEstimatedMins} 分钟`
+        : `Est. ${defaultEstimatedMins} min remaining`
     } else if (diffMins < 60) {
       const waitingText = language === "zh" ? `等待了 ${diffMins} 分钟` : `Waiting for ${diffMins} min`
-      if (estimatedRemainingMins > 0) {
-        const remainingText = language === "zh"
-          ? `, 预计还需 ${estimatedRemainingMins} 分钟`
-          : `, est. ${estimatedRemainingMins} min left`
-        return waitingText + remainingText
-      }
-      return waitingText
+      const remainingText = language === "zh"
+        ? `, 预计还需 ${defaultEstimatedMins} 分钟`
+        : `, est. ${defaultEstimatedMins} min left`
+      return waitingText + remainingText
     } else {
       const diffHours = Math.floor(diffMins / 60)
       const remainingMins = diffMins % 60
@@ -432,13 +438,10 @@ export default function JobPendingPage() {
         ? `等待了 ${diffHours} 小时 ${remainingMins} 分钟`
         : `Waiting for ${diffHours}h ${remainingMins}m`
 
-      if (estimatedRemainingMins > 0) {
-        const remainingText = language === "zh"
-          ? `, 预计还需 ${estimatedRemainingMins} 分钟`
-          : `, est. ${estimatedRemainingMins} min left`
-        return waitingText + remainingText
-      }
-      return waitingText
+      const remainingText = language === "zh"
+        ? `, 预计还需 ${defaultEstimatedMins} 分钟`
+        : `, est. ${defaultEstimatedMins} min left`
+      return waitingText + remainingText
     }
   }
 
@@ -475,6 +478,18 @@ export default function JobPendingPage() {
                 <p className={`${themeClasses.text} opacity-80`}>
                   {language === "zh" ? "查看您的视频生成进度" : "Track your video generation progress"}
                 </p>
+
+                {/* Real-time Connection Status */}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <span className={`text-xs ${themeClasses.text} opacity-60`}>
+                    {isConnected
+                      ? (language === "zh" ? "实时更新已连接" : "Real-time updates connected")
+                      : (language === "zh" ? "实时更新断开" : "Real-time updates disconnected")
+                    }
+                    {connectionError && ` (${connectionError})`}
+                  </span>
+                </div>
               </div>
               <Button
                 onClick={() => router.push('/video-generation')}
@@ -646,7 +661,7 @@ export default function JobPendingPage() {
                                 ? t("jobPending.estimatedWaitMinutes", {
                                     minutes: Math.ceil((queueMetrics.pendingJobsCount * queueMetrics.estimatedProcessingTime) / 60)
                                   })
-                                : t("jobPending.waitingTimeUnknown")
+                                : t("jobPending.estimatedWaitMinutes", { minutes: 60 }) // Default to 1 hour
                               }
                             </p>
                           )}
