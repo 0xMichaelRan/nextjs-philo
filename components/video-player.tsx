@@ -1,9 +1,9 @@
 "use client"
 
 import { useRef, useState, useImperativeHandle, forwardRef, useEffect } from "react"
-import { Play, Pause, Volume2, VolumeX, Maximize, Subtitles } from "lucide-react"
+import { Play, Pause, Maximize, Subtitles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
+
 
 interface VideoPlayerProps {
   src: string
@@ -22,10 +22,8 @@ export interface VideoPlayerRef {
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, poster, className = "", onPlay, subtitleSrc, showSubtitles = false, onSubtitleToggle }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(1)
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -65,12 +63,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
     }
   }
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
-    }
-  }
+
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -108,19 +101,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
     setHasError(false)
   }
 
-  const handleSeek = (value: number[]) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = value[0]
-      setCurrentTime(value[0])
-    }
-  }
 
-  const handleVolumeChange = (value: number[]) => {
-    if (videoRef.current) {
-      videoRef.current.volume = value[0]
-      setVolume(value[0])
-    }
-  }
+
+
 
   const toggleFullscreen = () => {
     if (videoRef.current) {
@@ -151,11 +134,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
     }
   }
 
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`
-  }
+
 
   return (
     <div className={`relative bg-black rounded-lg overflow-hidden ${className}`}>
@@ -217,13 +196,14 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
       )}
 
       {/* Controls Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-        {/* Progress Bar */}
-        <div className="mb-4">
-          <Slider value={[currentTime]} max={duration} step={1} onValueChange={handleSeek} className="w-full" />
-          <div className="flex justify-between text-white text-sm mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+        {/* Progress Bar - smaller and view-only */}
+        <div className="mb-2">
+          <div className="w-full bg-white/20 rounded-full h-1">
+            <div
+              className="bg-white rounded-full h-1 transition-all duration-300"
+              style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+            />
           </div>
         </div>
 
@@ -231,16 +211,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="sm" onClick={togglePlay} className="text-white hover:bg-white/20">
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
-
-            <Button variant="ghost" size="sm" onClick={toggleMute} className="text-white hover:bg-white/20">
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            </Button>
-
-            <div className="w-20">
-              <Slider value={[volume]} max={1} step={0.1} onValueChange={handleVolumeChange} className="w-full" />
-            </div>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -251,12 +223,12 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
                 onClick={toggleSubtitles}
                 className={`text-white hover:bg-white/20 ${showSubtitles ? 'bg-white/20' : ''}`}
               >
-                <Subtitles className="w-5 h-5" />
+                <Subtitles className="w-4 h-4" />
               </Button>
             )}
 
             <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-white hover:bg-white/20">
-              <Maximize className="w-5 h-5" />
+              <Maximize className="w-4 h-4" />
             </Button>
           </div>
         </div>
