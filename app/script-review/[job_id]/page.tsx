@@ -151,7 +151,7 @@ export default function ScriptReviewPage() {
         customVoiceId: flowState.customVoiceId,
         ttsProvider: flowState.ttsProvider || 'xfyun',
         isCustom: flowState.voiceId === 'custom',
-        speed: flowState.speed || 100
+        speed: flowState.speed || 50
       }
 
       console.log("Script-review - Flow state voice data:", {
@@ -247,7 +247,7 @@ export default function ScriptReviewPage() {
           language: 'zh',
           provider: voiceConfig.ttsProvider || 'xfyun',
           custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
-          speed: flowState.speed || 100
+          speed: flowState.speed || 50
         }
 
         console.log("TTS Generation - Frontend request:", generateTtsRequest)
@@ -289,7 +289,7 @@ export default function ScriptReviewPage() {
         language: 'zh',
         voice_code: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
         custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
-        speed: flowState.speed || 100
+        speed: flowState.speed || 50
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(apiConfig.tts.synthesize(), {
@@ -446,7 +446,7 @@ export default function ScriptReviewPage() {
         custom_voice_id: voiceConfig?.isCustom ? voiceConfig?.customVoiceId : null,
         tts_provider: voiceConfig?.ttsProvider || 'xfyun',
         resolution: flowState.resolution || '480p',
-        speed: flowState.speed || 100
+        speed: flowState.speed || 50
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(

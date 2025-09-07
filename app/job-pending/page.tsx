@@ -16,7 +16,7 @@ import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
 
 // Utility function for relative time formatting
-const formatRelativeTime = (dateString: string, t: (key: string, params?: any) => string): string => {
+const formatRelativeTime = (dateString: string, t: (key: string, params?: Record<string, string | number>) => string): string => {
   if (!dateString) {
     return t("jobPending.timeUnknown")
   }
@@ -46,6 +46,27 @@ const formatRelativeTime = (dateString: string, t: (key: string, params?: any) =
     const months = Math.floor(diffInSeconds / 2592000)
     return t("jobPending.monthsAgo", { months })
   }
+}
+
+// Function to calculate estimated waiting time based on queue metrics
+const calculateEstimatedWaitTime = (pendingJobs: number, estimatedTime: number, t: (key: string, params?: Record<string, string | number>) => string): string => {
+  if (!pendingJobs || !estimatedTime) {
+    return t("jobPending.waitingTimeUnknown")
+  }
+
+  const waitMinutes = Math.ceil((pendingJobs * estimatedTime) / 60)
+  return t("jobPending.estimatedWaitMinutes", { minutes: waitMinutes })
+}
+
+// Function to check if job was completed recently (within 1 minute)
+const isRecentlyCompleted = (job: Job): boolean => {
+  if (job.status !== 'completed') return false
+
+  const now = new Date()
+  const updatedAt = new Date(job.updatedAt)
+  const diffInSeconds = Math.floor((now.getTime() - updatedAt.getTime()) / 1000)
+
+  return diffInSeconds <= 60 // Within 1 minute
 }
 
 interface Job {
@@ -103,6 +124,7 @@ export default function JobPendingPage() {
     pendingJobsCount: 0,
     estimatedProcessingTime: 300 // Default 5 minutes
   })
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0)
   const { theme } = useTheme()
   const { language, t } = useLanguage()
   const { user } = useAuth()
@@ -110,6 +132,13 @@ export default function JobPendingPage() {
 
   const fetchJobs = async () => {
     if (!user) return
+
+    // Debounce: prevent multiple calls within 2 seconds
+    const now = Date.now()
+    if (now - lastFetchTime < 2000) {
+      return
+    }
+    setLastFetchTime(now)
 
     try {
       setLoading(true)
@@ -198,11 +227,11 @@ export default function JobPendingPage() {
   }
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchJobs()
       fetchJobLimits()
     }
-  }, [user])
+  }, [user?.id]) // Only depend on user ID to prevent unnecessary re-fetches
 
   // No more HTTP polling - using SSE for real-time updates
 
@@ -216,14 +245,14 @@ export default function JobPendingPage() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       window.location.href = "/auth?redirect=job-pending"
     }
-  }, [user])
+  }, [user?.id])
 
-  // Periodic update for timestamps and job status (every 5 seconds)
+  // Periodic update for timestamps only (every 30 seconds) - no API calls since we have SSE
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
 
     const interval = setInterval(() => {
       setLastUpdateTime(new Date())
@@ -236,22 +265,12 @@ export default function JobPendingPage() {
           updatedAtFormatted: job.updatedAt ? formatRelativeTime(job.updatedAt, t) : t("jobPending.timeUnknown"),
         }))
 
-        // Check if there are pending jobs and refresh if needed
-        const hasPendingJobs = updatedJobs.some(job =>
-          job.status === 'pending' || job.status === 'queued' || job.status === 'processing'
-        )
-
-        if (hasPendingJobs) {
-          // Use setTimeout to avoid blocking the state update
-          setTimeout(() => fetchJobs(), 100)
-        }
-
         return updatedJobs
       })
-    }, 5000) // Update every 5 seconds
+    }, 30000) // Update every 30 seconds (only for timestamp formatting)
 
     return () => clearInterval(interval)
-  }, [user, language]) // Remove jobs dependency to prevent recreation
+  }, [user?.id, language]) // Remove jobs dependency to prevent recreation
 
   // Use standard theme classes instead of custom ones
   const themeClasses = {
@@ -267,7 +286,7 @@ export default function JobPendingPage() {
 
   // Subscribe to real-time job updates
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
 
     const unsubscribe = onJobUpdate((data) => {
       // Update specific job in the list
@@ -611,14 +630,23 @@ export default function JobPendingPage() {
                             {job.movieTitle}
                           </h3>
                           <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
-                            {language === "zh" ? "创建于" : "Created"} {job.createdAtFormatted}
+                            {t("jobPending.createdAt")} {job.createdAtFormatted}
                           </p>
-                          <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
-                            {language === "zh" ? "更新于" : "Updated"} {job.updatedAtFormatted}
-                          </p>
+                          {/* For pending jobs: show created time + estimated wait */}
                           {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
                             <p className={`text-sm ${job.backdrop_url ? 'text-gray-100 font-medium' : `${themeClasses.secondaryText} font-medium`}`}>
-                              {job.createdAt ? calculateWaitingTime(job.createdAt) : (language === "zh" ? "等待时间未知" : "Waiting time unknown")}
+                              {queueMetrics.pendingJobsCount > 0 && queueMetrics.estimatedProcessingTime > 0
+                                ? t("jobPending.estimatedWaitMinutes", {
+                                    minutes: Math.ceil((queueMetrics.pendingJobsCount * queueMetrics.estimatedProcessingTime) / 60)
+                                  })
+                                : t("jobPending.waitingTimeUnknown")
+                              }
+                            </p>
+                          )}
+                          {/* For recently completed jobs: show created time + completed time */}
+                          {job.status === "completed" && isRecentlyCompleted(job) && (
+                            <p className={`text-sm ${job.backdrop_url ? 'text-gray-200' : themeClasses.secondaryText}`}>
+                              {t("jobPending.completedAgo")} {job.updatedAtFormatted}
                             </p>
                           )}
                         </div>

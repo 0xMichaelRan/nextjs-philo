@@ -9,7 +9,7 @@ interface LanguageContextType {
   language: Language
   setLanguage: (language: Language) => void
   toggleLanguage: () => void
-  t: (key: string) => string
+  t: (key: string, params?: Record<string, string | number>) => string
 }
 
 const translations = {
@@ -337,6 +337,8 @@ const translations = {
     "videoGeneration.subtitles": "字幕",
     "videoGeneration.currentSubtitle": "当前字幕",
     "videoGeneration.noSubtitlesAvailable": "暂无字幕",
+    "videoGeneration.downloadVideo": "下载视频",
+    "videoGeneration.noCurrentSubtitle": "暂无当前字幕",
 
     // Job Pending
     "jobPending.title": "任务处理中",
@@ -383,7 +385,8 @@ const translations = {
     "jobPending.status.failed": "失败",
     "jobPending.status.cancelled": "已取消",
     "jobPending.estimatedTime": "预计完成时间",
-    "jobPending.myVideos": "我的视频",
+    "jobPending.estimatedWaitMinutes": "预计等待 {minutes} 分钟",
+    "jobPending.completedAgo": "完成于",
     "jobPending.showAllVideos": "显示所有视频",
     "jobPending.hideVideos": "收起视频",
     "jobPending.processing": "处理中",
@@ -777,6 +780,8 @@ const translations = {
     "videoGeneration.subtitles": "Subtitles",
     "videoGeneration.currentSubtitle": "Current Subtitle",
     "videoGeneration.noSubtitlesAvailable": "No subtitles available",
+    "videoGeneration.downloadVideo": "Download Video",
+    "videoGeneration.noCurrentSubtitle": "No current subtitle",
 
     // Job Pending
     "jobPending.title": "Processing Jobs",
@@ -823,7 +828,8 @@ const translations = {
     "jobPending.status.failed": "Failed",
     "jobPending.status.cancelled": "Cancelled",
     "jobPending.estimatedTime": "Estimated Completion",
-    "jobPending.myVideos": "My Videos",
+    "jobPending.estimatedWaitMinutes": "~{minutes} min wait",
+    "jobPending.completedAgo": "Completed",
     "jobPending.showAllVideos": "Show All Videos",
     "jobPending.hideVideos": "Hide Videos",
     "jobPending.processing": "Processing",
@@ -922,8 +928,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguage((prev) => (prev === "zh" ? "en" : "zh"))
   }
 
-  const t = (key: string): string => {
-    return (translations[language] as any)[key] || key
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    let translation = (translations[language] as any)[key] || key
+
+    // Handle parameter interpolation
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        const placeholder = `{${paramKey}}`
+        translation = translation.replace(new RegExp(placeholder, 'g'), String(paramValue))
+      })
+    }
+
+    return translation
   }
 
   return (

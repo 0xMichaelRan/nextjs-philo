@@ -2,14 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Download, AlertCircle, ArrowLeft, RefreshCw } from "lucide-react"
+import { Download, AlertCircle, ArrowLeft, RefreshCw, ChevronDown, FileVideo, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import { AppLayout } from "@/components/app-layout"
 import { VideoPlayer } from "@/components/video-player"
 import { SubtitleDisplay } from "@/components/subtitle-display"
+import { CurrentSentenceDisplay } from "@/components/current-sentence-display"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -406,6 +413,17 @@ export default function VideoJobPage() {
                           />
                         </div>
 
+                        {/* Current Sentence Display - Right under video player */}
+                        {job.status === 'completed' && (streamingUrl || downloadUrl) && (
+                          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                            <CurrentSentenceDisplay
+                              subtitleUrl={subtitleUrl || undefined}
+                              currentTime={currentVideoTime}
+                              isPlaying={isVideoPlaying}
+                            />
+                          </div>
+                        )}
+
 
 
 
@@ -423,46 +441,49 @@ export default function VideoJobPage() {
                       </div>
                     )}
                     <div className="p-6">
-                      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                        <Button
-                          asChild
-                          className={`flex-1 ${themeClasses.button} text-white`}
-                          disabled={!downloadUrl}
-                        >
-                          <a
-                            href={downloadUrl || '#'}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => {
-                              if (!downloadUrl) {
-                                e.preventDefault()
-                              }
-                            }}
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            {t("videoGeneration.download")}
-                          </a>
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            try {
-                              if (window.history.length > 1) {
-                                router.back()
-                              } else {
-                                router.push('/video-generation')
-                              }
-                            } catch (error) {
-                              console.warn('Router.back() failed, using fallback navigation:', error)
-                              router.push('/video-generation')
-                            }
-                          }}
-                          variant="outline"
-                          className={`flex-1 ${themeClasses.filterButton}`}
-                        >
-                          <ArrowLeft className="w-4 h-4 mr-2" />
-                          {t("common.backToList")}
-                        </Button>
+                      <div className="flex justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              className={`${themeClasses.button} text-white`}
+                              disabled={!downloadUrl && !subtitleUrl}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              {t("videoGeneration.download")}
+                              <ChevronDown className="w-4 h-4 ml-2" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="center" className="w-48">
+                            {downloadUrl && (
+                              <DropdownMenuItem asChild>
+                                <a
+                                  href={downloadUrl}
+                                  download
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center w-full"
+                                >
+                                  <FileVideo className="w-4 h-4 mr-2" />
+                                  {t("videoGeneration.downloadVideo") || "Download Video"}
+                                </a>
+                              </DropdownMenuItem>
+                            )}
+                            {subtitleUrl && (
+                              <DropdownMenuItem asChild>
+                                <a
+                                  href={subtitleUrl}
+                                  download={`${job.movie_id}_subtitles.srt`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center w-full"
+                                >
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  {t("videoGeneration.downloadSubtitles") || "Download Subtitles"}
+                                </a>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
 
 
@@ -492,7 +513,7 @@ export default function VideoJobPage() {
               )}
 
               {/* Subtitle Display - Only show for completed videos */}
-              {job.status === 'completed' && (streamingUrl || downloadUrl) && (
+              {/*job.status === 'completed' && (streamingUrl || downloadUrl) && (
                 <SubtitleDisplay
                   subtitleUrl={subtitleUrl || undefined}
                   currentTime={currentVideoTime}
@@ -500,7 +521,7 @@ export default function VideoJobPage() {
                   movieId={job.movie_id}
                   className="mt-6"
                 />
-              )}
+              )*/}
             </div>
 
             {/* Sidebar - Movie Info & Job Details */}
