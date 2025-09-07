@@ -289,19 +289,26 @@ export default function JobPendingPage() {
     if (!user?.id) return
 
     const unsubscribe = onJobUpdate((data) => {
+      console.log('Received job update:', data)
+
       // Update specific job in the list
       setJobs(prevJobs =>
-        prevJobs.map(job =>
-          job.id === data.job_id
-            ? {
-                ...job,
-                status: data.status as Job['status'],
-                progress: data.progress,
-                updatedAt: data.updated_at || new Date().toISOString(),
-                updatedAtFormatted: formatRelativeTime(data.updated_at || new Date().toISOString(), t)
-              }
-            : job
-        )
+        prevJobs.map(job => {
+          // Handle both string and number job ID comparison
+          const jobIdMatch = String(job.id) === String(data.job_id) || Number(job.id) === Number(data.job_id)
+
+          if (jobIdMatch) {
+            console.log(`Updating job ${job.id} status from ${job.status} to ${data.status}`)
+            return {
+              ...job,
+              status: data.status as Job['status'],
+              progress: data.progress,
+              updatedAt: data.updated_at || new Date().toISOString(),
+              updatedAtFormatted: formatRelativeTime(data.updated_at || new Date().toISOString(), t)
+            }
+          }
+          return job
+        })
         // Don't filter out completed jobs - let user see completion status
       )
 

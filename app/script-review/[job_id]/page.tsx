@@ -2,10 +2,16 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Play, Pause, Edit, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, X } from "lucide-react"
+import { Play, Pause, Edit, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, X, Settings, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 import { AppLayout } from "@/components/app-layout"
 import { MovieHeader } from "@/components/movie-header"
@@ -706,13 +712,71 @@ export default function ScriptReviewPage() {
               <CardTitle className="text-white">
                 {language === "zh" ? "AI 分析结果" : "AI Analysis Result"}
               </CardTitle>
-              <div className="flex items-center space-x-2 mt-2">
-                <Badge variant="outline" className="text-xs bg-blue-600/20 text-blue-200 border-blue-400/30">
-                  {language === "zh" ? "视频脚本" : "Video Script"}
-                </Badge>
-                <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-                  {llmResponse.length} {language === "zh" ? "字符" : "characters"}
-                </Badge>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs bg-blue-600/20 text-blue-200 border-blue-400/30">
+                    {language === "zh" ? "视频脚本" : "Video Script"}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                    {llmResponse.length} {language === "zh" ? "字符" : "characters"}
+                  </Badge>
+                </div>
+
+                {/* Speed and Resolution Controls */}
+                <div className="flex items-center space-x-2">
+                  {/* Speed Control */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs bg-white/10 border-white/20 text-white hover:bg-white/20">
+                        <Settings className="w-3 h-3 mr-1" />
+                        {language === "zh" ? "语速" : "Speed"}: {flowState.speed || 50}%
+                        <ChevronDown className="w-3 h-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-32">
+                      {[30, 40, 50, 60, 70, 80].map((speed) => (
+                        <DropdownMenuItem
+                          key={speed}
+                          onClick={() => updateFlowState({ speed })}
+                          className={flowState.speed === speed ? "bg-blue-100 dark:bg-blue-900" : ""}
+                        >
+                          {speed}%
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Resolution Control */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs bg-white/10 border-white/20 text-white hover:bg-white/20">
+                        <Settings className="w-3 h-3 mr-1" />
+                        {flowState.resolution || "720p"}
+                        <ChevronDown className="w-3 h-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-32">
+                      <DropdownMenuItem
+                        onClick={() => updateFlowState({ resolution: "480p" })}
+                        className={flowState.resolution === "480p" ? "bg-blue-100 dark:bg-blue-900" : ""}
+                      >
+                        480p (SD)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateFlowState({ resolution: "720p" })}
+                        className={flowState.resolution === "720p" ? "bg-blue-100 dark:bg-blue-900" : ""}
+                      >
+                        720p (HD)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateFlowState({ resolution: "1080p" })}
+                        className={flowState.resolution === "1080p" ? "bg-blue-100 dark:bg-blue-900" : ""}
+                      >
+                        1080p (FHD)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

@@ -43,6 +43,7 @@ interface VideoJob {
   error_message?: string
   resolution: string
   speed: number // TTS speed (0-100)
+  video_duration?: number // Video duration in seconds
   created_at: string
   updated_at: string
   completed_at?: string
@@ -455,7 +456,7 @@ export default function VideoJobPage() {
                               disabled={!downloadUrl && !subtitleUrl}
                             >
                               <Download className="w-4 h-4 mr-2" />
-                              {t("videoGeneration.download")}
+                              {language === "zh" ? "下载" : "Download"}
                               <ChevronDown className="w-4 h-4 ml-2" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -532,6 +533,40 @@ export default function VideoJobPage() {
 
             {/* Sidebar - Movie Info & Job Details */}
             <div className="space-y-6">
+              {/* Video Information Tags */}
+              {job.status === 'completed' && (
+                <Card className={themeClasses.card}>
+                  <CardHeader>
+                    <CardTitle className={themeClasses.text}>
+                      {language === "zh" ? "视频信息" : "Video Information"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {/* Speed Tag */}
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <span className="mr-1">🎵</span>
+                        {language === "zh" ? "语速" : "Speed"}: {job.speed}%
+                      </div>
+
+                      {/* Resolution Tag */}
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <span className="mr-1">📺</span>
+                        {language === "zh" ? "分辨率" : "Resolution"}: {job.resolution}
+                      </div>
+
+                      {/* Duration Tag */}
+                      {job.video_duration && (
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                          <span className="mr-1">⏱️</span>
+                          {language === "zh" ? "时长" : "Duration"}: {Math.floor(job.video_duration / 60)}:{(job.video_duration % 60).toFixed(0).padStart(2, '0')}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Movie Information */}
               {movieData && (
                 <Card className={themeClasses.card}>
@@ -599,12 +634,6 @@ export default function VideoJobPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-1 gap-3 text-sm">
-                    <div>
-                      <span className={themeClasses.secondaryText}>
-                        {t("videoGeneration.resolution")}
-                      </span>
-                      <p className={themeClasses.text}>{job.resolution}</p>
-                    </div>
                     <div>
                       <span className={themeClasses.secondaryText}>
                         {t("videoGeneration.voice")}
