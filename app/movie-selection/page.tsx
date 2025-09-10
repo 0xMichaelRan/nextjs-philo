@@ -198,7 +198,7 @@ export default function MovieSelectionPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout title={t("movieSelection.title")}>
       <div className="container mx-auto px-6 py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">

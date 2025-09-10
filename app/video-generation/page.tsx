@@ -11,6 +11,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
 import { getMovieTitle, type MovieTitleData } from "@/lib/movie-utils"
@@ -27,7 +28,6 @@ interface VideoJob extends MovieTitleData {
   tts_text: string
   voice_code: string
   voice_display_name?: string
-  custom_voice_id?: string
   status: string
   result_video_url?: string
   result_script_url?: string
@@ -55,37 +55,53 @@ export default function VideoGenerationPage() {
   const { user } = useAuth()
   const { toast } = useToast()
 
+  // Use auth guard to handle authentication
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({ requireAuth: true })
+
   useEffect(() => {
-    if (user) {
+    if (isAuthenticated && !authLoading) {
       fetchJobs(currentPage)
-    } else {
-      router.push('/auth')
     }
-  }, [user, router, currentPage])
+  }, [isAuthenticated, authLoading, currentPage])
 
   const fetchJobs = async (page: number = 1) => {
     if (!user) return
 
     try {
       setLoading(true)
+      // Calculate offset for pagination (backend uses offset, not page)
+      const offset = (page - 1) * jobsPerPage
+
       const response = await apiConfig.makeAuthenticatedRequest(
-        `${apiConfig.videoJobs.list()}?page=${page}&limit=${jobsPerPage}&status=completed`,
+        `${apiConfig.videoJobs.list()}?limit=${jobsPerPage}&offset=${offset}`,
         { method: 'GET' }
       )
 
       if (response.ok) {
         const data = await response.json()
-        // Assuming backend returns { jobs: VideoJob[], total: number, page: number, limit: number }
-        if (data.jobs) {
-          setJobs(data.jobs)
-          setTotalJobs(data.total || data.jobs.length)
-        } else {
-          // Fallback for old API format
-          const allJobs = data
-          const completedJobs = allJobs.filter((job: VideoJob) => job.status === 'completed')
-          setJobs(completedJobs)
-          setTotalJobs(completedJobs.length)
+        // Backend returns array directly, filter for completed jobs
+        const allJobs = Array.isArray(data) ? data : []
+        const completedJobs = allJobs.filter((job: VideoJob) => job.status === 'completed')
+
+        setJobs(completedJobs)
+
+        // For total count, we need to make a separate request or estimate
+        // Since we're filtering completed jobs, we'll need to fetch more to get accurate count
+        if (page === 1) {
+          // On first page, fetch a larger set to estimate total completed jobs
+          const largeResponse = await apiConfig.makeAuthenticatedRequest(
+            `${apiConfig.videoJobs.list()}?limit=1000&offset=0`,
+            { method: 'GET' }
+          )
+          if (largeResponse.ok) {
+            const largeData = await largeResponse.json()
+            const allCompletedJobs = Array.isArray(largeData) ? largeData.filter((job: VideoJob) => job.status === 'completed') : []
+            setTotalJobs(allCompletedJobs.length)
+          } else {
+            setTotalJobs(completedJobs.length)
+          }
         }
+
         setError(null)
       } else {
         setError(language === "zh" ? "获取视频列表失败" : "Failed to fetch video list")
@@ -337,7 +353,7 @@ export default function VideoGenerationPage() {
                 </h3>
                 <p className={`${themeClasses.secondaryText} mb-6`}>{error}</p>
                 <Button
-                  onClick={fetchCompletedJobs}
+                  onClick={() => fetchJobs(currentPage)}
                   className={`${themeClasses.button} text-white px-8 py-3 rounded-lg font-semibold`}
                 >
                   {language === "zh" ? "重试" : "Retry"}
