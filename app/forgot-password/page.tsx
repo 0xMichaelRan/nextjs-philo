@@ -42,12 +42,13 @@ export default function ForgotPasswordPage() {
         input: "bg-white/50 border-gray-300 text-gray-800 placeholder:text-gray-500",
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
+      background: "theme-gradient-hero",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-      input: "bg-white/10 border-white/20 text-white placeholder:text-gray-400",
+      card: "theme-surface-elevated border-white/20",
+      input: "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400",
     }
   }
 

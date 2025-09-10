@@ -69,18 +69,31 @@ export default function AnalysisConfigPage() {
     if (theme === "light") {
       return {
         background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
-        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        button: "theme-button-primary",
+        outlineButton: "theme-button-secondary",
+        accent: "theme-brand-primary",
+        error: "theme-status-error",
+        input: "bg-white border-gray-200 text-gray-900 placeholder:text-gray-500",
+        select: "bg-white border-gray-200 text-gray-900"
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20 backdrop-blur-md",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      button: "theme-button-primary",
+      outlineButton: "theme-button-secondary",
+      accent: "theme-brand-primary",
+      error: "theme-status-error",
+      input: "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400",
+      select: "theme-surface-elevated border-white/20 text-white"
     }
   }
 
@@ -194,12 +207,12 @@ export default function AnalysisConfigPage() {
               {isRequired && <span className="text-red-500">*</span>}
             </Label>
             <Select value={value} onValueChange={(val) => handleInputChange(fieldName, val)}>
-              <SelectTrigger className={`${themeClasses.card} border-white/30 ${hasError ? 'border-red-500' : ''}`}>
+              <SelectTrigger className={`${themeClasses.select} ${hasError ? 'border-red-500' : ''}`}>
                 <SelectValue placeholder={language === "zh" ? `请选择${field.label}` : `Select ${field.label}`} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={themeClasses.card}>
                 {field.options?.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={option.value} className={`${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}>
                     {option.label}
                   </SelectItem>
                 ))}
@@ -224,7 +237,7 @@ export default function AnalysisConfigPage() {
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
               placeholder={field.placeholder}
-              className={`${themeClasses.card} border-white/30 min-h-[100px]`}
+              className={`${themeClasses.input} min-h-[100px]`}
             />
           </div>
         )
@@ -241,7 +254,7 @@ export default function AnalysisConfigPage() {
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border`}
+              className={`w-full px-3 py-2 rounded-md ${themeClasses.input} border`}
             />
           </div>
         )
@@ -563,7 +576,7 @@ export default function AnalysisConfigPage() {
             <Button
               onClick={handleNext}
               size="lg"
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4"
+              className="flex-1 theme-button-primary font-semibold py-4"
             >
               {language === "zh" ? "下一步" : "Next"}
             </Button>

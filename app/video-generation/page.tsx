@@ -45,6 +45,9 @@ export default function VideoGenerationPage() {
   const [jobs, setJobs] = useState<VideoJob[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalJobs, setTotalJobs] = useState(0)
+  const jobsPerPage = 12
 
   const router = useRouter()
   const { theme } = useTheme()
@@ -54,27 +57,35 @@ export default function VideoGenerationPage() {
 
   useEffect(() => {
     if (user) {
-      fetchCompletedJobs()
+      fetchJobs(currentPage)
     } else {
       router.push('/auth')
     }
-  }, [user, router])
+  }, [user, router, currentPage])
 
-  const fetchCompletedJobs = async () => {
+  const fetchJobs = async (page: number = 1) => {
     if (!user) return
 
     try {
       setLoading(true)
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.videoJobs.list(),
+        `${apiConfig.videoJobs.list()}?page=${page}&limit=${jobsPerPage}&status=completed`,
         { method: 'GET' }
       )
 
       if (response.ok) {
-        const allJobs = await response.json()
-        // Filter only completed jobs for the video generation page
-        const completedJobs = allJobs.filter((job: VideoJob) => job.status === 'completed')
-        setJobs(completedJobs)
+        const data = await response.json()
+        // Assuming backend returns { jobs: VideoJob[], total: number, page: number, limit: number }
+        if (data.jobs) {
+          setJobs(data.jobs)
+          setTotalJobs(data.total || data.jobs.length)
+        } else {
+          // Fallback for old API format
+          const allJobs = data
+          const completedJobs = allJobs.filter((job: VideoJob) => job.status === 'completed')
+          setJobs(completedJobs)
+          setTotalJobs(completedJobs.length)
+        }
         setError(null)
       } else {
         setError(language === "zh" ? "获取视频列表失败" : "Failed to fetch video list")
@@ -185,13 +196,24 @@ export default function VideoGenerationPage() {
     }
   }
 
-  const getTimeGroup = (dateString: string) => {
+  const getTimeGroup = (dateString: string, todayJobsCount: number = 0) => {
     try {
       const now = new Date()
       const date = new Date(dateString)
-      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+      const diffInMs = now.getTime() - date.getTime()
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
 
-      if (diffInDays === 0) {
+      // For the last 24 hours, group by hour if there are many videos today (>6)
+      if (diffInHours < 24 && todayJobsCount > 6) {
+        if (diffInHours === 0) {
+          return language === "zh" ? "刚刚" : "Just now"
+        } else if (diffInHours === 1) {
+          return language === "zh" ? "1 小时前" : "1 hour ago"
+        } else {
+          return language === "zh" ? `${diffInHours} 小时前` : `${diffInHours} hours ago`
+        }
+      } else if (diffInDays === 0) {
         return language === "zh" ? "今天" : "Today"
       } else if (diffInDays === 1) {
         return language === "zh" ? "昨天" : "Yesterday"
@@ -212,8 +234,14 @@ export default function VideoGenerationPage() {
   const groupJobsByTime = (jobs: VideoJob[]) => {
     const groups: { [key: string]: VideoJob[] } = {}
 
+    // Count today's jobs to determine if we should group by hour
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayJobs = jobs.filter(job => new Date(job.created_at) >= todayStart)
+    const todayJobsCount = todayJobs.length
+
     jobs.forEach(job => {
-      const group = getTimeGroup(job.created_at)
+      const group = getTimeGroup(job.created_at, todayJobsCount)
       if (!groups[group]) {
         groups[group] = []
       }
@@ -415,6 +443,36 @@ export default function VideoGenerationPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!loading && !error && totalJobs > jobsPerPage && (
+                <div className="flex justify-center items-center gap-4 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={themeClasses.outlineButton}
+                  >
+                    {language === "zh" ? "上一页" : "Previous"}
+                  </Button>
+
+                  <span className={themeClasses.text}>
+                    {language === "zh"
+                      ? `第 ${currentPage} 页，共 ${Math.ceil(totalJobs / jobsPerPage)} 页`
+                      : `Page ${currentPage} of ${Math.ceil(totalJobs / jobsPerPage)}`
+                    }
+                  </span>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalJobs / jobsPerPage), prev + 1))}
+                    disabled={currentPage >= Math.ceil(totalJobs / jobsPerPage)}
+                    className={themeClasses.outlineButton}
+                  >
+                    {language === "zh" ? "下一页" : "Next"}
+                  </Button>
                 </div>
               )}
             </div>

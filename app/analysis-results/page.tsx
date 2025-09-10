@@ -63,18 +63,27 @@ export default function AnalysisResultsPage() {
     if (theme === "light") {
       return {
         background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50 backdrop-blur-md",
-        cardHover: "hover:bg-white/90 hover:shadow-lg transition-all duration-300",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        button: "theme-button-primary",
+        outlineButton: "theme-button-secondary",
+        accent: "theme-brand-primary",
+        error: "theme-status-error"
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20 backdrop-blur-md",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      button: "theme-button-primary",
+      outlineButton: "theme-button-secondary",
+      accent: "theme-brand-primary",
+      error: "theme-status-error"
     }
   }
 

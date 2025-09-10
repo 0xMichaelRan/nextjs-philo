@@ -78,29 +78,32 @@ export default function ResolutionSelectionPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 backdrop-blur-sm border-gray-200",
-        cardHover: "hover:shadow-xl hover:scale-105",
-        selectedCard: "ring-2 ring-purple-500 shadow-xl bg-purple-50/80",
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        selectedCard: "ring-2 ring-indigo-500 shadow-xl bg-indigo-50/80",
         hoverCard: "hover:bg-gray-50/80",
-        button: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700",
-        filterButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80",
-        activeFilterButton: "bg-purple-100 border-purple-300 text-purple-700"
+        button: "theme-button-primary",
+        outlineButton: "theme-button-secondary",
+        accent: "theme-brand-primary",
+        error: "theme-status-error"
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/5 backdrop-blur-sm border-white/10",
-      cardHover: "hover:shadow-2xl hover:scale-105",
-      selectedCard: "ring-2 ring-purple-400 shadow-2xl bg-purple-900/20",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      selectedCard: "ring-2 ring-indigo-400 shadow-2xl",
       hoverCard: "hover:bg-white/10",
-      button: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700",
-      filterButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20",
-      activeFilterButton: "bg-purple-900/50 border-purple-400 text-purple-300"
+      button: "theme-button-primary",
+      outlineButton: "theme-button-secondary",
+      accent: "theme-brand-primary",
+      error: "theme-status-error"
     }
   }
 

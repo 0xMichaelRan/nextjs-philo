@@ -191,11 +191,12 @@ export default function PaymentPage() {
         card: "bg-white/80 border-gray-200/50",
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900",
+      background: "theme-gradient-hero",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
+      card: "theme-surface-elevated border-white/20",
     }
   }
 

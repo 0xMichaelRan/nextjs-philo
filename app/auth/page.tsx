@@ -324,9 +324,10 @@ export default function AuthPage() {
 
 
 
+  /* dark-theme refactor */
   const getBackgroundClass = () => {
     if (theme === "dark") {
-      return "bg-gradient-to-br from-violet-900 via-purple-900 to-fuchsia-900"
+      return "theme-gradient-hero"
     } else {
       return "bg-gradient-to-br from-violet-100 via-purple-100 to-fuchsia-100"
     }
@@ -340,12 +341,14 @@ export default function AuthPage() {
     return theme === "dark" ? "text-gray-300" : "text-gray-500"
   }
 
+  /* dark-theme refactor */
   const getCardBackgroundClass = () => {
-    return theme === "dark" ? "bg-white/10 border-white/20" : "bg-white/80 border-gray-200"
+    return theme === "dark" ? "theme-surface-elevated border-white/20" : "bg-white/80 border-gray-200"
   }
 
+  /* dark-theme refactor */
   const getInputClass = () => {
-    return theme === "dark" ? "bg-white/5 border-white/20 text-white" : "bg-gray-50 border-gray-300 text-gray-800"
+    return theme === "dark" ? "theme-surface-elevated border-white/20 text-white" : "bg-gray-50 border-gray-300 text-gray-800"
   }
 
   return (
@@ -444,11 +447,12 @@ export default function AuthPage() {
                       </div>
                     </div>
 
+                    {/* dark-theme refactor */}
                     {/* Login Button */}
                     <Button
                       onClick={handleLogin}
                       disabled={!phoneNumber || !password || isLoading}
-                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      className="w-full theme-gradient-premium"
                       size="lg"
                     >
                       <Phone className="w-4 h-4 mr-2" />
@@ -608,11 +612,12 @@ export default function AuthPage() {
                       </div>
                     </div>
 
+                    {/* dark-theme refactor */}
                     {/* Register Button */}
                     <Button
                       onClick={handleRegister}
                       disabled={!name || !phoneNumber || !password || isLoading}
-                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      className="w-full theme-gradient-premium"
                       size="lg"
                     >
                       <Phone className="w-4 h-4 mr-2" />

@@ -14,6 +14,7 @@ import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
+import { newsDataManager, type NewsItem } from "@/lib/news-data"
 
 // Types for notifications from backend API
 interface Notification {
@@ -34,42 +35,7 @@ interface NotificationList {
   unread_count: number
 }
 
-// Mock news data (keeping this as it's not part of the backend API yet)
-const mockNews = [
-  {
-    id: 1,
-    title: "新增SVIP会员等级",
-    titleEn: "New SVIP Membership Tier",
-    message: "我们推出了全新的SVIP会员等级，享受更多专属特权和高级功能，包括无限视频生成、优先处理队列、专属客服支持等。",
-    messageEn: "We've launched a new SVIP membership tier with exclusive benefits and advanced features, including unlimited video generation, priority processing queue, and dedicated customer support.",
-    timestamp: "2025-07-19 10:00",
-    externalLink: "https://example.com/svip-announcement",
-    category: "产品更新",
-    categoryEn: "Product Update",
-  },
-  {
-    id: 2,
-    title: "AI分析引擎升级",
-    titleEn: "AI Analysis Engine Upgrade",
-    message: "我们的AI分析引擎已全面升级，采用最新的深度学习技术，生成的视频质量更高，分析更加深入准确。",
-    messageEn: "Our AI analysis engine has been comprehensively upgraded with the latest deep learning technology for higher quality videos and more accurate analysis.",
-    timestamp: "2025-06-18 16:30",
-    externalLink: "https://example.com/ai-upgrade",
-    category: "技术更新",
-    categoryEn: "Tech Update",
-  },
-  {
-    id: 3,
-    title: "春节活动预告",
-    titleEn: "Spring Festival Event Preview",
-    message: "春节期间将有特别优惠活动，VIP会员享受额外折扣，还有限时免费试用等精彩活动，敬请期待！",
-    messageEn: "Special offers coming during Spring Festival with extra discounts for VIP members and limited-time free trials. Stay tuned for exciting events!",
-    timestamp: "2025-04-17 09:15",
-    externalLink: "https://example.com/spring-festival-event",
-    category: "活动预告",
-    categoryEn: "Event Preview",
-  },
-]
+
 
 export default function NotificationsPage() {
   const { theme } = useTheme()
@@ -88,10 +54,30 @@ export default function NotificationsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalNotifications, setTotalNotifications] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([])
+  const [newsLoading, setNewsLoading] = useState(false)
   const notificationsPerPage = 10
 
   // Set page title
   usePageTitle('notifications')
+
+  // Load news data
+  const loadNewsData = () => {
+    setNewsLoading(true)
+    try {
+      const news = newsDataManager.getAllNews()
+      setNewsItems(news)
+    } catch (err) {
+      console.error('Error loading news data:', err)
+    } finally {
+      setNewsLoading(false)
+    }
+  }
+
+  // Load news data on component mount
+  useEffect(() => {
+    loadNewsData()
+  }, [])
 
   // Update active tab based on user login status
   useEffect(() => {
@@ -250,35 +236,49 @@ export default function NotificationsPage() {
     if (theme === "light") {
       return {
         background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        accent: "from-purple-500 to-pink-500",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        accent: "theme-brand-primary",
       }
     }
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-      accent: "from-purple-400 to-pink-400",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      accent: "theme-brand-primary",
     }
   }
 
   const themeClasses = getThemeClasses()
 
   const getIcon = (type: string) => {
+    const iconColors = theme === "light"
+      ? {
+          video: "theme-status-success",
+          payment: "theme-status-info",
+          profile: "theme-brand-primary",
+          default: "theme-text-muted"
+        }
+      : {
+          video: "theme-status-success",
+          payment: "theme-status-info",
+          profile: "theme-brand-primary",
+          default: "theme-text-muted"
+        }
+
     switch (type) {
       case "video_completed":
       case "video_processing":
-        return <Video className="w-5 h-5 text-green-500" />
+        return <Video className={`w-5 h-5 ${iconColors.video}`} />
       case "payment_success":
       case "success":
-        return <CreditCard className="w-5 h-5 text-blue-500" />
+        return <CreditCard className={`w-5 h-5 ${iconColors.payment}`} />
       case "profile_update":
-        return <User className="w-5 h-5 text-purple-500" />
+        return <User className={`w-5 h-5 ${iconColors.profile}`} />
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />
+        return <Bell className={`w-5 h-5 ${iconColors.default}`} />
     }
   }
 
@@ -354,7 +354,7 @@ export default function NotificationsPage() {
                       onClick={markAllAsRead}
                       variant="outline"
                       size="sm"
-                      className={`${themeClasses.text} border-gray-300 dark:border-gray-600`}
+                      className={themeClasses.outlineButton}
                     >
                       {language === "zh" ? "全部标记为已读" : "Mark All as Read"}
                     </Button>
@@ -366,7 +366,7 @@ export default function NotificationsPage() {
                 {isLoading ? (
                   <Card className={`${themeClasses.card} text-center`}>
                     <CardContent className="p-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                      <div className={`animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4 ${theme === "light" ? "border-purple-600" : "border-violet-400"}`}></div>
                       <p className={`${themeClasses.secondaryText}`}>
                         {language === "zh" ? "加载中..." : "Loading..."}
                       </p>
@@ -375,7 +375,7 @@ export default function NotificationsPage() {
                 ) : error ? (
                   <Card className={`${themeClasses.card} text-center`}>
                     <CardContent className="p-12">
-                      <Bell className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                      <Bell className={`w-16 h-16 mx-auto mb-4 ${theme === "light" ? "text-red-600" : "text-red-400"}`} />
                       <h3 className={`${themeClasses.text} text-xl font-semibold mb-2`}>
                         {language === "zh" ? "加载失败" : "Failed to load"}
                       </h3>
@@ -384,7 +384,7 @@ export default function NotificationsPage() {
                       </p>
                       <button
                         onClick={() => fetchNotifications()}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        className={`px-4 py-2 rounded-lg transition-colors text-white ${theme === "light" ? "bg-purple-600 hover:bg-purple-700" : "bg-violet-500 hover:bg-violet-600"}`}
                       >
                         {language === "zh" ? "重试" : "Retry"}
                       </button>
@@ -396,7 +396,7 @@ export default function NotificationsPage() {
                       key={notification.id}
                       className={`${themeClasses.card} ${
                         !notification.is_read
-                          ? `ring-2 ring-blue-400 shadow-lg ${theme === "light" ? "bg-blue-50/50" : "bg-blue-900/20"} border-blue-200`
+                          ? `ring-2 shadow-lg border ${theme === "light" ? "ring-purple-400 bg-purple-50/50 border-purple-200" : "ring-violet-400 bg-violet-900/20 border-violet-500/30"}`
                           : ""
                       } transition-all duration-200 hover:shadow-lg cursor-pointer`}
                       onClick={() => !notification.is_read && markAsRead(notification.id)}
@@ -418,8 +418,8 @@ export default function NotificationsPage() {
                               <div className="flex items-center space-x-2">
                                 {!notification.is_read && (
                                   <div className="flex items-center space-x-1">
-                                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                    <div className={`w-3 h-3 rounded-full animate-pulse ${theme === "light" ? "bg-purple-500" : "bg-violet-400"}`}></div>
+                                    <span className={`text-xs font-medium ${theme === "light" ? "text-purple-600" : "text-violet-400"}`}>
                                       {language === "zh" ? "新" : "NEW"}
                                     </span>
                                   </div>
@@ -454,7 +454,7 @@ export default function NotificationsPage() {
                                     handleCtaClick(notification.cta_url!)
                                   }}
                                   size="sm"
-                                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                                  className={`text-white ${theme === "light" ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" : "bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600"}`}
                                 >
                                   {language === "zh" ? "查看详情" : "View Details"}
                                 </Button>
@@ -468,7 +468,7 @@ export default function NotificationsPage() {
                 ) : (
                   <Card className={`${themeClasses.card} text-center`}>
                     <CardContent className="p-12">
-                      <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <Bell className={`w-16 h-16 mx-auto mb-4 ${theme === "light" ? "text-gray-500" : "text-gray-400"}`} />
                       <h3 className={`${themeClasses.text} text-xl font-semibold mb-2`}>
                         {language === "zh" ? "暂无通知" : "No notifications"}
                       </h3>
@@ -508,96 +508,125 @@ export default function NotificationsPage() {
 
             {/* News Tab */}
             <TabsContent value="news">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-                {mockNews.map((news) => (
-                  <Card
-                    key={news.id}
-                    className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] border-l-4 border-l-purple-500 bg-gradient-to-r ${
-                      theme === "light"
-                        ? "from-purple-50 to-white hover:from-purple-100"
-                        : "from-purple-900/20 to-transparent hover:from-purple-800/30"
-                    }`}
-                    onClick={(e) => {
-                      // Only show animation, don't open link
-                      e.preventDefault()
-                      const readMoreBtn = e.currentTarget.querySelector('[data-read-more]') as HTMLElement
-                      const target = e.target as HTMLElement
-                      if (readMoreBtn && !target?.closest('[data-read-more]')) {
-                        // Add highlight animation to read more button
-                        readMoreBtn.classList.add('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
-                        readMoreBtn.style.transition = 'all 0.2s ease-in-out'
-                        setTimeout(() => {
-                          readMoreBtn.classList.remove('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
-                        }, 800)
-                      }
-                    }}
-                  >
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        {/* Title */}
-                        <h3 className={`${themeClasses.text} text-xl font-bold leading-tight`}>
-                          {language === "zh" ? news.title : news.titleEn}
-                        </h3>
-
-                        {/* Date below title */}
-                        <div className="flex items-center space-x-2">
-                          <span className={`${themeClasses.secondaryText} text-sm`}>
-                            {news.timestamp}
-                          </span>
-                        </div>
-
-                        {/* Content */}
-                        <p className={`${themeClasses.secondaryText} leading-relaxed text-sm`}>
-                          {language === "zh" ? news.message : news.messageEn}
-                        </p>
-
-                        {/* Category and Read more link */}
-                        <div className="flex items-center justify-between pt-2">
-                          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            theme === "light"
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-purple-800/50 text-purple-300"
-                          }`}>
-                            {language === "zh" ? news.category : news.categoryEn}
+              {newsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <span className={`ml-3 ${themeClasses.text}`}>
+                    {language === "zh" ? "加载中..." : "Loading..."}
+                  </span>
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
+                  {newsItems.map((news) => (
+                    <Card
+                      key={news.id}
+                      className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] border-l-4 overflow-hidden relative`}
+                      style={{
+                        backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${news.image})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                      onClick={(e) => {
+                        // Only show animation, don't open link
+                        e.preventDefault()
+                        const readMoreBtn = e.currentTarget.querySelector('[data-read-more]') as HTMLElement
+                        const target = e.target as HTMLElement
+                        if (readMoreBtn && !target?.closest('[data-read-more]')) {
+                          // Add highlight animation to read more button
+                          readMoreBtn.classList.add('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
+                          readMoreBtn.style.transition = 'all 0.2s ease-in-out'
+                          setTimeout(() => {
+                            readMoreBtn.classList.remove('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
+                          }, 800)
+                        }
+                      }}
+                    >
+                      <CardContent className="p-6 relative z-10">
+                        <div className="flex gap-4">
+                          {/* Image placeholder */}
+                          <div className="flex-shrink-0">
+                            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                              <img
+                                src={news.image}
+                                alt={language === "zh" ? news.title : news.titleEn}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                  e.currentTarget.parentElement!.innerHTML = `
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-200 dark:bg-gray-700">
+                                      <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                      </svg>
+                                    </div>
+                                  `
+                                }}
+                              />
+                            </div>
                           </div>
 
-                          <button
-                            data-read-more
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              window.open(news.externalLink, '_blank')
-                            }}
-                            className="flex items-center space-x-2 text-purple-500 hover:text-purple-600 transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20 px-3 py-2 rounded-lg"
-                          >
-                            <span className="text-sm font-medium">
-                              {language === "zh" ? "阅读全文" : "Read More"}
-                            </span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                          {/* Content */}
+                          <div className="flex-1 space-y-3">
+                            {/* Title */}
+                            <h3 className="text-white text-lg font-bold leading-tight">
+                              {language === "zh" ? news.title : news.titleEn}
+                            </h3>
 
-                {mockNews.length === 0 && (
-                  <Card className={`${themeClasses.card} text-center`}>
-                    <CardContent className="p-12">
-                      <Newspaper className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className={`${themeClasses.text} text-xl font-semibold mb-2`}>
-                        {language === "zh" ? "暂无资讯" : "No news"}
-                      </h3>
-                      <p className={`${themeClasses.secondaryText}`}>
-                        {language === "zh"
-                          ? "我们会在这里发布产品更新和重要资讯"
-                          : "We'll post product updates and important news here"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                            {/* Date and tag */}
+                            <div className="flex items-center space-x-3">
+                              <span className="text-white/80 text-sm">
+                                {new Date(news.publishedAt).toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")}
+                              </span>
+                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-purple-600/80 text-white">
+                                {language === "zh" ? news.tag : news.tagEn}
+                              </div>
+                            </div>
+
+                            {/* Summary */}
+                            <p className="text-white/90 leading-relaxed text-sm line-clamp-2">
+                              {language === "zh" ? news.summary : news.summaryEn}
+                            </p>
+
+                            {/* Read more link */}
+                            <div className="flex justify-end">
+                              <button
+                                data-read-more
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  window.open(news.url, '_blank')
+                                }}
+                                className="flex items-center space-x-2 text-white hover:text-purple-300 transition-colors hover:bg-white/10 px-3 py-2 rounded-lg"
+                              >
+                                <span className="text-sm font-medium">
+                                  {language === "zh" ? "阅读全文" : "Read More"}
+                                </span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {newsItems.length === 0 && !newsLoading && (
+                    <Card className={`${themeClasses.card} text-center`}>
+                      <CardContent className="p-12">
+                        <Newspaper className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className={`${themeClasses.text} text-xl font-semibold mb-2`}>
+                          {language === "zh" ? "暂无资讯" : "No news"}
+                        </h3>
+                        <p className={`${themeClasses.secondaryText}`}>
+                          {language === "zh"
+                            ? "我们会在这里发布产品更新和重要资讯"
+                            : "We'll post product updates and important news here"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

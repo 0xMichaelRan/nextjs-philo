@@ -523,16 +523,25 @@ export default function ScriptReviewPage() {
     if (theme === "light") {
       return {
         background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "text-gray-800",
-        card: "bg-white/80 border-gray-200/50",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        mutedText: "theme-text-muted",
+        card: "theme-bg-elevated border-gray-200/50",
+        button: "theme-button-primary",
+        overlayText: "text-white", // Always white on video overlay
+        overlayBg: "bg-gradient-to-br from-gray-100 to-gray-200",
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900",
-      text: "text-white",
-      card: "bg-white/10 border-white/20",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      mutedText: "theme-text-muted",
+      card: "theme-surface-elevated border-white/20",
+      button: "theme-button-primary",
+      overlayText: "text-white", // Always white on video overlay
+      overlayBg: "bg-gradient-to-br from-gray-900 to-black",
     }
   }
 
@@ -569,7 +578,7 @@ export default function ScriptReviewPage() {
           {/* Video-like Audio Player */}
           <Card className={`${themeClasses.card} mb-8 overflow-hidden`}>
             <CardContent className="p-0">
-              <div className={`relative aspect-video ${theme === 'light' ? 'bg-gradient-to-br from-gray-100 to-gray-200' : 'bg-gradient-to-br from-gray-900 to-black'}`}>
+              <div className={`relative aspect-video ${themeClasses.overlayBg}`}>
                 {/* Video thumbnail/backdrop */}
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -587,11 +596,11 @@ export default function ScriptReviewPage() {
                     className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-white/30 w-20 h-20 rounded-full"
                   >
                     {isGenerating ? (
-                      <RefreshCw className="w-8 h-8 text-white animate-spin" />
+                      <RefreshCw className={`w-8 h-8 ${themeClasses.overlayText} animate-spin`} />
                     ) : isPlaying ? (
-                      <Pause className="w-8 h-8 text-white" />
+                      <Pause className={`w-8 h-8 ${themeClasses.overlayText}`} />
                     ) : (
-                      <Play className="w-8 h-8 text-white ml-1" />
+                      <Play className={`w-8 h-8 ${themeClasses.overlayText} ml-1`} />
                     )}
                   </Button>
                 </div>
@@ -610,7 +619,7 @@ export default function ScriptReviewPage() {
                   </div>
 
                   {/* Controls and info */}
-                  <div className="flex items-center justify-between text-white">
+                  <div className={`flex items-center justify-between ${themeClasses.overlayText}`}>
                     <div className="flex items-center space-x-4">
                       <div className="text-sm">
                         <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
@@ -626,7 +635,7 @@ export default function ScriptReviewPage() {
                 {/* Loading overlay */}
                 {isGenerating && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="text-center text-white">
+                    <div className={`text-center ${themeClasses.overlayText}`}>
                       <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
                       <p className="text-sm">
                         {language === "zh" ? "正在生成语音..." : "Generating audio..."}
@@ -641,35 +650,35 @@ export default function ScriptReviewPage() {
           {/* Configuration Review Section */}
           {voiceConfig && (
             <div className="mb-6 space-y-4">
-              <h3 className="text-lg font-semibold text-white text-center mb-4">
+              <h3 className={`text-lg font-semibold ${themeClasses.text} text-center mb-4`}>
                 {language === "zh" ? "配置确认" : "Configuration Review"}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Voice Configuration */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                  <div className="text-sm text-white/70 mb-1">
+                <div className={`backdrop-blur-sm rounded-lg p-4 border ${theme === "light" ? "bg-gray-100 border-gray-200" : "bg-white/10 border-white/20"}`}>
+                  <div className={`text-sm ${themeClasses.mutedText} mb-1`}>
                     {language === "zh" ? "语音配置" : "Voice"}
                   </div>
-                  <div className="text-white font-medium">
+                  <div className={`${themeClasses.text} font-medium`}>
                     {voiceConfig.isCustom ?
                       (language === "zh" ? "自定义语音" : "Custom Voice") :
                       voiceConfig.voiceName
                     }
                   </div>
                   {voiceConfig.ttsProvider && (
-                    <div className="text-xs text-white/60 mt-1">
+                    <div className={`text-xs ${themeClasses.mutedText} mt-1`}>
                       {language === "zh" ? "提供商" : "Provider"}: {voiceConfig.ttsProvider}
                     </div>
                   )}
                 </div>
 
                 {/* Speed Configuration */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                  <div className="text-sm text-white/70 mb-1">
+                <div className={`backdrop-blur-sm rounded-lg p-4 border ${theme === "light" ? "bg-gray-100 border-gray-200" : "bg-white/10 border-white/20"}`}>
+                  <div className={`text-sm ${themeClasses.mutedText} mb-1`}>
                     {language === "zh" ? "播放速度" : "Speed"}
                   </div>
-                  <div className="text-white font-medium">
+                  <div className={`${themeClasses.text} font-medium`}>
                     {(() => {
                       const speed = flowState.speed || 50;
                       if (speed < 30) return language === "zh" ? "较慢" : "Slower";
@@ -679,7 +688,7 @@ export default function ScriptReviewPage() {
                       return language === "zh" ? "较快" : "Faster";
                     })()}
                   </div>
-                  <div className="text-xs text-white/60 mt-1">
+                  <div className={`text-xs ${themeClasses.mutedText} mt-1`}>
                     {language === "zh" ? "数值" : "Value"}: {flowState.speed || 50}
                   </div>
                 </div>
@@ -713,15 +722,6 @@ export default function ScriptReviewPage() {
                 {language === "zh" ? "AI 分析结果" : "AI Analysis Result"}
               </CardTitle>
               <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs bg-blue-600/20 text-blue-200 border-blue-400/30">
-                    {language === "zh" ? "视频脚本" : "Video Script"}
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-                    {llmResponse.length} {language === "zh" ? "字符" : "characters"}
-                  </Badge>
-                </div>
-
                 {/* Speed and Resolution Controls */}
                 <div className="flex items-center space-x-2">
                   {/* Speed Control */}
@@ -802,6 +802,9 @@ export default function ScriptReviewPage() {
                 <span>
                   {language === "zh" ? "此内容将用于生成视频解说" : "This content will be used for video narration"}
                 </span>
+                  <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                    {llmResponse.length} {language === "zh" ? "字符" : "characters"}
+                  </Badge>
                 {generatedAudioUrl && (
                   <span className="text-green-400 flex items-center gap-1">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -809,6 +812,7 @@ export default function ScriptReviewPage() {
                   </span>
                 )}
               </div>
+              
             </CardContent>
           </Card>
 
@@ -816,7 +820,7 @@ export default function ScriptReviewPage() {
 
           {!generatedAudioUrl && !isGenerating && (
             <p className="text-center text-gray-300 text-sm mt-4">
-              {language === "zh" ? "请先生成音频预览" : "Please generate audio preview first"}
+              {language === "zh" ? "音频预览可选，您可以直接生成视频" : "Audio preview is optional, you can proceed to generate video"}
             </p>
           )}
         </div>
@@ -825,10 +829,10 @@ export default function ScriptReviewPage() {
         <div className="pt-6 hidden md:block">
           <BottomNavigation
             onBack={() => router.push(`/voice-selection/${jobId}`)}
-            onNext={generatedAudioUrl ? handleGenerateVideo : undefined}
+            onNext={handleGenerateVideo}
             backLabel={language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
             nextLabel={language === "zh" ? "生成视频" : "Generate Video"}
-            nextDisabled={!generatedAudioUrl || isGenerating}
+            nextDisabled={isGenerating}
           />
         </div>
 
@@ -886,16 +890,14 @@ export default function ScriptReviewPage() {
             >
               {language === "zh" ? "返回语音选择" : "Back to Voice Selection"}
             </Button>
-            {generatedAudioUrl && (
-              <Button
-                onClick={handleGenerateVideo}
-                disabled={isGenerating}
-                size="lg"
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 disabled:opacity-50"
-              >
-                {language === "zh" ? "生成视频" : "Generate Video"}
-              </Button>
-            )}
+            <Button
+              onClick={handleGenerateVideo}
+              disabled={isGenerating}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 disabled:opacity-50"
+            >
+              {language === "zh" ? "生成视频" : "Generate Video"}
+            </Button>
           </div>
         </MobileBottomBar>
       </AppLayout>

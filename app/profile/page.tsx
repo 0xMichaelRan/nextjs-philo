@@ -516,14 +516,14 @@ export default function ProfilePage() {
     return (
       <AppLayout title={t("profile.title")}>
         <div
-          className={`min-h-screen ${getThemeClass("bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100", "bg-gradient-to-br from-indigo-900 via-blue-900 to-cyan-900")}`}
+          className={`min-h-screen ${getThemeClass("bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100", "theme-gradient-hero")}`}
         >
           <div className="container mx-auto px-4 py-8">
             <Card
-              className={`${getThemeClass("bg-gray-50", "bg-white/10")} ${getThemeClass("border-gray-200", "border-white/20")} max-w-md mx-auto text-center`}
+              className={`${getThemeClass("bg-gray-50", "theme-surface-elevated")} ${getThemeClass("border-gray-200", "border-white/20")} max-w-md mx-auto text-center`}
             >
               <CardContent className="p-8">
-                <h2 className={`${getThemeClass("text-gray-900", "text-white")} text-xl font-bold mb-4`}>
+                <h2 className={`${getThemeClass("text-gray-900", "theme-text-primary")} text-xl font-bold mb-4`}>
                   {language === "zh" ? "请先登录" : "Please login first"}
                 </h2>
                 <Link href="/auth">
@@ -539,7 +539,7 @@ export default function ProfilePage() {
 
   return (
     <div
-      className={`min-h-screen ${getThemeClass("bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100", "bg-gradient-to-br from-indigo-900 via-blue-900 to-cyan-900")}`}
+      className={`min-h-screen ${getThemeClass("bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100", "theme-gradient-hero")}`}
     >
       <AppLayout >
         <div className="container mx-auto px-4 py-6">

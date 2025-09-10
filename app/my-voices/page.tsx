@@ -261,7 +261,7 @@ export default function MyVoicesPage() {
                 <p className={themeClasses.textSecondary}>
                   {t("myVoices.subtitle")}
                 </p>
-                <span className={`text-sm px-2 py-1 rounded-full ${themeClasses.textSecondary} bg-gray-100 dark:bg-gray-800`}>
+                <span className={`text-sm px-3 py-1 rounded-full ${theme === "light" ? "bg-indigo-100 text-indigo-700" : "bg-indigo-900/50 text-indigo-300"} font-medium`}>
                   {voicesData?.voices?.length || 0} / {maxVoices} {t("myVoices.voicesUsed")}
                 </span>
               </div>
@@ -296,72 +296,90 @@ export default function MyVoicesPage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {voicesData?.voices.map((voice) => (
-                <Card key={voice.id} className={themeClasses.card}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className={`${themeClasses.text} text-lg`}>
-                        {`"${voice.display_name}" ${t("myVoices.voiceName")}`}
-                      </CardTitle>
-                      <Badge variant={voice.language === "zh" ? "default" : "secondary"}>
-                        {voice.language === "zh" ? "中文" : "English"}
-                      </Badge>
+                <Card
+                  key={voice.id}
+                  className={`${themeClasses.card} transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-xl border-2 ${
+                    playingVoice === voice.id
+                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20"
+                      : "border-transparent hover:border-purple-200 dark:hover:border-purple-700"
+                  }`}
+                  onClick={() => {
+                    if (voice.voice_file && user?.id) {
+                      // Construct audio URL for custom voices
+                      const audioUrl = `/static/new_voices/uid${user.id}/${voice.voice_file}`
+                      playVoice(voice.id, audioUrl)
+                    }
+                  }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        {/* Voice indicator circle */}
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          playingVoice === voice.id
+                            ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
+                            : "border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400"
+                        }`}>
+                          {playingVoice === voice.id ? (
+                            <Pause className="w-5 h-5" />
+                          ) : (
+                            <Play className="w-5 h-5" />
+                          )}
+                        </div>
+
+                        <div>
+                          <h3 className={`${themeClasses.text} font-semibold text-lg`}>
+                            {voice.display_name}
+                          </h3>
+                          <p className={`${themeClasses.textSecondary} text-sm`}>
+                            {t("myVoices.customVoice")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={voice.language === "zh" ? "default" : "secondary"}>
+                          {voice.language === "zh" ? "中文" : "English"}
+                        </Badge>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteVoice(voice.id)
+                          }}
+                          disabled={deletingVoice === voice.id}
+                          className="opacity-70 hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className={`${themeClasses.textSecondary} flex items-center`}>
-                          <Calendar className="w-4 h-4 mr-1" />
-                          {t("myVoices.created")}
-                        </span>
-                        <span className={themeClasses.text}>
+
+                    {/* Voice details */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span className={themeClasses.textSecondary}>
                           {new Date(voice.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className={`${themeClasses.textSecondary} flex items-center`}>
-                          <HardDrive className="w-4 h-4 mr-1" />
-                          {t("myVoices.duration")}
-                        </span>
-                        <span className={themeClasses.text}>
+                      <div className="flex items-center space-x-2">
+                        <HardDrive className="w-4 h-4 text-gray-400" />
+                        <span className={themeClasses.textSecondary}>
                           {voice.duration || "0:00"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (voice.voice_file && user?.id) {
-                              // Construct audio URL for custom voices
-                              const audioUrl = `/static/new_voices/uid${user.id}/${voice.voice_file}`
-                              playVoice(voice.id, audioUrl)
-                            }
-                          }}
-                          className="flex-1"
-                        >
-                          {playingVoice === voice.id ? (
-                            <Pause className="w-4 h-4 mr-1" />
-                          ) : (
-                            <Play className="w-4 h-4 mr-1" />
-                          )}
-                          {playingVoice === voice.id ? t("myVoices.pause") : t("myVoices.play")}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteVoice(voice.id)}
-                          disabled={deletingVoice === voice.id}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                    {/* Playing status */}
+                    {playingVoice === voice.id && (
+                      <div className="mt-4 text-center">
+                        <p className="text-purple-600 dark:text-purple-400 text-sm font-medium">
+                          {t("myVoices.playing")}
+                        </p>
                       </div>
-
-                      {/* Removed select button - selection only happens in voice-selection page */}
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

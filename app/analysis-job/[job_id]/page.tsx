@@ -65,31 +65,32 @@ export default function AnalysisJobPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400",
-        text: "text-gray-900",
-        secondaryText: "text-gray-600",
-        card: "bg-white/90 backdrop-blur-sm border-white/20",
-        cardHover: "hover:bg-white/95 hover:shadow-lg transition-all duration-300",
-        accent: "text-purple-600",
-        success: "text-green-600",
-        error: "text-red-600",
-        warning: "text-yellow-600",
-        button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-        outlineButton: "bg-white/60 border-gray-300 text-gray-700 hover:bg-white/80"
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        button: "theme-button-primary",
+        outlineButton: "theme-button-secondary",
+        accent: "theme-brand-primary",
+        success: "theme-status-success",
+        error: "theme-status-error",
+        warning: "theme-status-warning"
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 backdrop-blur-sm border-white/20",
-      cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
-      accent: "text-purple-400",
-      success: "text-green-400",
-      error: "text-red-400",
-      warning: "text-yellow-400",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
-      outlineButton: "bg-white/10 border-white/20 text-gray-300 hover:bg-white/20"
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      button: "theme-button-primary",
+      outlineButton: "theme-button-secondary",
+      accent: "theme-brand-primary",
+      success: "theme-status-success",
+      error: "theme-status-error",
+      warning: "theme-status-warning"
     }
   }
 

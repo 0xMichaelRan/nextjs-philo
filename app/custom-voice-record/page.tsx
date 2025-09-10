@@ -89,11 +89,12 @@ export default function CustomVoiceRecordPage() {
         cardHover: "hover:bg-white/90",
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900",
+      background: "theme-gradient-hero",
       text: "text-white",
       secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
+      card: "theme-surface-elevated border-white/20",
       cardHover: "hover:bg-white/20",
     }
   }

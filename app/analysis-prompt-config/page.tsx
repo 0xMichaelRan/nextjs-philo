@@ -91,22 +91,32 @@ export default function AnalysisPromptConfigPage() {
   const getThemeClasses = () => {
     if (theme === "light") {
       return {
-        background: "bg-gradient-to-br from-gray-50 to-white min-h-screen",
-        card: "bg-white border-gray-200",
-        cardHover: "hover:shadow-lg transition-shadow duration-300",
-        text: "text-gray-900",
-        secondaryText: "text-gray-600",
-        border: "border-gray-200"
+        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
+        text: "theme-text-primary",
+        secondaryText: "theme-text-secondary",
+        card: "theme-bg-elevated border-gray-200/50",
+        cardHover: "hover:shadow-lg transition-all duration-300",
+        button: "theme-button-primary",
+        outlineButton: "theme-button-secondary",
+        accent: "theme-brand-primary",
+        error: "theme-status-error",
+        input: "bg-white border-gray-200 text-gray-900 placeholder:text-gray-500",
+        select: "bg-white border-gray-200 text-gray-900"
       }
-    } else {
-      return {
-        background: "bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 min-h-screen",
-        card: "bg-gray-800/50 border-white/20 backdrop-blur-sm",
-        cardHover: "hover:bg-gray-800/70 transition-all duration-300",
-        text: "text-white",
-        secondaryText: "text-gray-300",
-        border: "border-white/20"
-      }
+    }
+    /* dark-theme refactor */
+    return {
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
+      cardHover: "hover:shadow-xl transition-all duration-300",
+      button: "theme-button-primary",
+      outlineButton: "theme-button-secondary",
+      accent: "theme-brand-primary",
+      error: "theme-status-error",
+      input: "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400",
+      select: "theme-surface-elevated border-white/20 text-white"
     }
   }
 
@@ -319,7 +329,7 @@ IMPORTANT OUTPUT REQUIREMENTS:
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
               placeholder={field.placeholder}
-              className={`${themeClasses.card} border-white/30 min-h-[120px]`}
+              className={`${themeClasses.input} min-h-[120px]`}
             />
           </div>
         )
@@ -336,7 +346,7 @@ IMPORTANT OUTPUT REQUIREMENTS:
               value={value}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-3 py-2 rounded-md ${themeClasses.card} border-white/30 border`}
+              className={`w-full px-3 py-2 rounded-md ${themeClasses.input} border`}
             />
           </div>
         )
@@ -349,10 +359,10 @@ IMPORTANT OUTPUT REQUIREMENTS:
               {field.required && <span className="text-red-500">*</span>}
             </Label>
             <Select value={value} onValueChange={(newValue) => handleInputChange(fieldName, newValue)}>
-              <SelectTrigger className={`${themeClasses.card} border-white/30`}>
+              <SelectTrigger className={themeClasses.select}>
                 <SelectValue placeholder={field.placeholder} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={themeClasses.card}>
                 {field.options?.map((option, index) => {
                   // Handle both string options and object options with {label, value}
                   const optionKey = typeof option === 'string' ? option : option.value || index
@@ -360,7 +370,7 @@ IMPORTANT OUTPUT REQUIREMENTS:
                   const optionLabel = typeof option === 'string' ? option : option.label || option.value
 
                   return (
-                    <SelectItem key={optionKey} value={optionValue}>
+                    <SelectItem key={optionKey} value={optionValue} className={`${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}>
                       {optionLabel}
                     </SelectItem>
                   )
@@ -674,14 +684,14 @@ IMPORTANT OUTPUT REQUIREMENTS:
                       <span className="text-red-500">*</span>
                     </Label>
                     <Select value={useMock.toString()} onValueChange={(value) => setUseMock(value === "true")}>
-                      <SelectTrigger className={`${themeClasses.card} ${themeClasses.border} ${themeClasses.text}`}>
+                      <SelectTrigger className={themeClasses.select}>
                         <SelectValue placeholder={language === "zh" ? "选择分析模式" : "Select analysis mode"} />
                       </SelectTrigger>
-                      <SelectContent className={`${themeClasses.card} ${themeClasses.border}`}>
-                        <SelectItem value="false" className={`${themeClasses.text} hover:${themeClasses.cardHover}`}>
+                      <SelectContent className={themeClasses.card}>
+                        <SelectItem value="false" className={`${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}>
                           {language === "zh" ? "真实模式 (llm call)" : "Real Mode (AI Analysis)"}
                         </SelectItem>
-                        <SelectItem value="true" className={`${themeClasses.text} hover:${themeClasses.cardHover}`}>
+                        <SelectItem value="true" className={`${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}>
                           {language === "zh" ? "模拟模式 (mock)" : "Mock Mode (Fast Testing)"}
                         </SelectItem>
                       </SelectContent>
@@ -703,12 +713,12 @@ IMPORTANT OUTPUT REQUIREMENTS:
                       value={selectedModelId?.toString() || ""}
                       onValueChange={(value) => setSelectedModelId(parseInt(value))}
                     >
-                      <SelectTrigger className={`${themeClasses.card} border-white/30`}>
+                      <SelectTrigger className={themeClasses.select}>
                         <SelectValue placeholder={language === "zh" ? "选择AI模型" : "Select AI model"} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className={themeClasses.card}>
                         {aiModels.map((model) => (
-                          <SelectItem key={model.id} value={model.id.toString()}>
+                          <SelectItem key={model.id} value={model.id.toString()} className={`${themeClasses.text} hover:bg-gray-100 dark:hover:bg-gray-800`}>
                             {model.name} ({model.model_id})
                           </SelectItem>
                         ))}

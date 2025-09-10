@@ -160,32 +160,41 @@ export default function MovieSelectionPage() {
     setShowSearchSuggestions(false)
   }
 
-  const getTextClasses = () => {
-    if (theme === "light") {
-      return "text-gray-800"
-    }
-    return "text-white"
+  const themeClasses = {
+    text: "theme-text-primary",
+    secondaryText: "theme-text-secondary",
+    mutedText: "theme-text-muted",
+    brand: "theme-brand-primary",
+    status: "theme-status-warning"
   }
 
+  /* dark-theme refactor */
+  const getTextClasses = () => {
+    return "theme-text-primary"
+  }
+
+  /* dark-theme refactor */
   const getCardClasses = () => {
     if (theme === "light") {
       return "bg-white/80 border-gray-200/50 hover:bg-white/90"
     }
-    return "bg-white/10 border-white/20 hover:bg-white/20"
+    return "theme-surface-elevated border-white/20 hover:bg-white/20"
   }
 
+  /* dark-theme refactor */
   const getInputClasses = () => {
     if (theme === "light") {
       return "bg-white/80 border-gray-200/50 text-gray-800 placeholder:text-gray-500"
     }
-    return "bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+    return "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400"
   }
 
+  /* dark-theme refactor */
   const getSuggestionClasses = () => {
     if (theme === "light") {
       return "bg-white/95 border-gray-200/50 shadow-lg"
     }
-    return "bg-gray-900/95 border-white/20 shadow-lg"
+    return "theme-surface-primary border-white/20 shadow-lg"
   }
 
   return (
@@ -193,7 +202,7 @@ export default function MovieSelectionPage() {
       <div className="container mx-auto px-6 py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">
-          <h2 className={`text-3xl md:text-4xl font-bold ${getTextClasses()} mb-4`}>{t("movieSelection.title")}</h2>
+          <h2 className={`text-3xl md:text-4xl font-bold ${themeClasses.text} mb-4`}>{t("movieSelection.title")}</h2>
           {/* <p className={`text-lg ${theme === "light" ? "text-gray-600" : "text-gray-300"} mb-6`}>
             {t("movieSelection.subtitle")}
           </p> */}
@@ -203,7 +212,7 @@ export default function MovieSelectionPage() {
         <div className="max-w-md mx-auto mb-8 relative">
           <div className="relative">
             <Search
-              className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}
+              className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${themeClasses.mutedText}`}
             />
             <Input
               ref={searchInputRef}
@@ -212,7 +221,7 @@ export default function MovieSelectionPage() {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={handleSearchFocus}
-              className={`pl-10 pr-10 ${getInputClasses()}`}
+              className={`pl-10 pr-10 ${theme === "light" ? "theme-bg-elevated border-gray-200/50 theme-text-primary placeholder:text-gray-500" : "theme-surface-elevated border-white/20 theme-text-primary placeholder:text-gray-400"}`}
             />
             {searchQuery && (
               <Button
@@ -279,8 +288,9 @@ export default function MovieSelectionPage() {
                           : "hover:bg-purple-900/20 text-gray-300 hover:text-purple-300"
                       }`}
                     >
+                      {/* dark-theme refactor */}
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-gradient-to-r from-violet-400 to-cyan-400 rounded-full"></div>
                         <span>{language === "zh" ? item.keyword : item.keywordEn}</span>
                       </div>
                     </button>
@@ -329,7 +339,7 @@ export default function MovieSelectionPage() {
                         }}
                       />
                       {movie.rating && (
-                        <Badge className="absolute top-3 right-3 bg-orange-500 text-white font-bold">
+                        <Badge className={`absolute top-3 right-3 font-bold text-white ${themeClasses.status}`} style={{backgroundColor: 'var(--status-warning)'}}>
                           {movie.rating.toFixed(1)}
                         </Badge>
                       )}

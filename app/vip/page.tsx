@@ -242,14 +242,15 @@ export default function VipPage() {
         accent: "text-yellow-600",
       }
     }
+    /* dark-theme refactor */
     return {
-      background: "bg-gradient-to-br from-yellow-900 via-orange-900 to-red-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20 backdrop-blur-md",
+      background: "theme-gradient-hero",
+      text: "theme-text-primary",
+      secondaryText: "theme-text-secondary",
+      card: "theme-surface-elevated border-white/20",
       cardHover: "hover:bg-white/20 hover:shadow-xl transition-all duration-300",
-      button: "bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700",
-      accent: "text-yellow-400",
+      button: "theme-button-primary",
+      accent: "theme-brand-primary",
     }
   }
 
@@ -277,8 +278,9 @@ export default function VipPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="text-center mb-6">
+              {/* dark-theme refactor */}
               <h1 className={`text-3xl font-bold ${themeClasses.text} mb-2 flex items-center justify-center gap-3`}>
-                <Crown className="w-8 h-8 text-yellow-500" />
+                <Crown className="w-8 h-8 theme-brand-primary" />
                 {t("vip.title")}
               </h1>
               <p className={`${themeClasses.secondaryText} text-lg`}>
@@ -292,7 +294,8 @@ export default function VipPage() {
             <div className="mb-8">
               <Card className={`${themeClasses.card} ${themeClasses.cardHover} border-l-4 border-yellow-500`}>
                 <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  {/* dark-theme refactor */}
+                  <div className="w-16 h-16 theme-gradient-premium rounded-full flex items-center justify-center mx-auto mb-4">
                     <Crown className="w-8 h-8 text-white" />
                   </div>
                   <h3 className={`${themeClasses.text} text-xl font-bold mb-2`}>
@@ -324,12 +327,12 @@ export default function VipPage() {
                     <Crown className="w-6 h-6 text-yellow-500" />
                     {language === "zh"
                       ? `我的${vipStatus.plan === "SVIP" ? "SVIP" : "VIP"}状态`
-                      : `My ${vipStatus.plan} Status`}
+                      : `My ${vipStatus.plan || "VIP"} Status`}
                     <Badge className={`text-white ${
                       vipStatus.plan === "SVIP"
                         ? "bg-gradient-to-r from-purple-600 to-pink-600"
                         : "bg-purple-600"
-                    }`}>{vipStatus.plan}</Badge>
+                    }`}>{vipStatus.plan || "VIP"}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -491,10 +494,15 @@ export default function VipPage() {
                                 : "bg-purple-600 hover:bg-purple-700"
                         } text-white`}
                         size="lg"
-                        disabled={plan.id === "free"}
+                        disabled={
+                          plan.id === "free" ||
+                          (vipStatus?.plan === "SVIP" && plan.id === "vip") // Disable VIP for SVIP users
+                        }
                       >
                         {plan.id === "free" ? (
                           t("vip.currentPlan")
+                        ) : vipStatus?.plan === "SVIP" && plan.id === "vip" ? (
+                          language === "zh" ? "不可降级" : "Cannot Downgrade"
                         ) : !user ? (
                           <>
                             <Crown className="w-4 h-4 mr-2" />

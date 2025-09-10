@@ -141,7 +141,7 @@ export default function PaymentSuccessPage() {
   <div className="h-2" />       {/* or h-4, h-6, etc. */}
 
                   <Link href="/profile">
-                    <Button variant="outline" className="w-full bg-transparent">
+                    <Button variant="outline" className={`w-full ${themeClasses.outlineButton}`}>
                       {t("nav.profile")}
                     </Button>
                   </Link>

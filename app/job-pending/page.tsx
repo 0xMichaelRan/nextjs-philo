@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
+import { formatSpeedDisplay } from "@/lib/speed-utils"
 
 // Utility function for relative time formatting
 const formatRelativeTime = (dateString: string, t: (key: string, params?: Record<string, string | number>) => string): string => {
@@ -88,6 +89,8 @@ interface Job {
   error_message?: string
   poster_url?: string
   backdrop_url?: string
+  resolution?: string
+  speed?: number
 }
 
 interface JobLimits {
@@ -344,6 +347,18 @@ export default function JobPendingPage() {
 
     return unsubscribe
   }, [user, onJobUpdate])
+
+  // Auto-refresh fallback every 15 seconds
+  useEffect(() => {
+    if (!user?.id) return
+
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing jobs (fallback)')
+      fetchJobs()
+    }, 15000) // 15 seconds
+
+    return () => clearInterval(interval)
+  }, [user?.id])
 
   const getStatusBadge = (status: Job['status']) => {
     const badges = {
@@ -610,9 +625,15 @@ export default function JobPendingPage() {
                 style={{
                   backgroundImage: job.backdrop_url ? `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${job.backdrop_url})` : undefined,
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  cursor: job.status === 'completed' ? 'pointer' : 'default'
                 }}
-                onClick={() => router.push(`/video-generation/${job.id}`)}
+                onClick={() => {
+                  // Only allow navigation for completed jobs
+                  if (job.status === 'completed') {
+                    router.push(`/video-generation/${job.id}`)
+                  }
+                }}
               >
                 <CardContent className="p-6 relative z-10">
                   <div className="flex items-start space-x-4 mb-4">
@@ -655,15 +676,19 @@ export default function JobPendingPage() {
                           <p className={`text-sm ${job.backdrop_url ? 'text-white/90' : themeClasses.secondaryText}`}>
                             {t("jobPending.createdAt")} {job.createdAtFormatted}
                           </p>
+                          {/* Video specs */}
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className={`text-xs px-2 py-1 rounded ${job.backdrop_url ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
+                              {job.resolution || '720p'}
+                            </span>
+                            <span className={`text-xs px-2 py-1 rounded ${job.backdrop_url ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
+                              {formatSpeedDisplay(job.speed, language)}
+                            </span>
+                          </div>
                           {/* For pending jobs: show created time + estimated wait */}
                           {(job.status === "pending" || job.status === "queued" || job.status === "processing") && (
                             <p className={`text-sm font-medium ${job.backdrop_url ? 'text-white/80' : themeClasses.secondaryText}`}>
-                              {queueMetrics.pendingJobsCount > 0 && queueMetrics.estimatedProcessingTime > 0
-                                ? t("jobPending.estimatedWaitMinutes", {
-                                    minutes: Math.ceil((queueMetrics.pendingJobsCount * queueMetrics.estimatedProcessingTime) / 60)
-                                  })
-                                : t("jobPending.estimatedWaitMinutes", { minutes: 60 }) // Default to 1 hour
-                              }
+                              {calculateWaitingTime(job.createdAt)}
                             </p>
                           )}
                           {/* For recently completed jobs: show created time + completed time */}
@@ -715,6 +740,18 @@ export default function JobPendingPage() {
                     <div className={`mt-4 p-3 rounded-lg border ${theme === "light" ? "bg-red-50 border-red-200" : "bg-red-900/20 border-red-800"}`}>
                       <p className={`text-sm ${theme === "light" ? "text-red-700" : "text-red-300"}`}>
                         {job.error_message}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Retry message for failed jobs */}
+                  {job.status === "failed" && (
+                    <div className={`mt-3 p-3 rounded-lg border ${theme === "light" ? "bg-blue-50 border-blue-200" : "bg-blue-900/20 border-blue-800"}`}>
+                      <p className={`text-sm ${theme === "light" ? "text-blue-700" : "text-blue-300"}`}>
+                        {language === "zh"
+                          ? "我们的系统将在24小时内自动重新运行您失败的任务，请耐心等待。"
+                          : "Our system will automatically retry your failed job within 24 hours. Please wait patiently."
+                        }
                       </p>
                     </div>
                   )}
