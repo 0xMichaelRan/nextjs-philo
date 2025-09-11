@@ -26,13 +26,27 @@ interface VoicesData {
   }
 }
 
+interface UserLimits {
+  plan: string
+  is_vip: boolean
+  is_svip: boolean
+  limits: {
+    max_custom_voices: number
+  }
+  custom_voices: {
+    used: number
+    limit: number
+    remaining: number
+  }
+}
+
 export default function MyVoicesPage() {
   const [voicesData, setVoicesData] = useState<VoicesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null)
   const [deletingVoice, setDeletingVoice] = useState<string | null>(null)
-  const [vipStatus, setVipStatus] = useState<any>(null)
+  const [userLimits, setUserLimits] = useState<UserLimits | null>(null)
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -57,7 +71,7 @@ export default function MyVoicesPage() {
     }
     
     fetchVoices()
-    fetchVipStatus()
+    fetchUserLimits()
 
     return () => {
       if (audioElement) {
@@ -66,20 +80,20 @@ export default function MyVoicesPage() {
     }
   }, [user, router])
 
-  const fetchVipStatus = async () => {
+  const fetchUserLimits = async () => {
     if (!user) return
 
     try {
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.videoJobs.vipStatus()
+        apiConfig.auth.userLimits()
       )
 
       if (response.ok) {
         const data = await response.json()
-        setVipStatus(data)
+        setUserLimits(data)
       }
     } catch (error) {
-      console.error("Error fetching VIP status:", error)
+      console.error("Error fetching user limits:", error)
     }
   }
 
@@ -97,8 +111,8 @@ export default function MyVoicesPage() {
           voices: voices || [],
           total: voices?.length || 0,
           limits: {
-            custom_voices: vipStatus?.is_svip ? 10 : vipStatus?.is_vip ? 3 : 1, // Free: 1, VIP: 3, SVIP: 10
-            current_plan: vipStatus?.is_svip ? "SVIP" : vipStatus?.is_vip ? "VIP" : "Free"
+            custom_voices: userLimits?.limits?.max_custom_voices || 1, // Get from backend API
+            current_plan: userLimits?.plan || "Free"
           }
         }
         setVoicesData(data)
@@ -117,8 +131,8 @@ export default function MyVoicesPage() {
         voices: [],
         total: 0,
         limits: {
-          custom_voices: vipStatus?.is_svip ? 10 : vipStatus?.is_vip ? 2 : 0, // Free: 0, VIP: 2, SVIP: 10
-          current_plan: vipStatus?.is_svip ? "SVIP" : vipStatus?.is_vip ? "VIP" : "Free"
+          custom_voices: userLimits?.limits?.max_custom_voices || 1, // Get from backend API
+          current_plan: userLimits?.plan || "Free"
         }
       })
     } finally {
@@ -251,9 +265,17 @@ export default function MyVoicesPage() {
                 <p className={themeClasses.textSecondary}>
                   {t("myVoices.subtitle")}
                 </p>
-                <span className={`text-sm px-3 py-1 rounded-full ${theme === "light" ? "bg-indigo-100 text-indigo-700" : "bg-indigo-900/50 text-indigo-300"} font-medium`}>
-                  {voicesData?.voices?.length || 0} / {maxVoices} {t("myVoices.voicesUsed")}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-sm px-3 py-1 rounded-full ${theme === "light" ? "bg-indigo-100 text-indigo-700" : "bg-indigo-900/50 text-indigo-300"} font-medium`}>
+                    {voicesData?.voices?.length || 0} / {maxVoices} {t("myVoices.voicesUsed")}
+                  </span>
+                  {/* Limited-time free offering tag for free users */}
+                  {userLimits?.plan === "Free" && userLimits?.limits?.max_custom_voices > 0 && (
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${theme === "light" ? "bg-green-100 text-green-700 border border-green-200" : "bg-green-900/50 text-green-300 border border-green-700"}`}>
+                      {language === "zh" ? "限免" : "Limited Time"}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
