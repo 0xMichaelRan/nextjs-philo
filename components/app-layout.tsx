@@ -483,9 +483,11 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                 <Button
                   variant="ghost"
                   onClick={() => {
+                    // Clear any stored redirect URLs
+                    localStorage.removeItem('redirectAfterAuth')
                     logout()
                     setIsNavOpen(false)
-                    router.push("/")
+                    router.push("/movie-selection")
                   }}
                   className={`w-full justify-start h-10 ${
                     theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10"

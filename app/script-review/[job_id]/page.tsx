@@ -148,29 +148,39 @@ export default function ScriptReviewPage() {
 
   // Set voice config from flow state
   useEffect(() => {
-    if (flowState.voiceId) {
-      const voiceConfig = {
+    if (flowState.voiceId && (!voiceConfig || voiceConfig.voiceId !== flowState.voiceId)) {
+      const newVoiceConfig = {
         voiceId: flowState.voiceId,
         voiceName: flowState.voiceName,
-        voiceCode: flowState.voiceCode || flowState.voiceId, // Use voiceCode if available, fallback to voiceId
+        vcn: flowState.vcn,  // Use vcn instead of voiceCode
         voiceLanguage: flowState.voiceLanguage,
-        customVoiceId: flowState.customVoiceId,
         ttsProvider: flowState.ttsProvider || 'xfyun',
-        isCustom: flowState.voiceId === 'custom',
         speed: flowState.speed || 50
       }
 
       console.log("Script-review - Flow state voice data:", {
         voiceId: flowState.voiceId,
-        voiceCode: flowState.voiceCode,
+        vcn: flowState.vcn,
         voiceName: flowState.voiceName,
         ttsProvider: flowState.ttsProvider
       })
-      console.log("Script-review - Final voice config:", voiceConfig)
+      console.log("Script-review - Final voice config:", newVoiceConfig)
 
-      setVoiceConfig(voiceConfig)
+      setVoiceConfig(newVoiceConfig)
+    } else if (!voiceConfig && !flowState.voiceId && analysisJob?.id) {
+      // Fallback: Set default voice config if none exists
+      console.log("No voice config in flow state, setting default voice config")
+      const defaultVoiceConfig = {
+        voiceId: null,
+        voiceName: language === "zh" ? "默认语音" : "Default Voice",
+        vcn: 'x4_yezi',  // Default xfyun voice
+        voiceLanguage: 'zh',
+        ttsProvider: 'xfyun',
+        speed: 50
+      }
+      setVoiceConfig(defaultVoiceConfig)
     }
-  }, [flowState])
+  }, [flowState, analysisJob, language])
 
   // Auto-generate TTS when analysis result is available and voice is configured
   useEffect(() => {
@@ -213,9 +223,21 @@ export default function ScriptReviewPage() {
 
   const generateTTSAudio = async () => {
     if (!voiceConfig) {
+      console.error("TTS generation failed: No voice configuration available")
+      console.log("Current flow state:", flowState)
       toast({
         title: language === "zh" ? "错误" : "Error",
-        description: language === "zh" ? "缺少语音配置" : "Missing voice configuration",
+        description: language === "zh" ? "缺少语音配置，请返回语音选择页面" : "Missing voice configuration, please return to voice selection",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!llmResponse) {
+      console.error("TTS generation failed: No analysis result available")
+      toast({
+        title: language === "zh" ? "错误" : "Error",
+        description: language === "zh" ? "缺少分析结果" : "Missing analysis result",
         variant: "destructive"
       })
       return
@@ -226,7 +248,7 @@ export default function ScriptReviewPage() {
       
       // First, check if TTS audio already exists for this analysis job with the current voice
       if (analysisJob?.id) {
-        const currentVoiceId = voiceConfig.isCustom ? voiceConfig.customVoiceId : voiceConfig.voiceCode
+        const currentVoiceId = voiceConfig.voiceId
         const ttsAudioUrl = `${apiConfig.getBaseUrl()}/static/tts-audio/aj${analysisJob.id}/${currentVoiceId}.wav`
 
         try {
@@ -247,13 +269,61 @@ export default function ScriptReviewPage() {
 
       // If we have an analysis job ID, try to generate and save TTS audio
       if (analysisJob?.id) {
+        // For default voice case, we need to get a valid voice ID from the backend
+        // For now, we'll use a fallback approach with VCN directly
+        if (!voiceConfig.voiceId && voiceConfig.vcn) {
+          console.log("Using VCN-based TTS generation as fallback...")
+          // Use the direct TTS synthesis endpoint instead
+          const ttsRequest = {
+            text: llmResponse.substring(0, 7888),
+            provider: voiceConfig.ttsProvider,
+            voice_type: 'system',
+            language: 'zh',
+            voice_id: voiceConfig.vcn,
+            speed: voiceConfig.speed || 50
+          }
+
+          const response = await apiConfig.makeAuthenticatedRequest(apiConfig.tts.synthesize(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ttsRequest)
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            if (result.success && result.audio_data) {
+              const audioData = atob(result.audio_data)
+              const audioArray = new Uint8Array(audioData.length)
+              for (let i = 0; i < audioData.length; i++) {
+                audioArray[i] = audioData.charCodeAt(i)
+              }
+
+              const mimeType = result.audio_format === 'wav' ? 'audio/wav' :
+                              result.audio_format === 'mp3' ? 'audio/mpeg' :
+                              result.audio_format === 'aac' ? 'audio/aac' :
+                              result.audio_format === 'ogg' ? 'audio/ogg' :
+                              'audio/wav'
+
+              const audioBlob = new Blob([audioArray], { type: mimeType })
+              const audioUrl = URL.createObjectURL(audioBlob)
+              setGeneratedAudioUrl(audioUrl)
+
+              toast({
+                title: language === "zh" ? "成功" : "Success",
+                description: language === "zh" ? "语音生成完成" : "Audio generated successfully"
+              })
+              return
+            }
+          }
+          // If VCN-based generation fails, continue with the original approach
+        }
+
         const generateTtsRequest = {
-          voice_id: voiceConfig.isCustom ? voiceConfig.customVoiceId : voiceConfig.voiceCode,
-          voice_type: voiceConfig.isCustom ? 'custom' : 'system',
+          voice_id: voiceConfig.voiceId || 1, // Use a default voice ID if null
+          voice_type: voiceConfig.voiceId ? 'system' : 'custom',
           language: 'zh',
           provider: voiceConfig.ttsProvider || 'xfyun',
-          custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
-          speed: flowState.speed || 50
+          speed: voiceConfig.speed || 50
         }
 
         console.log("TTS Generation - Frontend request:", generateTtsRequest)
@@ -291,11 +361,10 @@ export default function ScriptReviewPage() {
       const ttsRequest = {
         text: llmResponse.substring(0, 7888),
         provider: voiceConfig.ttsProvider,
-        voice_type: voiceConfig.isCustom ? 'custom' : 'system',
+        voice_type: 'system',  // Simplified - we'll handle custom voices differently
         language: 'zh',
-        voice_code: voiceConfig.isCustom ? null : voiceConfig.voiceCode,
-        custom_voice_file_path: voiceConfig.isCustom ? voiceConfig.customVoiceId : null,
-        speed: flowState.speed || 50
+        voice_id: voiceConfig.vcn || 'x4_yezi',  // Use VCN for system voices
+        speed: voiceConfig.speed || 50
       }
 
       const response = await apiConfig.makeAuthenticatedRequest(apiConfig.tts.synthesize(), {
@@ -347,6 +416,16 @@ export default function ScriptReviewPage() {
   }
 
   const handlePlayPause = () => {
+    if (!voiceConfig) {
+      toast({
+        title: language === "zh" ? "提示" : "Notice",
+        description: language === "zh" ? "请先选择语音配置" : "Please select voice configuration first",
+        variant: "default"
+      })
+      router.push(`/voice-selection/${jobId}`)
+      return
+    }
+
     if (!generatedAudioUrl && !isGenerating) {
       generateTTSAudio()
       return
@@ -446,10 +525,10 @@ export default function ScriptReviewPage() {
         ].filter(Boolean),        // removes any undefined/null/empty entries
         movie_title_en: movieData.title_en,
         tts_text: analysisJob.analysis_result || llmResponse,
-        voice_code: voiceConfig?.voiceCode || voiceConfig?.voiceId || 'default',
+        voice_id: voiceConfig?.voiceId || 1, // Use default voice ID instead of null
+        vcn: voiceConfig?.vcn || 'x4_yezi', // Use default VCN instead of null
         voice_display_name: voiceConfig?.voiceName || 'Default Voice',
         voice_language: voiceConfig?.voiceLanguage || 'zh',
-        custom_voice_id: voiceConfig?.isCustom ? voiceConfig?.customVoiceId : null,
         tts_provider: voiceConfig?.ttsProvider || 'xfyun',
         resolution: flowState.resolution || '480p',
         speed: flowState.speed || 50
@@ -465,7 +544,7 @@ export default function ScriptReviewPage() {
       )
 
       if (response.ok) {
-        const result = await response.json()
+        await response.json() // Consume response but don't need the result
 
         toast({
           title: language === "zh" ? "成功" : "Success",
@@ -476,7 +555,16 @@ export default function ScriptReviewPage() {
         router.push('/job-pending')
       } else {
         const errorData = await response.json()
-        throw new Error(errorData.detail || "Failed to create video job")
+
+        // Show error but still navigate to job-pending to see status
+        toast({
+          title: language === "zh" ? "错误" : "Error",
+          description: errorData.detail || (language === "zh" ? "创建视频任务失败" : "Failed to create video job"),
+          variant: "destructive"
+        })
+
+        // Navigate to job pending page even on error to see job status
+        router.push('/job-pending')
       }
     } catch (error) {
       console.error('Error creating video job:', error)
@@ -485,6 +573,9 @@ export default function ScriptReviewPage() {
         description: language === "zh" ? "创建视频任务失败" : "Failed to create video job",
         variant: "destructive"
       })
+
+      // Navigate to job pending page even on error
+      router.push('/job-pending')
     }
   }
 
@@ -661,10 +752,7 @@ export default function ScriptReviewPage() {
                     {language === "zh" ? "语音配置" : "Voice"}
                   </div>
                   <div className={`${themeClasses.text} font-medium`}>
-                    {voiceConfig.isCustom ?
-                      (language === "zh" ? "自定义语音" : "Custom Voice") :
-                      voiceConfig.voiceName
-                    }
+                    {voiceConfig.voiceName || (language === "zh" ? "默认语音" : "Default Voice")}
                   </div>
                   {voiceConfig.ttsProvider && (
                     <div className={`text-xs ${themeClasses.mutedText} mt-1`}>

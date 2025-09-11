@@ -23,46 +23,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 
 import { apiConfig } from "@/lib/api-config"
-
-interface VideoJob {
-  id: number
-  user_id: number
-  analysis_job_id: number
-  movie_id: string
-  movie_title: string
-  movie_title_en?: string
-  tts_text: string
-  voice_code: string
-  voice_display_name?: string
-  custom_voice_id?: string
-  status: string
-  result_video_url?: string
-  result_script_url?: string
-  video_url?: string
-  thumbnail_url?: string
-  error_message?: string
-  resolution: string
-  speed: number // TTS speed (0-100)
-  video_duration?: number // Video duration in seconds
-  created_at: string
-  updated_at: string
-  completed_at?: string
-}
-
-interface MovieData {
-  id: string
-  title: string
-  title_en: string
-  title_zh?: string
-  year?: number
-  genre: string[]
-  director?: string
-  duration_minutes?: number
-  rating?: number
-  description?: string
-  poster_url?: string
-  backdrop_url?: string
-}
+import { formatSpeedDisplay } from "@/lib/speed-utils"
+import { VideoJob, MovieData } from "@/types/video-job"
 
 export default function VideoJobPage() {
   const params = useParams()
@@ -162,7 +124,7 @@ export default function VideoJobPage() {
     if (user && jobId) {
       fetchJob()
     }
-  }, [jobId]) // Remove user dependency to prevent duplicate calls
+  }, [user, jobId]) // Include user dependency to handle page refresh
 
   // Subscribe to real-time job updates
   useEffect(() => {
@@ -310,14 +272,7 @@ export default function VideoJobPage() {
               </p>
               <div className="space-x-4">
                 <Button
-                  onClick={() => {
-                    // Navigate based on job status if available, otherwise go to job-pending
-                    if (job && job.status === 'completed') {
-                      router.push('/video-generation')
-                    } else {
-                      router.push('/job-pending')
-                    }
-                  }}
+                  onClick={() => router.push('/video-generation')}
                   variant="outline"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -359,29 +314,7 @@ export default function VideoJobPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  // Try router.back() first, fallback to specific pages
-                  try {
-                    if (window.history.length > 1) {
-                      router.back()
-                    } else {
-                      // Fallback navigation based on job status
-                      if (job && (job.status === 'pending' || job.status === 'processing' || job.status === 'queued')) {
-                        router.push('/job-pending')
-                      } else {
-                        router.push('/video-generation')
-                      }
-                    }
-                  } catch (error) {
-                    // Fallback if router.back() fails
-                    console.warn('Router.back() failed, using fallback navigation:', error)
-                    if (job && (job.status === 'pending' || job.status === 'processing' || job.status === 'queued')) {
-                      router.push('/job-pending')
-                    } else {
-                      router.push('/video-generation')
-                    }
-                  }
-                }}
+                onClick={() => router.push('/video-generation')}
                 className={`${themeClasses.text} hover:bg-white/10`}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -411,7 +344,7 @@ export default function VideoJobPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Video Player - Main Focus */}
             <div className="lg:col-span-2">
-              {true ? (
+              {job ? (
                 <Card className={themeClasses.card}>
                   <CardContent className="p-0">
                     {(streamingUrl || downloadUrl) ? (
@@ -523,14 +456,6 @@ export default function VideoJobPage() {
                     <p className={`${themeClasses.secondaryText} mb-6`}>
                       {t("videoGeneration.pleaseWait")}
                     </p>
-                    <div className="mt-4">
-                      <p className={`text-sm ${themeClasses.secondaryText}`}>
-                        {t("videoGeneration.status")}: {job.status}
-                      </p>
-                      <p className={`text-xs ${themeClasses.secondaryText} mt-1`}>
-                        {t("common.lastUpdated")}: {new Date(job.updated_at).toLocaleTimeString()}
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -552,7 +477,7 @@ export default function VideoJobPage() {
                       {/* Speed Tag */}
                       <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${theme === "light" ? "bg-blue-100 text-blue-800" : "bg-blue-900/50 text-blue-200"}`}>
                         <span className="mr-1">🎵</span>
-                        {language === "zh" ? "语速" : "Speed"}: {job.speed}%
+                        {language === "zh" ? "语速" : "Speed"}: {formatSpeedDisplay(job.speed, language)}
                       </div>
 
                       {/* Resolution Tag */}
@@ -645,7 +570,7 @@ export default function VideoJobPage() {
                         {t("videoGeneration.voice")}
                       </span>
                       <p className={themeClasses.text}>
-                        {job.voice_display_name || job.voice_code}
+                        {job.voice_display_name || job.vcn || `Voice ID: ${job.voice_id}`}
                       </p>
                     </div>
                     <div>

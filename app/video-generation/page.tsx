@@ -14,32 +14,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
-import { getMovieTitle, type MovieTitleData } from "@/lib/movie-utils"
-
-interface VideoJob extends MovieTitleData {
-  id: number
-  user_id: number
-  analysis_job_id: number
-  movie_id: string
-  movie_title?: string
-  movie_title_en?: string
-  movie_title_zh?: string
-  movie_title_json?: { en?: string; zh?: string }
-  tts_text: string
-  voice_code: string
-  voice_display_name?: string
-  status: string
-  result_video_url?: string
-  result_script_url?: string
-  video_url?: string
-  thumbnail_url?: string
-  error_message?: string
-  resolution: string
-  speed: number // TTS speed (0-100)
-  created_at: string
-  updated_at: string
-  completed_at?: string
-}
+import { getMovieTitle } from "@/lib/movie-utils"
+import { VideoJob } from "@/types/video-job"
 
 export default function VideoGenerationPage() {
   const [jobs, setJobs] = useState<VideoJob[]>([])

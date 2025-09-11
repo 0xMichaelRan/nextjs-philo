@@ -29,11 +29,10 @@ export interface FlowState {
   analysisResult?: string
 
   // Voice selection
-  voiceId?: string
-  voiceCode?: string
+  voiceId?: number  // Reference to new_voices table ID
+  vcn?: string      // Voice code name (system voices only)
   voiceName?: string
   voiceLanguage?: string
-  customVoiceId?: string
   ttsProvider?: string
   speed?: number // TTS speed (0-100)
 
@@ -133,14 +132,14 @@ const isFlowCustomizedState = (state: FlowState): boolean => {
     (state.voiceLanguage && state.voiceLanguage !== DEFAULT_VALUES.voiceLanguage) ||
     (state.scriptLength && state.scriptLength !== DEFAULT_VALUES.scriptLength) ||
     (state.scriptTone && state.scriptTone !== DEFAULT_VALUES.scriptTone) ||
-    !!state.customVoiceId
+    !!state.voiceId
   )
 }
 
 const getCurrentStepIndex = (state: FlowState): number => {
   if (!state.movieId) return 0
   if (!state.analysisStyle) return 1
-  if (!state.voiceId && !state.customVoiceId) return 2
+  if (!state.voiceId) return 2
   if (!state.scriptLength) return 3
   return 4
 }
@@ -217,7 +216,7 @@ export const useFlowStore = create<FlowStore>()(
         
         if (flowState.movieId) completedSteps++
         if (flowState.analysisStyle) completedSteps++
-        if (flowState.voiceId || flowState.customVoiceId) completedSteps++
+        if (flowState.voiceId) completedSteps++
         if (flowState.scriptLength) completedSteps++
         
         return (completedSteps / FLOW_STEPS.length) * 100
@@ -271,10 +270,10 @@ export const useFlowStore = create<FlowStore>()(
                   theme: flowState.analysisTheme || DEFAULT_VALUES.analysisTheme
                 },
                 voice_options: {
-                  voice_code: flowState.voiceCode,
+                  voice_id: flowState.voiceId,
+                  vcn: flowState.vcn,
                   voice_display_name: flowState.voiceName,
                   language: flowState.voiceLanguage || DEFAULT_VALUES.voiceLanguage,
-                  custom_voice_id: flowState.customVoiceId,
                   speed: flowState.speed || 100
                 },
                 script_options: {
@@ -333,10 +332,10 @@ export const useFlowStore = create<FlowStore>()(
               analysisDepth: job.analysis_options?.depth,
               analysisCharacter: job.analysis_options?.character,
               analysisTheme: job.analysis_options?.theme,
-              voiceId: job.voice_options?.voice_code,
+              voiceId: job.voice_options?.voice_id,
+              vcn: job.voice_options?.vcn,
               voiceName: job.voice_options?.voice_display_name,
               voiceLanguage: job.voice_options?.language,
-              customVoiceId: job.voice_options?.custom_voice_id,
               scriptLength: job.script_options?.length,
               scriptTone: job.script_options?.tone,
               isCustomized: true,

@@ -149,6 +149,18 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
     }
   }
 
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (videoRef.current && duration > 0) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const clickX = e.clientX - rect.left
+      const percentage = clickX / rect.width
+      const newTime = percentage * duration
+
+      videoRef.current.currentTime = newTime
+      setCurrentTime(newTime)
+    }
+  }
+
 
 
   return (
@@ -223,11 +235,14 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(({ src, 
 
       {/* Controls Overlay */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-        {/* Progress Bar - smaller and view-only */}
+        {/* Progress Bar - clickable for seeking */}
         <div className="mb-2">
-          <div className="w-full bg-white/20 rounded-full h-1">
+          <div
+            className="w-full bg-white/20 rounded-full h-2 cursor-pointer hover:h-3 transition-all duration-200"
+            onClick={handleSeek}
+          >
             <div
-              className="bg-white rounded-full h-1 transition-all duration-300"
+              className="bg-white rounded-full h-full transition-all duration-300"
               style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
             />
           </div>

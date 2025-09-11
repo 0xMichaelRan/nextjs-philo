@@ -2,10 +2,16 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Play, Pause, Mic, Check } from "lucide-react"
+import { Play, Pause, Mic, Check, ChevronDown, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 import { AppLayout } from "@/components/app-layout"
@@ -18,39 +24,7 @@ import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
 import { VoiceAudioPlayer } from "@/components/voice-audio-player"
-
-
-
-interface DefaultVoice {
-  id: string  // Backend returns string IDs
-  voice_code: string
-  voice_name: string  // Backend field name
-  display_name: string
-  description?: string
-  language: string
-  gender?: string
-  voice_file?: string
-  is_active: boolean
-  is_premium: boolean
-  voice_type: string
-  sort_order: number
-}
-
-interface CustomVoice {
-  id: string  // Now returns string ID like "custom_123"
-  voice_code: string  // Unified voice identifier
-  voice_name: string  // Backend field name
-  display_name: string
-  language: string
-  voice_file?: string
-  is_active: boolean
-  is_premium: boolean
-  voice_type: string
-  duration?: string
-  audio_url?: string
-  description?: string
-  created_at: string
-}
+import { Voice, VoiceConfig } from "@/types/voice"
 
 export default function VoiceSelectionWithJobPage() {
   const params = useParams()
@@ -62,12 +36,12 @@ export default function VoiceSelectionWithJobPage() {
   const [selectedResolution, setSelectedResolution] = useState<string>("480p")
   const [selectedSpeed, setSelectedSpeed] = useState<number>(50)
   const [playingVoice, setPlayingVoice] = useState<string | null>(null)
-  const [voices, setVoices] = useState<DefaultVoice[]>([])
+  const [voices, setVoices] = useState<Voice[]>([])
   const [loading, setLoading] = useState(true)
   const [audioProgress, setAudioProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
   const [voiceLanguage, setVoiceLanguage] = useState<"zh" | "en">("zh")
-  const [customVoices, setCustomVoices] = useState<CustomVoice[]>([])
+  const [customVoices, setCustomVoices] = useState<Voice[]>([])
   const [customVoicesLoading, setCustomVoicesLoading] = useState(false)
   const [vipLimits, setVipLimits] = useState<any>(null)
   const [showVipModal, setShowVipModal] = useState(false)
@@ -128,8 +102,8 @@ export default function VoiceSelectionWithJobPage() {
 
   // Initialize selected voice, resolution, and speed from flow state
   useEffect(() => {
-    if (flowState.voiceCode) {
-      setSelectedVoice(flowState.voiceCode)
+    if (flowState.voiceId) {
+      setSelectedVoice(flowState.voiceId.toString())
     }
     if (flowState.resolution) {
       setSelectedResolution(flowState.resolution)
@@ -137,7 +111,7 @@ export default function VoiceSelectionWithJobPage() {
     if (flowState.speed !== undefined) {
       setSelectedSpeed(flowState.speed)
     }
-  }, [flowState.voiceCode, flowState.resolution, flowState.speed])
+  }, [flowState.voiceId, flowState.resolution, flowState.speed])
 
   // Handle new voice selection from custom voice recording
   useEffect(() => {
@@ -302,15 +276,15 @@ export default function VoiceSelectionWithJobPage() {
     }
 
     // Update flow state with voice selection and job ID
-    const selectedVoiceData = voices.find(v => v.voice_code === selectedVoice)
-    const isCustomVoice = customVoices.some(cv => cv.id.toString() === selectedVoice)
+    const selectedVoiceId = parseInt(selectedVoice)
+    const selectedVoiceData = voices.find(v => v.id === selectedVoiceId) || customVoices.find(cv => cv.id === selectedVoiceId)
+    const isCustomVoice = customVoices.some(cv => cv.id === selectedVoiceId)
     const voiceConfig = {
-      voiceId: isCustomVoice ? "custom" : (selectedVoiceData?.voice_code || selectedVoice),
-      voiceCode: isCustomVoice ? selectedVoice : (selectedVoiceData?.voice_code || selectedVoice),
-      voiceName: isCustomVoice ? "Custom Voice" : (selectedVoiceData?.display_name || selectedVoiceData?.voice_code || ""),
+      voiceId: selectedVoiceId,
+      vcn: isCustomVoice ? undefined : selectedVoiceData?.vcn,
+      voiceName: selectedVoiceData?.display_name || "Unknown Voice",
       voiceLanguage: voiceLanguage,
-      customVoiceId: isCustomVoice ? selectedVoice : undefined,
-      ttsProvider: isCustomVoice ? "xfyun" : ttsProvider,
+      ttsProvider: "xfyun",
       analysisJobId: parseInt(jobId),
       resolution: selectedResolution,
       speed: selectedSpeed
@@ -364,7 +338,7 @@ export default function VoiceSelectionWithJobPage() {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title={t("voiceSelection.title")}>
         <div className={`min-h-screen ${themeClasses.background}`}>
           <div className="container mx-auto px-6 py-8">
             <div className="text-center py-8">
@@ -381,7 +355,7 @@ export default function VoiceSelectionWithJobPage() {
 
   return (
     <div className={`min-h-screen ${themeClasses.background}`}>
-      <AppLayout>
+      <AppLayout title={t("voiceSelection.title")}>
         <div className="container mx-auto px-6 py-8">
           {/* Header */}
           <div className="text-center mb-8">
@@ -410,19 +384,46 @@ export default function VoiceSelectionWithJobPage() {
               <label className={`text-sm font-medium ${themeClasses.text}`}>
                 {language === "zh" ? "语音速度:" : "Voice Speed:"}
               </label>
-              <select
-                value={selectedSpeed}
-                onChange={(e) => setSelectedSpeed(parseInt(e.target.value))}
-                className={`px-3 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 ${themeClasses.text} text-sm`}
-              >
-                <option value={20}>{language === "zh" ? "很慢 (20)" : "Very Slow (20)"}</option>
-                <option value={30}>{language === "zh" ? "慢 (30)" : "Slow (30)"}</option>
-                <option value={40}>{language === "zh" ? "较慢 (40)" : "Slower (40)"}</option>
-                <option value={50}>{language === "zh" ? "正常 (50)" : "Normal (50)"}</option>
-                <option value={60}>{language === "zh" ? "较快 (60)" : "Faster (60)"}</option>
-                <option value={70}>{language === "zh" ? "快 (70)" : "Fast (70)"}</option>
-                <option value={80}>{language === "zh" ? "很快 (80)" : "Very Fast (80)"}</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`text-xs ${theme === "light" ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50" : "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700"}`}
+                  >
+                    <Settings className="w-3 h-3 mr-1" />
+                    {(() => {
+                      if (selectedSpeed <= 20) return language === "zh" ? "很慢" : "Very Slow";
+                      if (selectedSpeed <= 30) return language === "zh" ? "慢" : "Slow";
+                      if (selectedSpeed <= 40) return language === "zh" ? "较慢" : "Slower";
+                      if (selectedSpeed <= 50) return language === "zh" ? "正常" : "Normal";
+                      if (selectedSpeed <= 60) return language === "zh" ? "较快" : "Faster";
+                      if (selectedSpeed <= 70) return language === "zh" ? "快" : "Fast";
+                      return language === "zh" ? "很快" : "Very Fast";
+                    })()} ({selectedSpeed})
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {[20, 30, 40, 50, 60, 70, 80].map((speed) => (
+                    <DropdownMenuItem
+                      key={speed}
+                      onClick={() => setSelectedSpeed(speed)}
+                      className={selectedSpeed === speed ? "bg-blue-100 dark:bg-blue-900" : ""}
+                    >
+                      {(() => {
+                        if (speed <= 20) return language === "zh" ? "很慢" : "Very Slow";
+                        if (speed <= 30) return language === "zh" ? "慢" : "Slow";
+                        if (speed <= 40) return language === "zh" ? "较慢" : "Slower";
+                        if (speed <= 50) return language === "zh" ? "正常" : "Normal";
+                        if (speed <= 60) return language === "zh" ? "较快" : "Faster";
+                        if (speed <= 70) return language === "zh" ? "快" : "Fast";
+                        return language === "zh" ? "很快" : "Very Fast";
+                      })()} ({speed})
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -478,24 +479,24 @@ export default function VoiceSelectionWithJobPage() {
               <Card
                 key={voice.id}
                 className={`${themeClasses.card} ${themeClasses.cardHover} ${
-                  selectedVoice === voice.voice_code ? themeClasses.selectedCard : themeClasses.hoverCard
+                  selectedVoice === voice.id ? themeClasses.selectedCard : themeClasses.hoverCard
                 } cursor-pointer transition-all duration-300`}
                 onClick={() => {
                   if (voice.is_premium && !user?.is_vip) {
                     setShowVipModal(true)
                     return
                   }
-                  setSelectedVoice(voice.voice_code)
+                  setSelectedVoice(voice.id.toString())
                   // Auto-play voice sample when selected
                   if (voice.voice_file) {
                     const audioUrl = `/static/voices/${voice.voice_file}`
-                    handlePlayAudio(voice.voice_code, audioUrl)
+                    handlePlayAudio(voice.id.toString(), audioUrl)
                   }
                 }}
               >
                 <CardContent className="p-6">
                   {/* Selection Indicator */}
-                  {selectedVoice === voice.voice_code ? (
+                  {selectedVoice === voice.id.toString() ? (
                     <div className="absolute top-4 right-4">
                       <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg">
                         <Check className="w-4 h-4 text-indigo-600" />
@@ -508,20 +509,20 @@ export default function VoiceSelectionWithJobPage() {
                   {/* Voice Info */}
                   <div className="space-y-4">
                     <div>
-                      <h3 className={`${selectedVoice === voice.voice_code ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
+                      <h3 className={`${selectedVoice === voice.id.toString() ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
                         {voice.display_name}
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         <Badge
                           variant="outline"
-                          className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                          className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                         >
                           {voice.language === "zh" ? "中文" : "English"}
                         </Badge>
                         {voice.gender && (
                           <Badge
                             variant="outline"
-                            className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                            className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                           >
                             {voice.gender === "male" ? (language === "zh" ? "男声" : "Male") : (language === "zh" ? "女声" : "Female")}
                           </Badge>
@@ -537,12 +538,12 @@ export default function VoiceSelectionWithJobPage() {
                     {/* Status Text */}
                     <div className="text-center">
                       {voice.is_premium && !user?.is_vip ? (
-                        <span className={`text-sm ${selectedVoice === voice.voice_code ? 'text-white/80' : themeClasses.secondaryText}`}>
+                        <span className={`text-sm ${selectedVoice === voice.id ? 'text-white/80' : themeClasses.secondaryText}`}>
                           {language === "zh" ? "需要VIP会员" : "VIP Required"}
                         </span>
-                      ) : selectedVoice === voice.voice_code ? (
+                      ) : selectedVoice === voice.id ? (
                         <span className="text-white/90 text-sm font-medium">
-                          {playingVoice === voice.voice_code
+                          {playingVoice === voice.id
                             ? (language === "zh" ? "正在播放..." : "Playing...")
                             : (language === "zh" ? "已选择" : "Selected")
                           }
@@ -617,22 +618,22 @@ export default function VoiceSelectionWithJobPage() {
                     <Card
                       key={voice.id}
                       className={`${themeClasses.card} ${themeClasses.cardHover} ${
-                        selectedVoice === voice.voice_code ? themeClasses.selectedCard : themeClasses.hoverCard
+                        selectedVoice === voice.id ? themeClasses.selectedCard : themeClasses.hoverCard
                       } cursor-pointer transition-all duration-300`}
                       onClick={() => {
-                        setSelectedVoice(voice.voice_code)
+                        setSelectedVoice(voice.id)
                         // Auto-play custom voice sample when selected
                         if (voice.voice_file) {
                           const audioUrl = voice.voice_type === "custom"
                             ? `/static/new_voices/uid${user?.id}/${voice.voice_file}`
                             : `/static/voices/${voice.voice_file}`
-                          handlePlayAudio(voice.voice_code, audioUrl)
+                          handlePlayAudio(voice.id, audioUrl)
                         }
                       }}
                     >
                       <CardContent className="p-6">
                         {/* Selection Indicator */}
-                        {selectedVoice === voice.voice_code ? (
+                        {selectedVoice === voice.id ? (
                           <div className="absolute top-4 right-4">
                             <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg">
                               <Check className="w-4 h-4 text-indigo-600" />
@@ -645,13 +646,13 @@ export default function VoiceSelectionWithJobPage() {
                         {/* Voice Info */}
                         <div className="space-y-4">
                           <div>
-                            <h3 className={`${selectedVoice === voice.voice_code ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
+                            <h3 className={`${selectedVoice === voice.id ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
                               {voice.display_name}
                             </h3>
                             <div className="flex flex-wrap gap-2">
                               <Badge
                                 variant="outline"
-                                className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                                className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                               >
                                 {voice.language === "zh" ? "中文" : "English"}
                               </Badge>
@@ -661,7 +662,7 @@ export default function VoiceSelectionWithJobPage() {
                               {voice.duration && (
                                 <Badge
                                   variant="outline"
-                                  className={`text-xs ${selectedVoice === voice.voice_code ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                                  className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                                 >
                                   {voice.duration}
                                 </Badge>
@@ -671,9 +672,9 @@ export default function VoiceSelectionWithJobPage() {
 
                           {/* Status Text */}
                           <div className="text-center">
-                            {selectedVoice === voice.voice_code ? (
+                            {selectedVoice === voice.id ? (
                               <span className="text-white/90 text-sm font-medium">
-                                {playingVoice === voice.voice_code
+                                {playingVoice === voice.id
                                   ? (language === "zh" ? "正在播放..." : "Playing...")
                                   : (language === "zh" ? "已选择" : "Selected")
                                 }

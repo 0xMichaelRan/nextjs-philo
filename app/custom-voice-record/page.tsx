@@ -302,6 +302,13 @@ export default function CustomVoiceRecordPage() {
 
     setIsSaving(true)
     try {
+      // Process display name: remove special chars, replace spaces with underscores, trim
+      const processedName = recordingName
+        .trim()
+        .replace(/[^a-zA-Z0-9\s\u4e00-\u9fff]/g, '') // Remove special chars, keep Chinese chars
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .trim()
+
       // Create FormData for file upload
       const formData = new FormData()
 
@@ -311,8 +318,8 @@ export default function CustomVoiceRecordPage() {
                            audioBlob.type.includes('webm') ? 'webm' :
                            audioBlob.type.includes('ogg') ? 'ogg' : 'webm'
 
-      formData.append('audio', audioBlob, `${recordingName}.${fileExtension}`)
-      formData.append('name', recordingName)
+      formData.append('audio', audioBlob, `${processedName}.${fileExtension}`)
+      formData.append('name', processedName)
       formData.append('language', recordLanguage)
 
       // Upload to backend API
@@ -560,6 +567,12 @@ export default function CustomVoiceRecordPage() {
                       id="voiceName"
                       value={recordingName}
                       onChange={(e) => setRecordingName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && recordingName.trim() && !isSaving) {
+                          e.preventDefault()
+                          saveRecording()
+                        }
+                      }}
                       placeholder={t("customVoice.namePlaceholder")}
                       className={`${themeClasses.card} ${themeClasses.text}`}
                     />
