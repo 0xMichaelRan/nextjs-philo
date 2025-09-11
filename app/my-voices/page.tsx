@@ -15,20 +15,10 @@ import { apiConfig } from "@/lib/api-config"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
-
-interface CustomVoice {
-  id: string  // Changed from number to string since backend returns "custom_X" format
-  name: string
-  display_name: string
-  language: string
-  created_at: string
-  file_size_mb?: number
-  voice_file: string  // The actual field returned by the API
-  duration?: string
-}
+import { Voice } from "@/types/voice"
 
 interface VoicesData {
-  voices: CustomVoice[]
+  voices: Voice[]
   total: number
   limits: {
     custom_voices: number
@@ -107,7 +97,7 @@ export default function MyVoicesPage() {
           voices: voices || [],
           total: voices?.length || 0,
           limits: {
-            custom_voices: vipStatus?.is_svip ? 10 : 2, // VIP: 2, SVIP: 10
+            custom_voices: vipStatus?.is_svip ? 10 : vipStatus?.is_vip ? 3 : 1, // Free: 1, VIP: 3, SVIP: 10
             current_plan: vipStatus?.is_svip ? "SVIP" : vipStatus?.is_vip ? "VIP" : "Free"
           }
         }
@@ -127,7 +117,7 @@ export default function MyVoicesPage() {
         voices: [],
         total: 0,
         limits: {
-          custom_voices: vipStatus?.is_svip ? 10 : 2,
+          custom_voices: vipStatus?.is_svip ? 10 : vipStatus?.is_vip ? 2 : 0, // Free: 0, VIP: 2, SVIP: 10
           current_plan: vipStatus?.is_svip ? "SVIP" : vipStatus?.is_vip ? "VIP" : "Free"
         }
       })
@@ -304,9 +294,9 @@ export default function MyVoicesPage() {
                       : "border-transparent hover:border-purple-200 dark:hover:border-purple-700"
                   }`}
                   onClick={() => {
-                    if (voice.voice_file && user?.id) {
-                      // Construct audio URL for custom voices
-                      const audioUrl = `/static/new_voices/uid${user.id}/${voice.voice_file}`
+                    if (voice.voice_file) {
+                      // voice_file already contains the full path with user ID prefix (e.g., "uid11/filename.wav")
+                      const audioUrl = `/static/new_voices/${voice.voice_file}`
                       playVoice(voice.id, audioUrl)
                     }
                   }}

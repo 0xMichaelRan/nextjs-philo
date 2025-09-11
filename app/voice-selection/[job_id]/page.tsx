@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Play, Pause, Mic, Check, ChevronDown, Settings } from "lucide-react"
+import { Mic, Check, ChevronDown, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
-import { VoiceAudioPlayer } from "@/components/voice-audio-player"
+
 import { Voice, VoiceConfig } from "@/types/voice"
 
 export default function VoiceSelectionWithJobPage() {
@@ -479,7 +479,7 @@ export default function VoiceSelectionWithJobPage() {
               <Card
                 key={voice.id}
                 className={`${themeClasses.card} ${themeClasses.cardHover} ${
-                  selectedVoice === voice.id ? themeClasses.selectedCard : themeClasses.hoverCard
+                  selectedVoice === voice.id.toString() ? themeClasses.selectedCard : themeClasses.hoverCard
                 } cursor-pointer transition-all duration-300`}
                 onClick={() => {
                   if (voice.is_premium && !user?.is_vip) {
@@ -515,14 +515,14 @@ export default function VoiceSelectionWithJobPage() {
                       <div className="flex flex-wrap gap-2">
                         <Badge
                           variant="outline"
-                          className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                          className={`text-xs ${selectedVoice === voice.id.toString() ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                         >
                           {voice.language === "zh" ? "中文" : "English"}
                         </Badge>
                         {voice.gender && (
                           <Badge
                             variant="outline"
-                            className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                            className={`text-xs ${selectedVoice === voice.id.toString() ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                           >
                             {voice.gender === "male" ? (language === "zh" ? "男声" : "Male") : (language === "zh" ? "女声" : "Female")}
                           </Badge>
@@ -538,12 +538,12 @@ export default function VoiceSelectionWithJobPage() {
                     {/* Status Text */}
                     <div className="text-center">
                       {voice.is_premium && !user?.is_vip ? (
-                        <span className={`text-sm ${selectedVoice === voice.id ? 'text-white/80' : themeClasses.secondaryText}`}>
+                        <span className={`text-sm ${selectedVoice === voice.id.toString() ? 'text-white/80' : themeClasses.secondaryText}`}>
                           {language === "zh" ? "需要VIP会员" : "VIP Required"}
                         </span>
-                      ) : selectedVoice === voice.id ? (
+                      ) : selectedVoice === voice.id.toString() ? (
                         <span className="text-white/90 text-sm font-medium">
-                          {playingVoice === voice.id
+                          {playingVoice === voice.id.toString()
                             ? (language === "zh" ? "正在播放..." : "Playing...")
                             : (language === "zh" ? "已选择" : "Selected")
                           }
@@ -618,22 +618,22 @@ export default function VoiceSelectionWithJobPage() {
                     <Card
                       key={voice.id}
                       className={`${themeClasses.card} ${themeClasses.cardHover} ${
-                        selectedVoice === voice.id ? themeClasses.selectedCard : themeClasses.hoverCard
+                        selectedVoice === voice.id.toString() ? themeClasses.selectedCard : themeClasses.hoverCard
                       } cursor-pointer transition-all duration-300`}
                       onClick={() => {
-                        setSelectedVoice(voice.id)
+                        setSelectedVoice(voice.id.toString())
                         // Auto-play custom voice sample when selected
                         if (voice.voice_file) {
                           const audioUrl = voice.voice_type === "custom"
-                            ? `/static/new_voices/uid${user?.id}/${voice.voice_file}`
+                            ? `/static/new_voices/${voice.voice_file}` // voice_file already contains uid prefix
                             : `/static/voices/${voice.voice_file}`
-                          handlePlayAudio(voice.id, audioUrl)
+                          handlePlayAudio(voice.id.toString(), audioUrl)
                         }
                       }}
                     >
                       <CardContent className="p-6">
                         {/* Selection Indicator */}
-                        {selectedVoice === voice.id ? (
+                        {selectedVoice === voice.id.toString() ? (
                           <div className="absolute top-4 right-4">
                             <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg">
                               <Check className="w-4 h-4 text-indigo-600" />
@@ -646,13 +646,13 @@ export default function VoiceSelectionWithJobPage() {
                         {/* Voice Info */}
                         <div className="space-y-4">
                           <div>
-                            <h3 className={`${selectedVoice === voice.id ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
+                            <h3 className={`${selectedVoice === voice.id.toString() ? 'text-white' : themeClasses.text} font-semibold text-lg mb-2`}>
                               {voice.display_name}
                             </h3>
                             <div className="flex flex-wrap gap-2">
                               <Badge
                                 variant="outline"
-                                className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                                className={`text-xs ${selectedVoice === voice.id.toString() ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                               >
                                 {voice.language === "zh" ? "中文" : "English"}
                               </Badge>
@@ -662,7 +662,7 @@ export default function VoiceSelectionWithJobPage() {
                               {voice.duration && (
                                 <Badge
                                   variant="outline"
-                                  className={`text-xs ${selectedVoice === voice.id ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
+                                  className={`text-xs ${selectedVoice === voice.id.toString() ? 'text-white border-white/50' : `${themeClasses.text} border-gray-300 dark:border-gray-600`}`}
                                 >
                                   {voice.duration}
                                 </Badge>
@@ -672,9 +672,9 @@ export default function VoiceSelectionWithJobPage() {
 
                           {/* Status Text */}
                           <div className="text-center">
-                            {selectedVoice === voice.id ? (
+                            {selectedVoice === voice.id.toString() ? (
                               <span className="text-white/90 text-sm font-medium">
-                                {playingVoice === voice.id
+                                {playingVoice === voice.id.toString()
                                   ? (language === "zh" ? "正在播放..." : "Playing...")
                                   : (language === "zh" ? "已选择" : "Selected")
                                 }

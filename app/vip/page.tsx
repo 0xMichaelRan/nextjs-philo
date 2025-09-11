@@ -16,6 +16,7 @@ interface VipStatus {
   plan: string
   plan_code: string
   is_vip: boolean
+  is_svip?: boolean
   vip_expiry_date: string | null
   limits: {
     pending_jobs: number
@@ -46,6 +47,102 @@ interface VipStatus {
     vip: any
     svip: any
   }
+}
+
+// Helper function to determine button action type
+const getButtonAction = (plan: any, vipStatus: VipStatus | null, user: any) => {
+  if (!user) return 'subscribe'
+  if (plan.id === 'free') return 'current'
+
+  const currentPlan = vipStatus?.plan_code?.toLowerCase() || 'free'
+  const targetPlan = plan.id
+
+  if (currentPlan === targetPlan) return 'extend'
+  if (currentPlan === 'free') return 'subscribe'
+  if (currentPlan === 'vip' && targetPlan === 'svip') return 'upgrade'
+  if (currentPlan === 'svip' && targetPlan === 'vip') return 'downgrade'
+
+  return 'subscribe'
+}
+
+// Helper function to get button style based on action
+const getButtonStyle = (plan: any, vipStatus: VipStatus | null) => {
+  const action = getButtonAction(plan, vipStatus, vipStatus?.is_vip ? { is_vip: true } : null)
+
+  if (plan.id === 'free') {
+    return 'bg-gray-500 hover:bg-gray-600'
+  }
+
+  switch (action) {
+    case 'upgrade':
+      return 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+    case 'downgrade':
+      return 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'
+    case 'extend':
+      return 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+    case 'subscribe':
+    default:
+      return plan.popular
+        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+        : plan.id === 'svip'
+          ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'
+          : 'bg-purple-600 hover:bg-purple-700'
+  }
+}
+
+// Helper function to determine if button should be disabled
+const getButtonDisabled = (plan: any, vipStatus: VipStatus | null, user: any) => {
+  if (plan.id === 'free') return true
+
+  const action = getButtonAction(plan, vipStatus, user)
+
+  // Disable downgrade for now (can be enabled if business logic allows)
+  if (action === 'downgrade') return true
+
+  return false
+}
+
+// Helper function to get button content
+const getButtonContent = (plan: any, vipStatus: VipStatus | null, user: any, language: string) => {
+  const action = getButtonAction(plan, vipStatus, user)
+
+  if (plan.id === 'free') {
+    return language === 'zh' ? '当前计划' : 'Current Plan'
+  }
+
+  const getIcon = () => {
+    switch (action) {
+      case 'upgrade':
+        return <Star className="w-4 h-4 mr-2" />
+      case 'extend':
+        return <Calendar className="w-4 h-4 mr-2" />
+      case 'downgrade':
+        return <ChevronDown className="w-4 h-4 mr-2" />
+      default:
+        return <Crown className="w-4 h-4 mr-2" />
+    }
+  }
+
+  const getText = () => {
+    switch (action) {
+      case 'upgrade':
+        return language === 'zh' ? '升级' : 'Upgrade'
+      case 'downgrade':
+        return language === 'zh' ? '不可降级' : 'Cannot Downgrade'
+      case 'extend':
+        return language === 'zh' ? '续费' : 'Extend'
+      case 'subscribe':
+      default:
+        return language === 'zh' ? '订阅' : 'Subscribe'
+    }
+  }
+
+  return (
+    <>
+      {getIcon()}
+      {getText()}
+    </>
+  )
 }
 
 const plans = [
@@ -484,46 +581,11 @@ export default function VipPage() {
 
                       <Button
                         onClick={() => handleSubscribe(plan.id)}
-                        className={`w-full ${
-                          plan.id === "free"
-                            ? "bg-gray-500 hover:bg-gray-600"
-                            : plan.popular
-                              ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                              : plan.id === "svip"
-                                ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                                : "bg-purple-600 hover:bg-purple-700"
-                        } text-white`}
+                        className={`w-full ${getButtonStyle(plan, vipStatus)} text-white`}
                         size="lg"
-                        disabled={
-                          plan.id === "free" ||
-                          (vipStatus?.plan === "SVIP" && plan.id === "vip") // Disable VIP for SVIP users
-                        }
+                        disabled={getButtonDisabled(plan, vipStatus, user)}
                       >
-                        {plan.id === "free" ? (
-                          t("vip.currentPlan")
-                        ) : vipStatus?.plan === "SVIP" && plan.id === "vip" ? (
-                          language === "zh" ? "不可降级" : "Cannot Downgrade"
-                        ) : !user ? (
-                          <>
-                            <Crown className="w-4 h-4 mr-2" />
-                            {language === "zh" ? "选择此计划" : "Choose Plan"}
-                          </>
-                        ) : user.is_vip && plan.id === vipStatus?.plan_code?.toLowerCase() ? (
-                          <>
-                            <Crown className="w-4 h-4 mr-2" />
-                            {language === "zh" ? "续费" : "Renew"}
-                          </>
-                        ) : user.is_vip && vipStatus?.plan_code === "vip" && plan.id === "svip" ? (
-                          <>
-                            <Crown className="w-4 h-4 mr-2" />
-                            {language === "zh" ? "升级到SVIP" : "Upgrade to SVIP"}
-                          </>
-                        ) : (
-                          <>
-                            <Crown className="w-4 h-4 mr-2" />
-                            {t("vip.subscribe")}
-                          </>
-                        )}
+                        {getButtonContent(plan, vipStatus, user, language)}
                       </Button>
                     </CardContent>
                   </Card>
