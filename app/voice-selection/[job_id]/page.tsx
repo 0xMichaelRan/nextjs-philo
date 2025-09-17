@@ -58,9 +58,9 @@ export default function VoiceSelectionWithJobPage() {
   // Set page title
   usePageTitle("voiceSelection")
 
-  // Fetch custom voices for VIP users
+  // Fetch custom voices for all users (free users now get 1 custom voice)
   const fetchCustomVoices = async () => {
-    if (!user?.is_vip || !user?.id) return
+    if (!user?.id) return
 
     try {
       setCustomVoicesLoading(true)
@@ -560,13 +560,20 @@ export default function VoiceSelectionWithJobPage() {
             ))}
           </div>
 
-          {/* Custom Voice Section for VIP Users */}
-          {user?.is_vip && (
+          {/* Custom Voice Section for All Users (Free users get 1 custom voice as limited-time offering) */}
+          {user && (
             <div className="mb-8">
               <div className="text-center mb-6">
-                <h3 className={`text-2xl font-bold ${themeClasses.text} mb-2`}>
-                  {language === "zh" ? "自定义语音" : "Custom Voices"}
-                </h3>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <h3 className={`text-2xl font-bold ${themeClasses.text}`}>
+                    {language === "zh" ? "自定义语音" : "Custom Voices"}
+                  </h3>
+                  {!user?.is_vip && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                      {language === "zh" ? "限免" : "Limited Time"}
+                    </span>
+                  )}
+                </div>
                 <p className={`${themeClasses.secondaryText} mb-4`}>
                   {language === "zh" ? "使用您自己录制的语音" : "Use your own recorded voice"}
                 </p>
@@ -578,7 +585,7 @@ export default function VoiceSelectionWithJobPage() {
                       {language === "zh" ? "自定义语音:" : "Custom Voices:"}
                     </span>
                     <span className={`text-sm font-semibold ${themeClasses.text}`}>
-                      {customVoices.length} / {vipLimits.plan === 'SVIP' ? 10 : (vipLimits.plan === 'VIP' ? 2 : 0)}
+                      {customVoices.length} / {vipLimits?.limits?.max_custom_voices || 1}
                     </span>
                   </div>
                 )}
@@ -587,7 +594,8 @@ export default function VoiceSelectionWithJobPage() {
                 <div className="flex justify-center space-x-4">
                   <Button
                     onClick={() => {
-                      if (vipLimits && customVoices.length >= (vipLimits.plan === 'SVIP' ? 10 : 2)) {
+                      const maxCustomVoices = vipLimits?.limits?.max_custom_voices || 1
+                      if (customVoices.length >= maxCustomVoices) {
                         setShowVipModal(true)
                       } else {
                         // Store current state in localStorage for return and auto-selection

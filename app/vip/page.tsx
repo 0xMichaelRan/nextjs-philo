@@ -516,11 +516,11 @@ export default function VipPage() {
                     : (language === "zh" ? "升级到VIP会员" : "Upgrade to VIP Membership")
                 }
               </h2>
-              {user?.is_vip && vipStatus && (
+              {user && vipStatus && (
                 <p className={`${themeClasses.secondaryText} text-center mb-8`}>
                   {language === "zh"
-                    ? `当前计划: ${vipStatus.plan} | 到期时间: ${vipStatus.vip_expiry_date ? new Date(vipStatus.vip_expiry_date).toLocaleDateString() : '永久'}`
-                    : `Current Plan: ${vipStatus.plan} | Expires: ${vipStatus.vip_expiry_date ? new Date(vipStatus.vip_expiry_date).toLocaleDateString() : 'Lifetime'}`
+                    ? `当前计划: ${vipStatus.is_svip ? 'SVIP' : vipStatus.is_vip ? 'VIP' : '免费'} ${vipStatus.is_vip && vipStatus.vip_expiry_date ? `| 到期时间: ${new Date(vipStatus.vip_expiry_date).toLocaleDateString()}` : ''}`
+                    : `Current Plan: ${vipStatus.is_svip ? 'SVIP' : vipStatus.is_vip ? 'VIP' : 'Free'} ${vipStatus.is_vip && vipStatus.vip_expiry_date ? `| Expires: ${new Date(vipStatus.vip_expiry_date).toLocaleDateString()}` : ''}`
                   }
                 </p>
               )}

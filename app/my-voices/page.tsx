@@ -43,10 +43,12 @@ interface UserLimits {
 export default function MyVoicesPage() {
   const [voicesData, setVoicesData] = useState<VoicesData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [playingVoice, setPlayingVoice] = useState<string | null>(null)
+  const [playingVoice, setPlayingVoice] = useState<number | null>(null)
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null)
-  const [deletingVoice, setDeletingVoice] = useState<string | null>(null)
+  const [deletingVoice, setDeletingVoice] = useState<number | null>(null)
   const [userLimits, setUserLimits] = useState<UserLimits | null>(null)
+  const [currentTime, setCurrentTime] = useState<number>(0)
+  const [duration, setDuration] = useState<number>(0)
 
   const { theme } = useTheme()
   const { language, t } = useLanguage()
@@ -76,6 +78,9 @@ export default function MyVoicesPage() {
     return () => {
       if (audioElement) {
         audioElement.pause()
+        setPlayingVoice(null)
+        setCurrentTime(0)
+        setDuration(0)
       }
     }
   }, [user, router])
@@ -103,15 +108,15 @@ export default function MyVoicesPage() {
       const response = await apiConfig.makeAuthenticatedRequest(
         apiConfig.voices.custom()
       )
-      
+
       if (response.ok) {
-        const voices: CustomVoice[] = await response.json()
+        const voices: Voice[] = await response.json()
         // Transform API response to expected format
         const data: VoicesData = {
           voices: voices || [],
           total: voices?.length || 0,
           limits: {
-            custom_voices: userLimits?.limits?.max_custom_voices || 1, // Get from backend API
+            custom_voices: userLimits?.limits?.max_custom_voices || 1,
             current_plan: userLimits?.plan || "Free"
           }
         }
@@ -131,7 +136,7 @@ export default function MyVoicesPage() {
         voices: [],
         total: 0,
         limits: {
-          custom_voices: userLimits?.limits?.max_custom_voices || 1, // Get from backend API
+          custom_voices: userLimits?.limits?.max_custom_voices || 1,
           current_plan: userLimits?.plan || "Free"
         }
       })
@@ -140,31 +145,21 @@ export default function MyVoicesPage() {
     }
   }
 
-  const deleteVoice = async (voiceId: string) => {
+  const deleteVoice = async (voiceId: number) => {
     try {
       // Stop any playing audio when delete button is clicked
       if (audioElement) {
         audioElement.pause()
         setPlayingVoice(null)
         setAudioElement(null)
+        setCurrentTime(0)
+        setDuration(0)
       }
 
       setDeletingVoice(voiceId)
 
-      // Extract numeric ID from "custom_X" format or use as-is if already numeric
-      let numericId: number
-      if (typeof voiceId === 'string' && voiceId.startsWith('custom_')) {
-        numericId = parseInt(voiceId.replace('custom_', ''))
-      } else {
-        numericId = parseInt(voiceId.toString())
-      }
-
-      if (isNaN(numericId)) {
-        throw new Error(`Invalid voice ID: ${voiceId}`)
-      }
-
       const response = await apiConfig.makeAuthenticatedRequest(
-        apiConfig.voices.deleteCustom(numericId),
+        apiConfig.voices.deleteCustom(voiceId),
         { method: 'DELETE' }
       )
       
@@ -190,12 +185,20 @@ export default function MyVoicesPage() {
     }
   }
 
-  const playVoice = (voiceId: string, audioUrl: string) => {
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const playVoice = (voiceId: number, audioUrl: string) => {
     if (playingVoice === voiceId) {
       if (audioElement) {
         audioElement.pause()
       }
       setPlayingVoice(null)
+      setCurrentTime(0)
+      setDuration(0)
       return
     }
 
@@ -214,9 +217,23 @@ export default function MyVoicesPage() {
     const newAudio = new Audio(fullAudioUrl)
     setAudioElement(newAudio)
     setPlayingVoice(voiceId)
-    
+
+    // Set up audio event listeners
+    newAudio.addEventListener('loadedmetadata', () => {
+      setDuration(newAudio.duration)
+    })
+
+    newAudio.addEventListener('timeupdate', () => {
+      setCurrentTime(newAudio.currentTime)
+    })
+
+    newAudio.addEventListener('ended', () => {
+      setPlayingVoice(null)
+      setCurrentTime(0)
+      setDuration(0)
+    })
+
     newAudio.play()
-    newAudio.onended = () => setPlayingVoice(null)
   }
 
   // Removed selectVoice function - selection only happens in voice-selection page
@@ -248,7 +265,7 @@ export default function MyVoicesPage() {
     voicesData.voices.length < voicesData.limits.custom_voices :
     false
 
-  const maxVoices = voicesData?.limits?.custom_voices || 1
+  const maxVoices = userLimits?.limits?.max_custom_voices || 1
 
   return (
     <div className={themeClasses.background}>
@@ -324,10 +341,10 @@ export default function MyVoicesPage() {
                   }}
                 >
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
                         {/* Voice indicator circle */}
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                           playingVoice === voice.id
                             ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
                             : "border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400"
@@ -339,20 +356,14 @@ export default function MyVoicesPage() {
                           )}
                         </div>
 
-                        <div>
-                          <h3 className={`${themeClasses.text} font-semibold text-lg`}>
+                        <div className="min-w-0 flex-1">
+                          <h3 className={`${themeClasses.text} font-semibold text-lg truncate`}>
                             {voice.display_name}
                           </h3>
-                          <p className={`${themeClasses.textSecondary} text-sm`}>
-                            {t("myVoices.customVoice")}
-                          </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={voice.language === "zh" ? "default" : "secondary"}>
-                          {voice.language === "zh" ? "中文" : "English"}
-                        </Badge>
+                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                         <Button
                           variant="destructive"
                           size="sm"
@@ -379,7 +390,10 @@ export default function MyVoicesPage() {
                       <div className="flex items-center space-x-2">
                         <HardDrive className="w-4 h-4 text-gray-400" />
                         <span className={themeClasses.textSecondary}>
-                          {voice.duration || "0:00"}
+                          {playingVoice === voice.id && duration > 0
+                            ? `${formatTime(currentTime)} / ${formatTime(duration)}`
+                            : voice.duration || "0:00"
+                          }
                         </span>
                       </div>
                     </div>
@@ -390,6 +404,16 @@ export default function MyVoicesPage() {
                         <p className="text-purple-600 dark:text-purple-400 text-sm font-medium">
                           {t("myVoices.playing")}
                         </p>
+                        {duration > 0 && (
+                          <div className="mt-2">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+                              <div
+                                className="bg-purple-600 h-1 rounded-full transition-all duration-300"
+                                style={{ width: `${(currentTime / duration) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>

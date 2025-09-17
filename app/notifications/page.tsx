@@ -451,6 +451,10 @@ export default function NotificationsPage() {
                                 <Button
                                   onClick={(e) => {
                                     e.stopPropagation()
+                                    // Mark notification as read when clicking CTA button
+                                    if (!notification.is_read) {
+                                      markAsRead(notification.id)
+                                    }
                                     handleCtaClick(notification.cta_url!)
                                   }}
                                   size="sm"

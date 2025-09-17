@@ -324,6 +324,9 @@ export default function PaymentPage() {
       return
     }
 
+    // Scroll to top when payment button is clicked
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
     setIsProcessing(true)
 
     try {

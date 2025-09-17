@@ -68,12 +68,12 @@ export default function CustomVoiceRecordPage() {
     return language === "zh" ? `${randomAdjective}的${randomNoun}` : `${randomAdjective} ${randomNoun}`
   }
 
-  // Check VIP status
+  // Check user login status (removed VIP restriction since free users now get 1 custom voice)
   useEffect(() => {
-    if (!user || !user.is_vip) {
+    if (!user) {
       const returnTo = searchParams.get("returnTo") || "/voice-selection"
       const cleanReturnTo = returnTo.startsWith('/') ? returnTo : `/${returnTo}`
-      router.push(`${cleanReturnTo}?${searchParams.toString()}`)
+      router.push(`/auth?redirect=${encodeURIComponent(cleanReturnTo)}`)
     }
     // Set record language to match UI language
     setRecordLanguage(language as "zh" | "en")
@@ -370,7 +370,7 @@ export default function CustomVoiceRecordPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  if (!user || !user.is_vip) {
+  if (!user) {
     return null // Will redirect in useEffect
   }
 
@@ -418,7 +418,13 @@ export default function CustomVoiceRecordPage() {
                 </Button>
               </div>
 
-              <Badge className="bg-yellow-500 text-black">VIP</Badge>
+              {user.is_vip ? (
+                <Badge className="bg-yellow-500 text-black">VIP</Badge>
+              ) : (
+                <Badge className="bg-green-500 text-white">
+                  {language === "zh" ? "限免" : "Limited Time"}
+                </Badge>
+              )}
             </div>
           </div>
 
