@@ -16,6 +16,7 @@ import {
 
 import { AppLayout } from "@/components/app-layout"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { MobileBottomBar } from "@/components/mobile-bottom-bar"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -708,13 +709,27 @@ export default function VoiceSelectionWithJobPage() {
           <audio ref={audioRef} onEnded={() => setPlayingVoice(null)} onError={() => setPlayingVoice(null)} />
         </div>
 
-        {/* Bottom Navigation */}
-        <BottomNavigation
-          onNext={handleNext}
-          nextDisabled={!selectedVoice}
-          nextLabel={t("voiceSelection.generateScript")}
-        />
+        {/* Navigation Buttons - Hidden on mobile (shown in fixed bottom bar) */}
+        <div className="pt-6 hidden md:block">
+          <BottomNavigation
+            onNext={handleNext}
+            nextDisabled={!selectedVoice}
+            nextLabel={t("voiceSelection.generateScript")}
+          />
+        </div>
       </AppLayout>
+
+      {/* Mobile Bottom Bar */}
+      <MobileBottomBar>
+        <Button
+          onClick={handleNext}
+          disabled={!selectedVoice}
+          size="lg"
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 disabled:opacity-50"
+        >
+          {t("voiceSelection.generateScript")}
+        </Button>
+      </MobileBottomBar>
 
       {/* VIP Upgrade Modal */}
       <VipUpgradeModal

@@ -43,12 +43,13 @@ app/
 ### Key Features to Maintain
 - **Multi-language**: All text must support Chinese and English
 - **Theme switching**: Components must work in light/dark modes
-- **VIP features**: Proper VIP/SVIP gating for premium features
-- **Audio handling**: Voice selection and custom voice recording
+- **VIP features**: Proper VIP/SVIP gating for premium features (FREE: 1 custom voice, VIP: 3 custom voices, SVIP: 10 custom voices)
+- **Audio handling**: Voice selection and custom voice recording with "限免"/"Limited Time" tags for free users
 - **Real-time updates**: Server-Sent Events (SSE) for instant job status and notifications
-- **Video playback**: Completed videos served from backend with proper authentication
+- **Video playbook**: Completed videos served from backend with proper authentication
 - **Phone number authentication**: Primary auth method with verification codes
 - **Password reset**: Phone-based password reset with verification
+- **Custom voice limits**: Fetch max_custom_voices from backend API, not hardcoded values
 
 ### Development Guidelines
 1. Always test both language modes (zh/en)

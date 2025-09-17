@@ -29,7 +29,7 @@ interface Movie {
 
 // Removed fallbackMovies - show empty list if API fails
 
-const recentSearches = ["肖申克的救赎", "黑暗骑士", "教父", "盗梦空间"]
+// Recent searches will be loaded from localStorage
 
 const recommendedKeywords = [
   { keyword: "黑暗骑士", keywordEn: "The Dark Knight" },
@@ -46,6 +46,7 @@ export default function MovieSelectionPage() {
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([])
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [recentSearches, setRecentSearches] = useState<string[]>([])
 
   // Movie selection doesn't require authentication
   useAuthGuard({ requireAuth: false })
@@ -58,8 +59,18 @@ export default function MovieSelectionPage() {
   // Note: Flow state is only cleared when a different movie is selected in movie detail page
   // This allows users to navigate back and forth without losing their progress
 
-  // Fetch popular movies on component mount
+  // Load recent searches from localStorage and fetch popular movies on component mount
   useEffect(() => {
+    // Load recent searches from localStorage
+    const savedSearches = localStorage.getItem('movieRecentSearches')
+    if (savedSearches) {
+      try {
+        setRecentSearches(JSON.parse(savedSearches))
+      } catch (error) {
+        console.error('Error parsing recent searches:', error)
+      }
+    }
+
     fetchPopularMovies()
   }, [])
 
@@ -148,15 +159,28 @@ export default function MovieSelectionPage() {
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     searchMovies(query)
+    // Save to recent searches when user actually searches (not just typing)
+    if (query.trim() && query.length > 1) {
+      saveToRecentSearches(query.trim())
+    }
   }
 
   const handleSearchFocus = () => {
     setShowSearchSuggestions(true)
   }
 
+  const saveToRecentSearches = (searchTerm: string) => {
+    if (!searchTerm.trim()) return
+
+    const updatedSearches = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5)
+    setRecentSearches(updatedSearches)
+    localStorage.setItem('movieRecentSearches', JSON.stringify(updatedSearches))
+  }
+
   const handleKeywordClick = (keyword: string) => {
     setSearchQuery(keyword)
     handleSearch(keyword)
+    saveToRecentSearches(keyword)
     setShowSearchSuggestions(false)
   }
 

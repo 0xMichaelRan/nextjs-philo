@@ -496,6 +496,37 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                   <span className="text-sm">{t("nav.logout")}</span>
                 </Button>
               )}
+
+              {/* Company Logo and Legal Links */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {/* Company Logo */}
+                <div className="flex items-center justify-center mb-4">
+                  <Play className={`w-5 h-5 mr-2 ${theme === "light" ? "text-purple-600" : "text-orange-400"}`} />
+                  <span className={`font-semibold text-sm ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>
+                    {language === "zh" ? "电影哲学家" : "Movie Philosopher"}
+                  </span>
+                </div>
+
+                {/* Legal Links */}
+                <div className="flex flex-col space-y-2 text-center">
+                  <a
+                    href="https://example.com/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`text-xs ${theme === "light" ? "text-gray-500 hover:text-gray-700" : "text-gray-400 hover:text-gray-200"} transition-colors`}
+                  >
+                    {language === "zh" ? "服务条款" : "Terms & Conditions"}
+                  </a>
+                  <a
+                    href="https://example.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`text-xs ${theme === "light" ? "text-gray-500 hover:text-gray-700" : "text-gray-400 hover:text-gray-200"} transition-colors`}
+                  >
+                    {language === "zh" ? "隐私政策" : "Privacy Policy"}
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>

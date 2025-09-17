@@ -208,6 +208,7 @@ const translations = {
     "myVoices.duration": "时长",
     "myVoices.voiceName": "的声音",
     "myVoices.addVoice": "添加声音",
+    "myVoices.playing": "正在播放",
 
     // Movie Selection
     "movieSelection.title": "选个电影吧",
@@ -651,6 +652,7 @@ const translations = {
     "myVoices.duration": "Duration",
     "myVoices.voiceName": "'s Voice",
     "myVoices.addVoice": "Add Voice",
+    "myVoices.playing": "Playing",
 
     // Movie Selection
     "movieSelection.title": "Pick a Movie",
