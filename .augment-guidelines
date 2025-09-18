@@ -45,7 +45,7 @@ app/
 - **Theme switching**: Components must work in light/dark modes
 - **VIP features**: Proper VIP/SVIP gating for premium features (FREE: 1 custom voice, VIP: 3 custom voices, SVIP: 10 custom voices)
 - **Audio handling**: Voice selection and custom voice recording with "限免"/"Limited Time" tags for free users
-- **Real-time updates**: Server-Sent Events (SSE) for instant job status and notifications
+- **Real-time updates**: Server-Sent Events (SSE) for instant job status and notifications with user-specific targeting
 - **Video playbook**: Completed videos served from backend with proper authentication
 - **Phone number authentication**: Primary auth method with verification codes
 - **Password reset**: Phone-based password reset with verification
@@ -99,3 +99,27 @@ useEffect(() => {
   return unsubscribe
 }, [onJobUpdate])
 ```
+
+## Completion Notification System
+
+The backend uses a sophisticated completion notification system for video job processing:
+
+### Architecture
+- **AMQP Consumer**: `completion_consumer.py` processes job completion messages from python-renderer
+- **User-Specific Targeting**: Each user only receives notifications for their own jobs via `job.user_id`
+- **Real-time Delivery**: SSE-based system with per-user connection management in `realtime_notifications.py`
+- **Queue Metrics**: Provides real-time `pending_jobs_count` and `estimated_processing_time` for wait time calculation
+
+### Key Features
+- **Bilingual Notifications**: Automatic English/Chinese notification creation
+- **Connection Management**: Automatic cleanup of disconnected SSE clients
+- **Estimated Wait Times**: Dynamic calculation based on queue metrics (not hardcoded 60 minutes)
+- **Fallback Mechanisms**: Auto-refresh every 15 seconds as backup to SSE
+- **Scalable Design**: Async operations, connection pooling, efficient for multiple concurrent users
+
+### Data Flow
+1. python-renderer sends completion notification via AMQP
+2. `completion_consumer.py` processes message and updates database
+3. Real-time notification sent to specific user via SSE
+4. Frontend receives job update with queue metrics
+5. UI displays calculated estimated waiting time
