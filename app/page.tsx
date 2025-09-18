@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Play, ChevronDown, Film, Users, Settings, Mic, ArrowRight } from "lucide-react"
+import { Play, ChevronDown, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Image from "next/image"
 import { useLanguage } from "@/contexts/language-context"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
@@ -21,38 +22,51 @@ export default function HomePage() {
   const sections = [
     {
       title: t("home.title"),
-      subtitle: t("home.subtitle"),
       description: t("home.description"),
-      icon: Play,
       isIntro: true,
+      image: "/assets/imgs/intro-hero.jpg"
     },
     {
       title: t("home.step1.title"),
-      subtitle: t("home.step1.subtitle"),
       description: t("home.step1.description"),
-      icon: Film,
       stepNumber: "01",
+      image: "/assets/imgs/step-movie-selection.jpg"
     },
     {
       title: t("home.step2.title"),
-      subtitle: t("home.step2.subtitle"),
       description: t("home.step2.description"),
-      icon: Users,
       stepNumber: "02",
+      image: "/assets/imgs/step-analysis-config.jpg"
     },
     {
       title: t("home.step3.title"),
-      subtitle: t("home.step3.subtitle"),
       description: t("home.step3.description"),
-      icon: Settings,
       stepNumber: "03",
+      image: "/assets/imgs/step-prompt-config.jpg"
     },
     {
       title: t("home.step4.title"),
-      subtitle: t("home.step4.subtitle"),
       description: t("home.step4.description"),
-      icon: Mic,
       stepNumber: "04",
+      image: "/assets/imgs/step-voice-selection.jpg"
+    },
+    {
+      title: t("home.step5.title"),
+      description: t("home.step5.description"),
+      stepNumber: "05",
+      image: "/assets/imgs/step-script-review.jpg"
+    },
+    {
+      title: t("home.step6.title"),
+      description: t("home.step6.description"),
+      stepNumber: "06",
+      image: "/assets/imgs/step-job-pending.jpg"
+    },
+    {
+      title: t("home.step7.title"),
+      description: t("home.step7.description"),
+      stepNumber: "07",
+      image: "/assets/imgs/step-video-complete.jpg"
     },
   ]
 
@@ -198,38 +212,45 @@ export default function HomePage() {
             >
               {sections.map((section, index) => (
                 <div key={index} className="h-screen flex flex-col justify-center items-center">
-                  {/* Step Number and Icon */}
-                  <div className="mb-8 flex flex-col items-center">
-                    {section.stepNumber && (
-                      <div className="text-6xl md:text-8xl font-bold text-white/10 mb-4 animate-pulse">
-                        {section.stepNumber}
-                      </div>
-                    )}
-                    <div className="relative">
-                      {/* Animated background rings */}
-                      <div className="absolute inset-0 w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-r from-orange-400/20 via-pink-400/20 to-purple-400/20 animate-ping" />
-                      <div className="absolute inset-1 w-22 h-22 md:w-30 md:h-30 rounded-full bg-gradient-to-r from-orange-400/30 via-pink-400/30 to-purple-400/30 animate-pulse" />
+                  {/* Step Number */}
+                  {section.stepNumber && (
+                    <div className="text-4xl md:text-6xl font-bold text-white/20 mb-6 animate-pulse">
+                      {section.stepNumber}
+                    </div>
+                  )}
 
-                      {/* Main icon container */}
-                      <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 flex items-center justify-center mb-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                        <section.icon className="w-12 h-12 md:w-16 md:h-16 text-white drop-shadow-lg" />
-                      </div>
+                  {/* Main Image */}
+                  <div className="mb-8 relative">
+                    <div className="w-80 h-48 md:w-96 md:h-60 rounded-2xl overflow-hidden shadow-2xl transform hover:scale-105 transition-all duration-300">
+                      <Image
+                        src={section.image}
+                        alt={section.title}
+                        width={384}
+                        height={240}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg?height=240&width=384&text=" + encodeURIComponent(section.title);
+                        }}
+                      />
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
+                      {/* Step number badge */}
                       {section.stepNumber && (
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-orange-400">
-                          <span className="text-sm font-bold text-gray-800">{section.stepNumber}</span>
+                        <div className="absolute top-4 right-4 w-12 h-12 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full flex items-center justify-center shadow-lg">
+                          <span className="text-white font-bold text-lg">{section.stepNumber}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className="max-w-3xl">
-                    <h1 className={`${section.isIntro ? 'text-5xl md:text-7xl' : 'text-4xl md:text-6xl'} font-bold text-white mb-6 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 bg-clip-text text-transparent`}>
+                  <div className="max-w-4xl text-center">
+                    <h1 className={`${section.isIntro ? 'text-5xl md:text-7xl' : 'text-4xl md:text-6xl'} font-bold text-white mb-8 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 bg-clip-text text-transparent`}>
                       {section.title}
                     </h1>
-                    <h2 className="text-xl md:text-2xl text-orange-300 mb-6 font-light">{section.subtitle}</h2>
-                    <p className="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">{section.description}</p>
+                    <p className="text-lg md:text-xl text-gray-200 max-w-3xl mx-auto leading-relaxed">{section.description}</p>
                   </div>
 
                   {/* Action Button */}
@@ -249,17 +270,17 @@ export default function HomePage() {
 
                   {/* Progress Indicator for Steps */}
                   {section.stepNumber && (
-                    <div className="mt-8 flex items-center gap-2">
-                      {Array.from({ length: 4 }, (_, i) => (
+                    <div className="mt-8 flex items-center gap-2 flex-wrap justify-center">
+                      {Array.from({ length: 7 }, (_, i) => (
                         <div key={i} className="flex items-center">
                           <div
                             className={`w-3 h-3 rounded-full transition-all duration-500 ${
                               i < parseInt(section.stepNumber) ? 'bg-orange-400 shadow-lg' : 'bg-white/20'
                             }`}
                           />
-                          {i < 3 && (
+                          {i < 6 && (
                             <div
-                              className={`w-8 h-0.5 mx-1 transition-all duration-500 ${
+                              className={`w-6 h-0.5 mx-1 transition-all duration-500 ${
                                 i < parseInt(section.stepNumber) - 1 ? 'bg-orange-400' : 'bg-white/20'
                               }`}
                             />
@@ -270,7 +291,7 @@ export default function HomePage() {
                   )}
 
                   {/* Next Step Hint */}
-                  {section.stepNumber && parseInt(section.stepNumber) < 4 && (
+                  {section.stepNumber && parseInt(section.stepNumber) < 7 && (
                     <div className="mt-6 text-sm text-white/60 animate-bounce">
                       <ChevronDown className="w-5 h-5 mx-auto" />
                     </div>
