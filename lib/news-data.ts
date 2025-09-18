@@ -31,76 +31,28 @@ export class NewsDataManager {
     this.newsItems = [
       {
         id: 1,
-        url: "https://example.com/svip-announcement",
-        title: "新增SVIP会员等级",
-        titleEn: "New SVIP Membership Tier",
-        tag: "产品更新",
-        tagEn: "Product Update",
-        summary: "我们推出了全新的SVIP会员等级，享受更多专属特权和高级功能，包括无限视频生成、优先处理队列、专属客服支持等。",
-        summaryEn: "We've launched a new SVIP membership tier with exclusive benefits and advanced features, including unlimited video generation, priority processing queue, and dedicated customer support.",
-        image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop",
-        publishedAt: "2025-01-19T10:00:00Z",
+        url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/ai-breakthrough-2025`,
+        title: "2025年AI技术突破：从大模型到多模态智能",
+        titleEn: "2025 AI Technology Breakthrough: From Large Models to Multimodal Intelligence",
+        tag: "人工智能",
+        tagEn: "Artificial Intelligence",
+        summary: "回顾2025年AI领域的重大突破，从GPT-5的发布到多模态AI的普及，探讨这些技术进步如何重塑我们的工作和生活方式。",
+        summaryEn: "Review the major breakthroughs in AI in 2025, from the release of GPT-5 to the popularization of multimodal AI, exploring how these technological advances reshape our work and lifestyle.",
+        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop",
+        publishedAt: "2025-01-20T10:00:00Z",
         featured: true
       },
       {
         id: 2,
-        url: "https://example.com/ai-upgrade",
-        title: "AI分析引擎升级",
-        titleEn: "AI Analysis Engine Upgrade",
+        url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/image-management-blog`,
+        title: "测试新图片管理系统",
+        titleEn: "Testing New Image Management System",
         tag: "技术更新",
         tagEn: "Tech Update",
-        summary: "我们的AI分析引擎已全面升级，采用最新的深度学习技术，生成的视频质量更高，分析更加深入准确。",
-        summaryEn: "Our AI analysis engine has been comprehensively upgraded with the latest deep learning technology for higher quality videos and more accurate analysis.",
-        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop",
-        publishedAt: "2025-01-18T16:30:00Z"
-      },
-      {
-        id: 3,
-        url: "https://example.com/spring-festival-event",
-        title: "春节活动预告",
-        titleEn: "Spring Festival Event Preview",
-        tag: "活动预告",
-        tagEn: "Event Preview",
-        summary: "春节期间将有特别优惠活动，VIP会员享受额外折扣，还有限时免费试用等精彩活动，敬请期待！",
-        summaryEn: "Special offers coming during Spring Festival with extra discounts for VIP members and limited-time free trials. Stay tuned for exciting events!",
-        image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=200&fit=crop",
-        publishedAt: "2025-01-17T09:15:00Z"
-      },
-      {
-        id: 4,
-        url: "https://example.com/voice-synthesis-update",
-        title: "语音合成技术优化",
-        titleEn: "Voice Synthesis Technology Optimization",
-        tag: "技术更新",
-        tagEn: "Tech Update",
-        summary: "全新的语音合成算法让生成的声音更加自然流畅，支持更多语言和方言，为用户提供更好的音频体验。",
-        summaryEn: "New voice synthesis algorithms make generated voices more natural and fluent, supporting more languages and dialects for better audio experience.",
-        image: "https://images.unsplash.com/photo-1589254065878-42c9da997008?w=400&h=200&fit=crop",
-        publishedAt: "2025-01-15T14:20:00Z"
-      },
-      {
-        id: 5,
-        url: "https://example.com/mobile-app-launch",
-        title: "移动端应用正式发布",
-        titleEn: "Mobile App Official Launch",
-        tag: "产品更新",
-        tagEn: "Product Update",
-        summary: "我们的移动端应用现已在各大应用商店上线，支持iOS和Android系统，随时随地享受AI视频生成服务。",
-        summaryEn: "Our mobile app is now available on major app stores, supporting iOS and Android systems for AI video generation services anytime, anywhere.",
-        image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=200&fit=crop",
-        publishedAt: "2025-01-12T11:45:00Z"
-      },
-      {
-        id: 6,
-        url: "https://example.com/collaboration-features",
-        title: "团队协作功能上线",
-        titleEn: "Team Collaboration Features Launch",
-        tag: "功能更新",
-        tagEn: "Feature Update",
-        summary: "新增团队协作功能，支持多人共同编辑项目，实时同步进度，提高团队工作效率。",
-        summaryEn: "New team collaboration features allow multiple users to edit projects together with real-time progress synchronization for improved team efficiency.",
-        image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop",
-        publishedAt: "2025-01-10T08:30:00Z"
+        summary: "这是一篇测试文章，用于验证新的图片管理系统是否正常工作。文章包含了多种图片引用方式。",
+        summaryEn: "This is a test article to verify whether the new image management system works properly. The article contains various image reference methods.",
+        image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop",
+        publishedAt: "2025-08-15T16:30:00Z"
       }
     ]
   }
