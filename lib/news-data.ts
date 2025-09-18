@@ -3,8 +3,6 @@ export interface NewsItem {
   url: string
   title: string
   titleEn: string
-  tag: string
-  tagEn: string
   summary: string
   summaryEn: string
   image: string
@@ -34,8 +32,6 @@ export class NewsDataManager {
         url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/ai-breakthrough-2025`,
         title: "2025年AI技术突破：从大模型到多模态智能",
         titleEn: "2025 AI Technology Breakthrough: From Large Models to Multimodal Intelligence",
-        tag: "人工智能",
-        tagEn: "Artificial Intelligence",
         summary: "回顾2025年AI领域的重大突破，从GPT-5的发布到多模态AI的普及，探讨这些技术进步如何重塑我们的工作和生活方式。",
         summaryEn: "Review the major breakthroughs in AI in 2025, from the release of GPT-5 to the popularization of multimodal AI, exploring how these technological advances reshape our work and lifestyle.",
         image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop",
@@ -47,8 +43,6 @@ export class NewsDataManager {
         url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/image-management-blog`,
         title: "测试新图片管理系统",
         titleEn: "Testing New Image Management System",
-        tag: "技术更新",
-        tagEn: "Tech Update",
         summary: "这是一篇测试文章，用于验证新的图片管理系统是否正常工作。文章包含了多种图片引用方式。",
         summaryEn: "This is a test article to verify whether the new image management system works properly. The article contains various image reference methods.",
         image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop",
@@ -67,11 +61,7 @@ export class NewsDataManager {
     return this.newsItems.filter(item => item.featured)
   }
 
-  public getNewsByTag(tag: string): NewsItem[] {
-    return this.newsItems.filter(item => 
-      item.tag === tag || item.tagEn === tag
-    )
-  }
+
 
   public getNewsById(id: number): NewsItem | undefined {
     return this.newsItems.find(item => item.id === id)
@@ -111,12 +101,10 @@ export class NewsDataManager {
     return this.newsItems.filter(item => {
       if (language === 'zh') {
         return item.title.toLowerCase().includes(searchTerm) ||
-               item.summary.toLowerCase().includes(searchTerm) ||
-               item.tag.toLowerCase().includes(searchTerm)
+               item.summary.toLowerCase().includes(searchTerm)
       } else {
         return item.titleEn.toLowerCase().includes(searchTerm) ||
-               item.summaryEn.toLowerCase().includes(searchTerm) ||
-               item.tagEn.toLowerCase().includes(searchTerm)
+               item.summaryEn.toLowerCase().includes(searchTerm)
       }
     })
   }

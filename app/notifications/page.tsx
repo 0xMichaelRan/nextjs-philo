@@ -354,7 +354,7 @@ export default function NotificationsPage() {
                       onClick={markAllAsRead}
                       variant="outline"
                       size="sm"
-                      className={themeClasses.outlineButton}
+                      className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/20"
                     >
                       {language === "zh" ? "全部标记为已读" : "Mark All as Read"}
                     </Button>
@@ -524,25 +524,14 @@ export default function NotificationsPage() {
                   {newsItems.map((news) => (
                     <Card
                       key={news.id}
-                      className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] border-l-4 overflow-hidden relative`}
+                      className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] border-l-4 overflow-hidden relative cursor-pointer`}
                       style={{
                         backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${news.image})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center'
                       }}
-                      onClick={(e) => {
-                        // Only show animation, don't open link
-                        e.preventDefault()
-                        const readMoreBtn = e.currentTarget.querySelector('[data-read-more]') as HTMLElement
-                        const target = e.target as HTMLElement
-                        if (readMoreBtn && !target?.closest('[data-read-more]')) {
-                          // Add highlight animation to read more button
-                          readMoreBtn.classList.add('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
-                          readMoreBtn.style.transition = 'all 0.2s ease-in-out'
-                          setTimeout(() => {
-                            readMoreBtn.classList.remove('ring-2', 'ring-purple-400', 'ring-opacity-75', 'scale-105')
-                          }, 800)
-                        }
+                      onClick={() => {
+                        window.open(news.url, '_blank')
                       }}
                     >
                       <CardContent className="p-6 relative z-10">
@@ -570,19 +559,17 @@ export default function NotificationsPage() {
 
                           {/* Content */}
                           <div className="flex-1 space-y-3">
-                            {/* Title */}
-                            <h3 className="text-white text-lg font-bold leading-tight">
+                            {/* Title - Limited to 2 lines */}
+                            <h3 className="text-white text-lg font-bold leading-tight line-clamp-2">
                               {language === "zh" ? news.title : news.titleEn}
                             </h3>
 
-                            {/* Date and tag */}
-                            <div className="flex items-center space-x-3">
+                            {/* Date only */}
+                            <div className="flex items-center">
                               <span className="text-white/80 text-sm">
                                 {new Date(news.publishedAt).toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")}
                               </span>
-                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-purple-600/80 text-white">
-                                {language === "zh" ? news.tag : news.tagEn}
-                              </div>
+
                             </div>
 
                             {/* Summary */}
@@ -590,24 +577,7 @@ export default function NotificationsPage() {
                               {language === "zh" ? news.summary : news.summaryEn}
                             </p>
 
-                            {/* Read more link */}
-                            <div className="flex justify-end">
-                              <button
-                                data-read-more
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  window.open(news.url, '_blank')
-                                }}
-                                className="flex items-center space-x-2 text-white hover:text-purple-300 transition-colors hover:bg-white/10 px-3 py-2 rounded-lg"
-                              >
-                                <span className="text-sm font-medium">
-                                  {language === "zh" ? "阅读全文" : "Read More"}
-                                </span>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                              </button>
-                            </div>
+
                           </div>
                         </div>
                       </CardContent>
