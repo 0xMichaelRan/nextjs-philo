@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { VipBadge } from "@/components/vip-badge"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
@@ -220,11 +221,21 @@ export function AppLayout({ children, title }: AppLayoutProps) {
           </Button>
 
           {/* Logo - Centered and Clickable */}
-          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-            <Play className={`w-6 h-6 ${theme === "light" ? "text-purple-600" : "text-orange-400"}`} />
-            <span className={`font-bold text-lg ${getTextClasses()}`}>
-              {language === "zh" ? "电影哲学家" : "Movie Philosopher"}
-            </span>
+          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
+            <Image
+              width={87}
+              height={27}
+              className={theme === 'light' ? 'block' : 'hidden'}
+              alt="Philo"
+              src="/assets/imgs/logo-day.png"
+            />
+            <Image
+              width={87}
+              height={27}
+              className={theme === 'light' ? 'hidden' : 'block'}
+              alt="Philo"
+              src="/assets/imgs/logo-night.png"
+            />
           </Link>
 
           {/* Notification Button */}
@@ -501,30 +512,40 @@ export function AppLayout({ children, title }: AppLayoutProps) {
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                 {/* Company Logo */}
                 <div className="flex items-center justify-center mb-4">
-                  <Play className={`w-5 h-5 mr-2 ${theme === "light" ? "text-purple-600" : "text-orange-400"}`} />
-                  <span className={`font-semibold text-sm ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>
-                    {language === "zh" ? "电影哲学家" : "Movie Philosopher"}
-                  </span>
+                  <Image
+                    width={87}
+                    height={27}
+                    className={theme === 'light' ? 'block' : 'hidden'}
+                    alt="Philo"
+                    src="/assets/imgs/logo-day.png"
+                  />
+                  <Image
+                    width={87}
+                    height={27}
+                    className={theme === 'light' ? 'hidden' : 'block'}
+                    alt="Philo"
+                    src="/assets/imgs/logo-night.png"
+                  />
                 </div>
 
                 {/* Legal Links */}
                 <div className="flex flex-col space-y-2 text-center">
-                  <a
-                    href="https://example.com/terms"
+                  <Link
+                    href={`${process.env.NEXT_PUBLIC_BLOG_URL}/privacy-policy`}
                     target="_blank"
-                    rel="noopener noreferrer"
-                    className={`text-xs ${theme === "light" ? "text-gray-500 hover:text-gray-700" : "text-gray-400 hover:text-gray-200"} transition-colors`}
-                  >
-                    {language === "zh" ? "服务条款" : "Terms & Conditions"}
-                  </a>
-                  <a
-                    href="https://example.com/privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`text-xs ${theme === "light" ? "text-gray-500 hover:text-gray-700" : "text-gray-400 hover:text-gray-200"} transition-colors`}
+                    onClick={() => setIsNavOpen(false)}
+                    className={`text-xs ${theme === "light" ? "text-blue-600 hover:text-blue-800" : "text-violet-400 hover:text-cyan-400"} hover:underline transition-colors`}
                   >
                     {language === "zh" ? "隐私政策" : "Privacy Policy"}
-                  </a>
+                  </Link>
+                  <Link
+                    href={`${process.env.NEXT_PUBLIC_BLOG_URL}/terms-conditions`}
+                    target="_blank"
+                    onClick={() => setIsNavOpen(false)}
+                    className={`text-xs ${theme === "light" ? "text-blue-600 hover:text-blue-800" : "text-violet-400 hover:text-cyan-400"} hover:underline transition-colors`}
+                  >
+                    {language === "zh" ? "服务条款" : "Terms & Conditions"}
+                  </Link>
                 </div>
               </div>
             </div>

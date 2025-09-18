@@ -42,7 +42,7 @@ export function GlobalFooter() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-12">
             {/* Company Info Column */}
             <div className="lg:col-span-1 mb-8 lg:mb-0">
-              <Link href="/" className="inline-block mb-6">
+              <Link href="/" className="inline-block mb-6 flex items-center space-x-2">
                 <Image
                   width={116}
                   height={36}
@@ -146,10 +146,14 @@ export function GlobalFooter() {
               </div>
               <div className="text-center lg:text-right">
                 <div className="privacy-links mb-4 lg:mb-0">
-                  <Link href="/privacy-policy" className={`text-sm ${themeClasses.link} mr-6 hover:underline`}>
+                  <Link href={`${process.env.NEXT_PUBLIC_BLOG_URL}/privacy-policy`} 
+                  target="_blank"
+                  className={`text-sm ${themeClasses.link} mr-6 hover:underline`}>
                     {language === "zh" ? "隐私政策" : "Privacy Policy"}
                   </Link>
-                  <Link href="/terms-conditions" className={`text-sm ${themeClasses.link} mr-6 hover:underline`}>
+                  <Link href={`${process.env.NEXT_PUBLIC_BLOG_URL}/terms-conditions`} 
+                  target="_blank"
+                  className={`text-sm ${themeClasses.link} mr-6 hover:underline`}>
                     {language === "zh" ? "服务条款" : "Terms & Conditions"}
                   </Link>
                 </div>
