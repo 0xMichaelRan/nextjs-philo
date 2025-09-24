@@ -186,7 +186,7 @@ export default function HomePage() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href={`${process.env.NEXT_PUBLIC_BLOG_URL}`} target="_blank" rel="noopener noreferrer">
+              <Link href={`${process.env.NEXT_PUBLIC_BLOG_URL}`} rel="noopener noreferrer">
                 <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 relative z-10">
                   {language === "zh" ? "博客" : "Blog"}
                 </Button>

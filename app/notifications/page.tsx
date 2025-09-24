@@ -307,18 +307,18 @@ export default function NotificationsPage() {
   return (
     <div className={themeClasses.background}>
       <AppLayout >
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <div
-              className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r ${themeClasses.accent} mb-4`}
+              className={`inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r ${themeClasses.accent} mb-4`}
             >
-              <Bell className="w-8 h-8 text-white" />
+              <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h1 className={`${themeClasses.text} text-3xl font-bold mb-2`}>
+            <h1 className={`${themeClasses.text} text-2xl sm:text-3xl font-bold mb-2`}>
               {language === "zh" ? "通知中心" : "Notification Center"}
             </h1>
-            <p className={`${themeClasses.secondaryText}`}>
+            <p className={`${themeClasses.secondaryText} text-sm sm:text-base`}>
               {language === "zh" ? "及时了解您的视频状态和产品动态" : "Stay updated with your videos and product news"}
             </p>
           </div>
@@ -327,17 +327,23 @@ export default function NotificationsPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className={`grid w-full ${user ? 'grid-cols-2' : 'grid-cols-1'} mb-8 ${theme === "light" ? "bg-white/50" : "bg-white/10"}`}>
               {user && (
-                <TabsTrigger value="notifications" className={`${themeClasses.text} relative`}>
-                  {language === "zh" ? "系统通知" : "Notifications"}
-                  {unreadCount > 0 && (
-                    <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center">
-                      {unreadCount}
-                    </Badge>
-                  )}
+                <TabsTrigger value="notifications" className={`${themeClasses.text} relative py-3 px-6 text-sm font-medium transition-all`}>
+                  <div className="flex items-center space-x-2">
+                    <Bell className="w-4 h-4" />
+                    <span>{language === "zh" ? "系统通知" : "Notifications"}</span>
+                    {unreadCount > 0 && (
+                      <Badge className="ml-1 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Badge>
+                    )}
+                  </div>
                 </TabsTrigger>
               )}
-              <TabsTrigger value="news" className={`${themeClasses.text} relative`}>
-                {language === "zh" ? "产品资讯" : "Product News"}
+              <TabsTrigger value="news" className={`${themeClasses.text} relative py-3 px-6 text-sm font-medium transition-all`}>
+                <div className="flex items-center space-x-2">
+                  <Newspaper className="w-4 h-4" />
+                  <span>{language === "zh" ? "产品资讯" : "Product News"}</span>
+                </div>
               </TabsTrigger>
             </TabsList>
 
@@ -391,84 +397,89 @@ export default function NotificationsPage() {
                     </CardContent>
                   </Card>
                 ) : notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <Card
-                      key={notification.id}
-                      className={`${themeClasses.card} ${
-                        !notification.is_read
-                          ? `ring-2 shadow-lg border ${theme === "light" ? "ring-purple-400 bg-purple-50/50 border-purple-200" : "ring-violet-400 bg-violet-900/20 border-violet-500/30"}`
-                          : ""
-                      } transition-all duration-200 hover:shadow-lg cursor-pointer`}
-                      onClick={() => !notification.is_read && markAsRead(notification.id)}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start space-x-4">
-                          <div className={`p-2 rounded-full ${theme === "light" ? "bg-gray-100" : "bg-white/10"}`}>
-                            {getIcon(notification.type)}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className={`${themeClasses.text} font-semibold`}>
-                                {language === "zh"
-                                  ? notification.title_zh
-                                  : (notification.title_en || notification.title_zh)
-                                }
-                              </h3>
-                              <div className="flex items-center space-x-2">
-                                {!notification.is_read && (
-                                  <div className="flex items-center space-x-1">
-                                    <div className={`w-3 h-3 rounded-full animate-pulse ${theme === "light" ? "bg-purple-500" : "bg-violet-400"}`}></div>
-                                    <span className={`text-xs font-medium ${theme === "light" ? "text-purple-600" : "text-violet-400"}`}>
-                                      {language === "zh" ? "新" : "NEW"}
-                                    </span>
-                                  </div>
-                                )}
-                                <div className={`${themeClasses.secondaryText} text-sm text-right`}>
-                                  {(() => {
-                                    const { date, time } = formatTimestamp(notification.created_at)
-                                    return (
-                                      <>
-                                        <div className="whitespace-nowrap">{date}</div>
-                                        <div className="whitespace-nowrap text-xs">{time}</div>
-                                      </>
-                                    )
-                                  })()}
-                                </div>
-                              </div>
+                  <div className="grid gap-4 md:gap-6">
+                    {notifications.map((notification) => (
+                      <Card
+                        key={notification.id}
+                        className={`${themeClasses.card} ${
+                          !notification.is_read
+                            ? `ring-2 shadow-lg border ${theme === "light" ? "ring-purple-400 bg-purple-50/50 border-purple-200" : "ring-violet-400 bg-violet-900/20 border-violet-500/30"}`
+                            : ""
+                        } transition-all duration-200 hover:shadow-lg ${notification.cta_url ? 'cursor-pointer hover:scale-[1.01]' : 'cursor-pointer'} relative group`}
+                        onClick={() => {
+                          if (!notification.is_read) {
+                            markAsRead(notification.id)
+                          }
+                          if (notification.cta_url) {
+                            handleCtaClick(notification.cta_url)
+                          }
+                        }}
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start space-x-4 h-full">
+                            <div className={`p-3 rounded-full flex-shrink-0 ${theme === "light" ? "bg-gray-100" : "bg-white/10"}`}>
+                              {getIcon(notification.type)}
                             </div>
 
-                            <p className={`${themeClasses.secondaryText} leading-relaxed mb-3`}>
-                              {language === "zh"
-                                ? notification.message_zh
-                                : (notification.message_en || notification.message_zh)
-                              }
-                            </p>
-
-                            {/* CTA Button */}
-                            {notification.cta_url && (
-                              <div className="mt-4">
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    // Mark notification as read when clicking CTA button
-                                    if (!notification.is_read) {
-                                      markAsRead(notification.id)
-                                    }
-                                    handleCtaClick(notification.cta_url!)
-                                  }}
-                                  size="sm"
-                                  className={`text-white ${theme === "light" ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" : "bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600"}`}
-                                >
-                                  {language === "zh" ? "查看详情" : "View Details"}
-                                </Button>
+                            <div className="flex-1 min-w-0 flex flex-col h-full">
+                              {/* Header with title and timestamp */}
+                              <div className="flex items-start justify-between mb-3">
+                                <h3 className={`${themeClasses.text} font-semibold text-base leading-tight line-clamp-2 flex-1 pr-2`}>
+                                  {language === "zh"
+                                    ? notification.title_zh
+                                    : (notification.title_en || notification.title_zh)
+                                  }
+                                </h3>
+                                <div className="flex flex-col items-end space-y-1 flex-shrink-0">
+                                  {!notification.is_read && (
+                                    <div className="flex items-center space-x-1">
+                                      <div className={`w-2 h-2 rounded-full animate-pulse ${theme === "light" ? "bg-purple-500" : "bg-violet-400"}`}></div>
+                                      <span className={`text-xs font-medium ${theme === "light" ? "text-purple-600" : "text-violet-400"}`}>
+                                        {language === "zh" ? "新" : "NEW"}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className={`${themeClasses.secondaryText} text-xs text-right`}>
+                                    {(() => {
+                                      const { date, time } = formatTimestamp(notification.created_at)
+                                      return (
+                                        <>
+                                          <div className="whitespace-nowrap">{date}</div>
+                                          <div className="whitespace-nowrap">{time}</div>
+                                        </>
+                                      )
+                                    })()}
+                                  </div>
+                                </div>
                               </div>
-                            )}
+
+                              {/* Message content */}
+                              <p className={`${themeClasses.secondaryText} leading-relaxed text-sm line-clamp-3 flex-1`}>
+                                {language === "zh"
+                                  ? notification.message_zh
+                                  : (notification.message_en || notification.message_zh)
+                                }
+                              </p>
+
+                              {/* CTA indicator for clickable cards */}
+                              {notification.cta_url && (
+                                <div className="mt-3 flex items-center justify-between">
+                                  <span className={`text-xs ${theme === "light" ? "text-purple-600" : "text-violet-400"} font-medium`}>
+                                    {language === "zh" ? "点击查看详情" : "Click to view details"}
+                                  </span>
+                                  <div className={`w-5 h-5 rounded-full flex items-center justify-center ${theme === "light" ? "bg-purple-100 text-purple-600" : "bg-violet-900/50 text-violet-400"} group-hover:scale-110 transition-transform`}>
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 ) : (
                   <Card className={`${themeClasses.card} text-center`}>
                     <CardContent className="p-12">
@@ -520,67 +531,66 @@ export default function NotificationsPage() {
                   </span>
                 </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
+                <div className="grid gap-4 md:gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {newsItems.map((news) => (
                     <Card
                       key={news.id}
-                      className={`${themeClasses.card} transition-all hover:shadow-xl hover:scale-[1.02] border-l-4 overflow-hidden relative cursor-pointer`}
-                      style={{
-                        backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${news.image})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
+                      className={`${themeClasses.card} transition-all duration-300 hover:shadow-xl hover:scale-[1.02] overflow-hidden relative cursor-pointer group h-[280px] flex flex-col`}
                       onClick={() => {
                         window.open(news.url, '_blank')
                       }}
                     >
-                      <CardContent className="p-6 relative z-10">
-                        <div className="flex gap-4">
-                          {/* Image placeholder */}
-                          <div className="flex-shrink-0">
-                            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
-                              <img
-                                src={news.image}
-                                alt={language === "zh" ? news.title : news.titleEn}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none'
-                                  e.currentTarget.parentElement!.innerHTML = `
-                                    <div class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-200 dark:bg-gray-700">
-                                      <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                                      </svg>
-                                    </div>
-                                  `
-                                }}
-                              />
-                            </div>
+                      {/* Background Image */}
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{
+                          backgroundImage: `url(${news.image})`,
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30"></div>
+                      </div>
+
+                      <CardContent className="p-6 relative z-10 flex flex-col h-full">
+                        {/* Header with date and click indicator */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <Newspaper className="w-4 h-4 text-white/80" />
+                            <span className="text-white/80 text-xs font-medium">
+                              {new Date(news.publishedAt).toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")}
+                            </span>
                           </div>
+                          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </div>
+                        </div>
 
-                          {/* Content */}
-                          <div className="flex-1 space-y-3">
-                            {/* Title - Limited to 2 lines */}
-                            <h3 className="text-white text-lg font-bold leading-tight line-clamp-2">
-                              {language === "zh" ? news.title : news.titleEn}
-                            </h3>
+                        {/* Title - Limited to 2 lines */}
+                        <h3 className="text-white text-lg font-bold leading-tight line-clamp-2 mb-3 flex-shrink-0">
+                          {language === "zh" ? news.title : news.titleEn}
+                        </h3>
 
-                            {/* Date only */}
-                            <div className="flex items-center">
-                              <span className="text-white/80 text-sm">
-                                {new Date(news.publishedAt).toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")}
-                              </span>
+                        {/* Summary - Limited to 2 lines */}
+                        <p className="text-white/90 leading-relaxed text-sm line-clamp-2 flex-1">
+                          {language === "zh" ? news.summary : news.summaryEn}
+                        </p>
 
-                            </div>
-
-                            {/* Summary */}
-                            <p className="text-white/90 leading-relaxed text-sm line-clamp-2">
-                              {language === "zh" ? news.summary : news.summaryEn}
-                            </p>
-
-
+                        {/* Click indicator */}
+                        <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/20">
+                          <span className="text-white/80 text-xs font-medium">
+                            {language === "zh" ? "点击阅读全文" : "Click to read more"}
+                          </span>
+                          <div className="flex items-center space-x-1 text-white/60">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
                           </div>
                         </div>
                       </CardContent>
+
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </Card>
                   ))}
 
