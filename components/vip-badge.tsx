@@ -35,7 +35,7 @@ export function VipBadge({
     if (onClick) {
       onClick()
     } else {
-      window.open(`${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`)
+      window.location.href = `${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`
     }
   }
 

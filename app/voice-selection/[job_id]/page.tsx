@@ -736,7 +736,7 @@ export default function VoiceSelectionWithJobPage() {
         isOpen={showVipModal}
         onClose={() => setShowVipModal(false)}
         feature="custom-voice"
-        onUpgrade={() => window.open(`${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`)}
+        onUpgrade={() => window.location.href = `${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`}
         currentUserTier={
           !user ? 'free' :
           user.is_svip ? 'svip' :
