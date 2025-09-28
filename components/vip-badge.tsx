@@ -35,7 +35,7 @@ export function VipBadge({
     if (onClick) {
       onClick()
     } else {
-      router.push('/vip')
+      window.open(`${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`)
     }
   }
 

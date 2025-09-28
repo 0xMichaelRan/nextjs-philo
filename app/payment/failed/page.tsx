@@ -55,7 +55,7 @@ export default function PaymentFailedPage() {
                     {language === "zh" ? "重新支付" : "Try Again"}
                   </Button>
 
-                  <Button onClick={() => router.push("/vip")} variant="outline" className="w-full">
+                  <Button onClick={() => window.open(`${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`)} variant="outline" className="w-full">
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     {t("common.back")}
                   </Button>

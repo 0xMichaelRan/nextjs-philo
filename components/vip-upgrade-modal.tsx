@@ -73,7 +73,7 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade, currentUs
     if (onUpgrade) {
       onUpgrade()
     } else {
-      router.push('/vip')
+      window.open(`${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`)
     }
   }
 
