@@ -168,7 +168,7 @@ export default function HomePage() {
     <div className="relative h-screen overflow-hidden">
       {/* Background Video */}
       <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
-        <source src="/2544523-hd_1920_1080_24fps.mp4" type="video/mp4" />
+        <source src="/NBA-game-promotion.mp4" type="video/mp4" />
       </video>
 
       {/* Dark Overlay */}
