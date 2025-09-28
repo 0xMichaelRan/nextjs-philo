@@ -81,19 +81,6 @@ export default function AuthPage() {
     }
   }, [user, router, redirectPath])
 
-  useEffect(() => {
-    // Redirect if already logged in
-    if (user) {
-      router.push(redirectPath)
-      return
-    }
-
-    const redirect = searchParams.get("redirect")
-    if (redirect) {
-      setRedirectPath(`/${redirect}`)
-    }
-  }, [searchParams, user, router, redirectPath])
-
   const validatePhoneNumber = (phone: string) => {
     // Remove any spaces or dashes
     const cleanPhone = phone.replace(/[\s-]/g, '')
@@ -166,37 +153,18 @@ export default function AuthPage() {
     setSuccess("")
 
     try {
-      const response = await fetch(apiConfig.auth.login(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone_number: phoneNumber.replace(/[\s-]/g, ''),
-          password,
-        }),
-      })
+      // Use auth context login function which handles everything
+      const success = await login(phoneNumber, password)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store token and user data
-        localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-
+      if (success) {
         setSuccess(t("auth.loginSuccess"))
-
-        // Use auth context to update state
-        if (login) {
-          await login(phoneNumber, password)
-        }
 
         // Redirect after successful login
         setTimeout(() => {
           router.push(redirectPath)
         }, 100)
       } else {
-        setError(data.detail || t("auth.loginFailed"))
+        setError(t("auth.loginFailed"))
       }
     } catch (error) {
       setError(t("auth.networkError"))
