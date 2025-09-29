@@ -537,7 +537,7 @@ export default function NotificationsPage() {
                       key={news.id}
                       className={`${themeClasses.card} transition-all duration-300 hover:shadow-xl hover:scale-[1.02] overflow-hidden relative cursor-pointer group h-[280px] flex flex-col`}
                       onClick={() => {
-                        window.open(news.url, '_blank')
+                        window.location.href = news.url
                       }}
                     >
                       {/* Background Image */}
