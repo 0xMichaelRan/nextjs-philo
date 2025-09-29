@@ -29,7 +29,7 @@ export class NewsDataManager {
     this.newsItems = [
       {
         id: 1,
-        url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/ai-breakthrough-2025`,
+        url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/creative-writing-with-ai`,
         title: "2025年AI技术突破：从大模型到多模态智能",
         titleEn: "2025 AI Technology Breakthrough: From Large Models to Multimodal Intelligence",
         summary: "回顾2025年AI领域的重大突破，从GPT-5的发布到多模态AI的普及，探讨这些技术进步如何重塑我们的工作和生活方式。",
@@ -40,7 +40,7 @@ export class NewsDataManager {
       },
       {
         id: 2,
-        url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/image-management-blog`,
+        url: `${process.env.NEXT_PUBLIC_BLOG_URL}/blog/ai-writing-assistant-revolution`,
         title: "测试新图片管理系统",
         titleEn: "Testing New Image Management System",
         summary: "这是一篇测试文章，用于验证新的图片管理系统是否正常工作。文章包含了多种图片引用方式。",

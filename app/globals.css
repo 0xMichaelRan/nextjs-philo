@@ -74,10 +74,10 @@
 
 /* Light Theme Colors */
 [data-theme="light"] {
-  /* Primary Brand Colors - Change these to customize your brand */
-  --brand-primary: #6366f1;        /* Main brand color (indigo) */
-  --brand-secondary: #8b5cf6;      /* Secondary brand color (violet) */
-  --brand-accent: #06b6d4;         /* Accent color (cyan) */
+  /* Primary Brand Colors - Lavender/Lilac theme */
+  --brand-primary: rgb(183, 148, 244);     /* Soft lavender */
+  --brand-secondary: rgb(204, 137, 174);   /* Light lilac */
+  --brand-accent: rgb(183, 148, 244);      /* Soft lavender accent */
 
   /* Background Colors */
   --bg-primary: #ffffff;           /* Main background */
@@ -98,10 +98,10 @@
 
 /* Dark Theme Colors - Professional Dark Theme */
 [data-theme="dark"] {
-  /* Primary Brand Colors - Consistent with light theme */
-  --brand-primary: #6366f1;        /* Indigo - same as light */
-  --brand-secondary: #8b5cf6;      /* Violet - same as light */
-  --brand-accent: #06b6d4;         /* Cyan - same as light */
+  /* Primary Brand Colors - Lavender/Lilac theme */
+  --brand-primary: rgb(183, 148, 244);     /* Soft lavender */
+  --brand-secondary: rgb(204, 137, 174);   /* Light lilac */
+  --brand-accent: rgb(183, 148, 244);      /* Soft lavender accent */
 
   /* Background Colors - Much darker for professional look */
   --bg-primary: #0a0a0a;           /* Very dark background */
@@ -225,56 +225,12 @@
   color: #ffffff;
 }
 
+.theme-surface-primary {
+  background-color: var(--bg-primary);
+}
+
 .theme-surface-elevated {
   background-color: var(--bg-elevated);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-}
-
-/* Border Utilities */
-.theme-border {
-  border-color: var(--text-muted);
-}
-
-[data-theme="dark"] .theme-border {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Card Utilities */
-.theme-card {
-  background-color: var(--bg-elevated);
-  border: 1px solid var(--text-muted);
-}
-
-[data-theme="dark"] .theme-card {
-  background-color: var(--bg-elevated);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* Animations - Subtle gradient effects only */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.shimmer-effect {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-@keyframes gradient-float {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.gradient-float {
-  background-size: 200% 200%;
-  animation: gradient-float 6s ease-in-out infinite;
 }
