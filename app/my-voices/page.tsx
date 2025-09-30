@@ -329,7 +329,9 @@ export default function MyVoicesPage() {
                   key={voice.id}
                   className={`${themeClasses.card} transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-xl border-2 ${
                     playingVoice === voice.id
-                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20"
+                      ? theme === 'light'
+                        ? "border-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50"
+                        : "border-purple-400 bg-gradient-to-br from-purple-900/40 to-indigo-900/40 shadow-lg shadow-purple-500/20"
                       : "border-transparent hover:border-purple-200 dark:hover:border-purple-700"
                   }`}
                   onClick={() => {
@@ -346,8 +348,12 @@ export default function MyVoicesPage() {
                         {/* Voice indicator circle */}
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                           playingVoice === voice.id
-                            ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
-                            : "border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400"
+                            ? theme === 'light'
+                              ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg"
+                              : "bg-gradient-to-r from-purple-400 to-indigo-400 text-white shadow-lg shadow-purple-500/30"
+                            : theme === 'light'
+                              ? "border-2 border-dashed border-gray-300 text-gray-400 hover:border-purple-300 hover:text-purple-500"
+                              : "border-2 border-dashed border-gray-600 text-gray-400 hover:border-purple-400 hover:text-purple-400"
                         }`}>
                           {playingVoice === voice.id ? (
                             <Pause className="w-5 h-5" />
@@ -401,14 +407,26 @@ export default function MyVoicesPage() {
                     {/* Playing status */}
                     {playingVoice === voice.id && (
                       <div className="mt-4 text-center">
-                        <p className="text-purple-600 dark:text-purple-400 text-sm font-medium">
+                        <p className={`text-sm font-medium ${
+                          theme === 'light'
+                            ? 'text-purple-600'
+                            : 'text-purple-300'
+                        }`}>
                           {t("myVoices.playing")}
                         </p>
                         {duration > 0 && (
                           <div className="mt-2">
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+                            <div className={`w-full rounded-full h-1.5 ${
+                              theme === 'light'
+                                ? 'bg-gray-200'
+                                : 'bg-gray-700/50'
+                            }`}>
                               <div
-                                className="bg-purple-600 h-1 rounded-full transition-all duration-300"
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                  theme === 'light'
+                                    ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
+                                    : 'bg-gradient-to-r from-purple-400 to-indigo-400 shadow-sm'
+                                }`}
                                 style={{ width: `${(currentTime / duration) * 100}%` }}
                               />
                             </div>
