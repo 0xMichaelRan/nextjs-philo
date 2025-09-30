@@ -324,13 +324,31 @@ export default function VideoJobPage() {
                 <h1 className={`${themeClasses.text} text-2xl font-bold`}>
                   {t("videoGeneration.title")}
                 </h1>
-                <p className={themeClasses.secondaryText}>
+                <p className={`${themeClasses.secondaryText} text-lg`}>
                   {(() => {
+                    // Handle movie title display with better fallback logic
                     if (typeof job.movie_title === 'object' && job.movie_title) {
                       const titleObj = job.movie_title as any
-                      return titleObj[language] || titleObj.en || titleObj.zh || "Movie"
+                      // Try language-specific title first, then fallback to available titles
+                      if (language === 'zh' || language === 'zh-tw') {
+                        return titleObj.zh || titleObj.title_zh || titleObj.title || titleObj.en || titleObj.title_en || "电影"
+                      } else {
+                        return titleObj.en || titleObj.title_en || titleObj.title || titleObj.zh || titleObj.title_zh || "Movie"
+                      }
                     }
-                    return job.movie_title || "Movie"
+                    // Handle string title or use movieData as fallback
+                    if (job.movie_title) {
+                      return job.movie_title
+                    }
+                    // Fallback to movieData if available
+                    if (movieData) {
+                      if (language === 'zh' || language === 'zh-tw') {
+                        return movieData.title_zh || movieData.title || movieData.title_en || "电影"
+                      } else {
+                        return movieData.title_en || movieData.title || movieData.title_zh || "Movie"
+                      }
+                    }
+                    return language === 'zh' || language === 'zh-tw' ? "电影" : "Movie"
                   })()}
                 </p>
               </div>
@@ -477,7 +495,7 @@ export default function VideoJobPage() {
                       {/* Speed Tag */}
                       <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${theme === "light" ? "bg-blue-100 text-blue-800" : "bg-blue-900/50 text-blue-200"}`}>
                         <span className="mr-1">🎵</span>
-                        {language === "zh" ? "语速" : "Speed"}: {formatSpeedDisplay(job.speed, language)}
+                        {language === "zh" || language === "zh-tw" ? "语速" : "Speed"}: {formatSpeedDisplay(job.speed, language === "zh-tw" ? "zh" : language)}
                       </div>
 
                       {/* Resolution Tag */}
