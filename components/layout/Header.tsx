@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
 import { useLanguage } from "@/contexts/language-context";
-import { Button } from "@/components/ui/button";
+
 import { useAuth } from "@/contexts/auth-context";
 import { User, LogOut, ChevronDown } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
@@ -192,9 +192,9 @@ const Header: React.FC<HeaderProps> = () => {
                   <Image
                     src={theme === 'dark' ? '/static/imgs/icons/mode.svg' : '/static/imgs/icons/mode-day.svg'}
                     alt={theme === 'dark' ? 'Dark mode' : 'Light mode'}
-                    width={12}
-                    height={12}
-                    className="opacity-70"
+                    width={20}
+                    height={20}
+                    className="opacity-80"
                   />
                 </div>
               </button>
@@ -210,7 +210,11 @@ const Header: React.FC<HeaderProps> = () => {
                       theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-white/10'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                    <div className={`w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold ring-2 transition-all duration-200 ${
+                      theme === 'light'
+                        ? 'ring-gray-200 hover:ring-purple-300'
+                        : 'ring-gray-600 hover:ring-purple-400'
+                    }`}>
                       {user.avatar ? (
                         <img
                           src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
@@ -233,7 +237,7 @@ const Header: React.FC<HeaderProps> = () => {
                         ? 'bg-white border-gray-200'
                         : 'bg-slate-800 border-gray-700'
                     }`}>
-                      {/* Language Switch - All Screen Sizes */}
+                      {/* Language Switch - iPhone Style */}
                       <div className="border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
                         <div className="px-4">
                           <div className="flex items-center justify-between mb-2">
@@ -242,44 +246,65 @@ const Header: React.FC<HeaderProps> = () => {
                                 ? 'text-gray-700'
                                 : 'text-gray-300'
                             }`}>
-                              {language === 'zh' ? '语言设置' : 'Language'}
+                              {language === 'zh' ? '语言设置' : language === 'zh-tw' ? '語言設置' : 'Language'}
                             </span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant={language === "zh" ? "default" : "outline"}
-                              size="sm"
+                          <div className={`relative inline-flex rounded-lg p-1 ${
+                            theme === 'light'
+                              ? 'bg-gray-100'
+                              : 'bg-gray-700'
+                          }`}>
+                            {/* Background slider */}
+                            <div
+                              className={`absolute top-1 bottom-1 rounded-md transition-all duration-300 ease-in-out ${
+                                theme === 'light' ? 'bg-white shadow-sm' : 'bg-gray-600 shadow-sm'
+                              }`}
+                              style={{
+                                width: '33.333%',
+                                left: language === 'zh' ? '4px' : language === 'en' ? '33.333%' : '66.666%',
+                                transform: language === 'zh' ? 'translateX(0%)' : language === 'en' ? 'translateX(4px)' : 'translateX(8px)'
+                              }}
+                            />
+                            {/* Language options */}
+                            <button
                               onClick={() => {
                                 setLanguage("zh");
                                 setIsProfileOpen(false);
                               }}
-                              className={`flex-1 text-sm py-2 ${
-                                language === "zh"
-                                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                                  : theme === 'light'
-                                    ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                              className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+                                language === 'zh'
+                                  ? theme === 'light' ? 'text-gray-900' : 'text-white'
+                                  : theme === 'light' ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-white'
                               }`}
                             >
-                              中文
-                            </Button>
-                            <Button
-                              variant={language === "en" ? "default" : "outline"}
-                              size="sm"
+                              汉
+                            </button>
+                            <button
                               onClick={() => {
                                 setLanguage("en");
                                 setIsProfileOpen(false);
                               }}
-                              className={`flex-1 text-sm py-2 ${
-                                language === "en"
-                                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                                  : theme === 'light'
-                                    ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                              className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+                                language === 'en'
+                                  ? theme === 'light' ? 'text-gray-900' : 'text-white'
+                                  : theme === 'light' ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-white'
                               }`}
                             >
-                              English
-                            </Button>
+                              En
+                            </button>
+                            <button
+                              onClick={() => {
+                                setLanguage("zh-tw");
+                                setIsProfileOpen(false);
+                              }}
+                              className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
+                                language === 'zh-tw'
+                                  ? theme === 'light' ? 'text-gray-900' : 'text-white'
+                                  : theme === 'light' ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-white'
+                              }`}
+                            >
+                              繁
+                            </button>
                           </div>
                         </div>
                       </div>

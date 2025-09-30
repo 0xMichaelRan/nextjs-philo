@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 
-type Language = "zh" | "en"
+type Language = "zh" | "en" | "zh-tw"
 
 interface LanguageContextType {
   language: Language
@@ -909,6 +909,61 @@ const translations = {
     "common.close": "Close",
     "common.submit": "Submit",
   },
+  "zh-tw": {
+    // Navigation
+    "nav.home": "首頁",
+    "nav.movieSelection": "選擇電影",
+
+    // Home Page
+    "home.title": "電影哲學家",
+    "home.description": "讓人工智慧為您創作深度電影分析視頻",
+    "home.step1.title": "選擇電影",
+    "home.step1.description": "從熱門電影庫中選擇，或搜索您感興趣的任何電影作品開始分析之旅",
+    "home.step2.title": "配置分析",
+    "home.step2.description": "選擇分析師角色、設定分析深度和風格，定制您的專屬分析內容",
+    "home.step3.title": "調整提示詞",
+    "home.step3.description": "精細調整AI分析提示詞，確保生成的內容符合您的期望和要求",
+    "home.step4.title": "選擇配音",
+    "home.step4.description": "從多種專業配音中選擇，或錄製自定義聲音，為視頻添加個人特色",
+    "home.step5.title": "預覽腳本",
+    "home.step5.description": "查看AI生成的分析腳本，確認內容質量後提交視頻製作任務",
+    "home.step6.title": "等待生成",
+    "home.step6.description": "視頻正在後台製作中，您可以查看隊列狀態和預計完成時間",
+    "home.step7.title": "觀看視頻",
+    "home.step7.description": "視頻製作完成！立即觀看您的專屬電影分析視頻並分享給朋友",
+    "home.pickMovie": "開始創作",
+    "home.login": "登錄",
+    "nav.jobPending": "任務隊列",
+    "nav.myVideos": "我的視頻",
+    "nav.myVoices": "我的聲音",
+    "nav.profile": "個人中心",
+    "nav.vip": "VIP會員",
+    "nav.upgrade": "升級",
+    "nav.darkMode": "深色模式",
+    "nav.lightMode": "淺色模式",
+    "nav.usageStats": "使用統計",
+    "nav.dailyRemaining": "今日剩餘",
+    "nav.totalGenerated": "累計生成",
+
+    // Common
+    "common.loading": "載入中...",
+    "common.error": "錯誤",
+    "common.success": "成功",
+    "common.cancel": "取消",
+    "common.confirm": "確認",
+    "common.save": "保存",
+    "common.delete": "刪除",
+    "common.edit": "編輯",
+    "common.back": "返回",
+    "common.backToList": "返回列表",
+    "common.networkError": "網絡錯誤",
+    "common.created": "創建時間",
+    "common.lastUpdated": "最後更新",
+    "common.next": "下一步",
+    "common.previous": "上一步",
+    "common.close": "關閉",
+    "common.submit": "提交",
+  },
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
@@ -923,7 +978,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     const languageToUse = preferredLanguage || savedLanguage
 
-    if (languageToUse && (languageToUse === "zh" || languageToUse === "en")) {
+    if (languageToUse && (languageToUse === "zh" || languageToUse === "en" || languageToUse === "zh-tw")) {
       setLanguage(languageToUse)
       // Update the regular language storage
       localStorage.setItem("language", languageToUse)
@@ -935,7 +990,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [language])
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "zh" ? "en" : "zh"))
+    setLanguage((prev) => {
+      if (prev === "zh") return "en"
+      if (prev === "en") return "zh-tw"
+      return "zh"
+    })
   }
 
   const t = (key: string, params?: Record<string, string | number>): string => {
