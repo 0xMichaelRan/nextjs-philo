@@ -269,7 +269,7 @@ const Header: React.FC<HeaderProps> = () => {
                             <button
                               onClick={() => {
                                 setLanguage("zh");
-                                setIsProfileOpen(false);
+                                setIsProfileOpen(true);
                               }}
                               className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
                                 language === 'zh'
@@ -282,7 +282,7 @@ const Header: React.FC<HeaderProps> = () => {
                             <button
                               onClick={() => {
                                 setLanguage("en");
-                                setIsProfileOpen(false);
+                                setIsProfileOpen(true);
                               }}
                               className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
                                 language === 'en'
@@ -295,7 +295,7 @@ const Header: React.FC<HeaderProps> = () => {
                             <button
                               onClick={() => {
                                 setLanguage("zh-tw");
-                                setIsProfileOpen(false);
+                                setIsProfileOpen(true);
                               }}
                               className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 ${
                                 language === 'zh-tw'
