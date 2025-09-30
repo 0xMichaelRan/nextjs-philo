@@ -283,7 +283,11 @@ export default function VideoGenerationPage() {
   return (
     <div className={themeClasses.background}>
       <AppLayout title={t("videoGeneration.title")}>
-        <div className="container mx-auto px-6 py-8">
+        <div className="container px-3 px-md-4 px-lg-3">
+          <div className="flex flex-wrap -mx-4">
+            <div className="hidden xl:block xl:w-1/12 px-4" />
+            <div className="w-full xl:w-10/12 lg:w-full px-4">
+              <div className="px-3 md:px-0 py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -420,7 +424,7 @@ export default function VideoGenerationPage() {
                                 <Button
                                   size="sm"
                                   className={`flex-1 ${themeClasses.button} text-white`}
-                                  onClick={() => window.open(`${apiConfig.getBaseUrl()}${job.video_url || job.result_video_url}`, '_blank')}
+                                  onClick={() => window.location.href = `${apiConfig.getBaseUrl()}${job.video_url || job.result_video_url}`}
                                 >
                                   <Download className="w-4 h-4 mr-2" />
                                   {language === "zh" ? "下载" : "Download"}
@@ -471,6 +475,9 @@ export default function VideoGenerationPage() {
           )}
 
 
+              </div>
+            </div>
+          </div>
         </div>
       </AppLayout>
     </div>

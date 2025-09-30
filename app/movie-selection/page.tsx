@@ -223,7 +223,11 @@ export default function MovieSelectionPage() {
 
   return (
     <AppLayout title={t("movieSelection.title")}>
-      <div className="container mx-auto px-6 py-8">
+      <div className="container px-3 px-md-4 px-lg-3">
+        <div className="flex flex-wrap -mx-4">
+          <div className="hidden xl:block xl:w-1/12 px-4" />
+          <div className="w-full xl:w-10/12 lg:w-full px-4">
+            <div className="px-3 md:px-0 py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h2 className={`text-3xl md:text-4xl font-bold ${themeClasses.text} mb-4`}>{t("movieSelection.title")}</h2>
@@ -410,6 +414,9 @@ export default function MovieSelectionPage() {
             </div>
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </AppLayout>
   )
