@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Play, ChevronDown, ArrowRight } from "lucide-react"
+import { ChevronDown, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
@@ -179,11 +179,16 @@ export default function HomePage() {
         {/* Header */}
         <header className="relative z-50 p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Play className="w-8 h-8 text-orange-400" />
-              <span className="text-white font-bold text-xl">
-                {t("home.title")}
-              </span>
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center">
+                <Image
+                  width={87}
+                  height={27}
+                  className="block transition-opacity duration-300"
+                  alt="Philo"
+                  src="/static/imgs/logo-night.svg"
+                />
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <Link href={`${process.env.NEXT_PUBLIC_BLOG_URL}`} rel="noopener noreferrer">

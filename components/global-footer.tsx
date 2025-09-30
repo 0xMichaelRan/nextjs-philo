@@ -46,16 +46,9 @@ export function GlobalFooter() {
                 <Image
                   width={116}
                   height={36}
-                  className={theme === 'light' ? 'block' : 'hidden'}
+                  className="transition-opacity duration-300"
                   alt="Philo"
-                  src="/assets/imgs/logo-day.png"
-                />
-                <Image
-                  width={116}
-                  height={36}
-                  className={theme === 'light' ? 'hidden' : 'block'}
-                  alt="Philo"
-                  src="/assets/imgs/logo-night.png"
+                  src={theme === 'dark' ? '/static/imgs/logo-night.svg' : '/static/imgs/logo-day.svg'}
                 />
               </Link>
               <div className="pr-4 lg:pr-10">
