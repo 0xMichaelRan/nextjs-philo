@@ -73,51 +73,51 @@
    ======================================== */
 
 /* Light Theme Colors */
-[data-theme="light"] {
+[data-theme='light'] {
   /* Primary Brand Colors - Lavender/Lilac theme */
-  --brand-primary: rgb(183, 148, 244);     /* Soft lavender */
-  --brand-secondary: rgb(204, 137, 174);   /* Light lilac */
-  --brand-accent: rgb(183, 148, 244);      /* Soft lavender accent */
+  --brand-primary: rgb(183, 148, 244); /* Soft lavender */
+  --brand-secondary: rgb(204, 137, 174); /* Light lilac */
+  --brand-accent: rgb(183, 148, 244); /* Soft lavender accent */
 
   /* Background Colors */
-  --bg-primary: #ffffff;           /* Main background */
-  --bg-secondary: #f8fafc;         /* Secondary background */
-  --bg-elevated: #ffffff;          /* Cards, modals */
+  --bg-primary: #ffffff; /* Main background */
+  --bg-secondary: #f8fafc; /* Secondary background */
+  --bg-elevated: #ffffff; /* Cards, modals */
 
   /* Text Colors */
-  --text-primary: #1e293b;         /* Main text */
-  --text-secondary: #64748b;       /* Secondary text */
-  --text-muted: #94a3b8;           /* Muted text */
+  --text-primary: #1e293b; /* Main text */
+  --text-secondary: #64748b; /* Secondary text */
+  --text-muted: #94a3b8; /* Muted text */
 
   /* Status Colors */
-  --status-success: #10b981;       /* Success green */
-  --status-warning: #f59e0b;       /* Warning amber */
-  --status-error: #ef4444;         /* Error red */
-  --status-info: #3b82f6;          /* Info blue */
+  --status-success: #10b981; /* Success green */
+  --status-warning: #f59e0b; /* Warning amber */
+  --status-error: #ef4444; /* Error red */
+  --status-info: #3b82f6; /* Info blue */
 }
 
 /* Dark Theme Colors - Professional Dark Theme */
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Primary Brand Colors - Lavender/Lilac theme */
-  --brand-primary: rgb(183, 148, 244);     /* Soft lavender */
-  --brand-secondary: rgb(204, 137, 174);   /* Light lilac */
-  --brand-accent: rgb(183, 148, 244);      /* Soft lavender accent */
+  --brand-primary: rgb(183, 148, 244); /* Soft lavender */
+  --brand-secondary: rgb(204, 137, 174); /* Light lilac */
+  --brand-accent: rgb(183, 148, 244); /* Soft lavender accent */
 
   /* Background Colors - Much darker for professional look */
-  --bg-primary: #0a0a0a;           /* Very dark background */
-  --bg-secondary: #1a1a1a;         /* Slightly lighter dark */
-  --bg-elevated: #2a2a2a;          /* Cards, modals - darker */
+  --bg-primary: #0a0a0a; /* Very dark background */
+  --bg-secondary: #1a1a1a; /* Slightly lighter dark */
+  --bg-elevated: #2a2a2a; /* Cards, modals - darker */
 
   /* Text Colors - High contrast for readability */
-  --text-primary: #ffffff;         /* Pure white for main text */
-  --text-secondary: #e5e5e5;       /* Light gray for secondary text */
-  --text-muted: #a3a3a3;           /* Medium gray for muted text */
+  --text-primary: #ffffff; /* Pure white for main text */
+  --text-secondary: #e5e5e5; /* Light gray for secondary text */
+  --text-muted: #a3a3a3; /* Medium gray for muted text */
 
   /* Status Colors - Adjusted for dark theme */
-  --status-success: #22c55e;       /* Green */
-  --status-warning: #f59e0b;       /* Amber */
-  --status-error: #ef4444;         /* Red */
-  --status-info: #3b82f6;          /* Blue */
+  --status-success: #22c55e; /* Green */
+  --status-warning: #f59e0b; /* Amber */
+  --status-error: #ef4444; /* Red */
+  --status-info: #3b82f6; /* Blue */
 }
 
 /* ========================================
@@ -184,15 +184,23 @@
 
 /* Button Utilities */
 .theme-button-primary {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
-  color: #ffffff;  /* Always white text for better contrast on gradients */
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary) 0%,
+    var(--brand-secondary) 100%
+  );
+  color: #ffffff; /* Always white text for better contrast on gradients */
   border: 1px solid var(--brand-primary);
   transition: all 0.2s ease;
   font-weight: 600;
 }
 
 .theme-button-primary:hover {
-  background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-secondary) 0%,
+    var(--brand-primary) 100%
+  );
   border-color: var(--brand-secondary);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -213,15 +221,28 @@
 
 /* Gradient Utilities */
 .theme-gradient-hero {
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-elevated) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-elevated) 100%
+  );
 }
 
 .theme-gradient-brand {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary) 0%,
+    var(--brand-secondary) 100%
+  );
 }
 
 .theme-gradient-premium {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary) 0%,
+    var(--brand-secondary) 100%
+  );
   color: #ffffff;
 }
 
