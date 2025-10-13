@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { useToast } from "@/hooks/use-toast"
 import { useFlow } from "@/hooks/use-flow"
+import { getQiniuBackdropUrl } from "@/lib/qiniu-config"
 
 interface MovieData {
   id: string
@@ -674,7 +675,7 @@ export default function ScriptReviewPage() {
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-30"
                   style={{
-                    backgroundImage: movieData ? `url(${apiConfig.getBaseUrl()}/static/${movieData.id}/image?file=backdrop)` : undefined,
+                    backgroundImage: movieData ? `url(${getQiniuBackdropUrl(movieData.id)})` : undefined,
                   }}
                 />
 

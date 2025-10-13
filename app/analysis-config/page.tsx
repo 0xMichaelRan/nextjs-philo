@@ -21,6 +21,7 @@ import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
 import { useAuthGuard, checkAuthForAction } from "@/hooks/use-auth-guard"
 import { useAuth } from "@/contexts/auth-context"
+import { getQiniuPosterUrl } from "@/lib/qiniu-config"
 
 interface PromptTemplate {
   id: number
@@ -420,7 +421,7 @@ export default function AnalysisConfigPage() {
                   {/* Movie Poster */}
                   <div className="flex-shrink-0">
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster` || "/placeholder.svg"}
+                      src={getQiniuPosterUrl(movieData.id)}
                       alt={language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
                       width={120}
                       height={180}

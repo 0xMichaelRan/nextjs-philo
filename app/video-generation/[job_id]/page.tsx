@@ -25,6 +25,7 @@ import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
 import { formatSpeedDisplay } from "@/lib/speed-utils"
 import { VideoJob, MovieData } from "@/types/video-job"
+import { getQiniuBackdropUrl, getQiniuPosterUrl } from "@/lib/qiniu-config"
 
 export default function VideoJobPage() {
   const params = useParams()
@@ -297,7 +298,7 @@ export default function VideoJobPage() {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url(${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop)`
+            backgroundImage: `url(${getQiniuBackdropUrl(movieData.id)})`
           }}
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
@@ -372,7 +373,7 @@ export default function VideoJobPage() {
                           <VideoPlayer
                             src={streamingUrl || downloadUrl || ''}
                             poster={movieData?.backdrop_url
-                              ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=backdrop`
+                              ? getQiniuBackdropUrl(movieData.id)
                               : job.thumbnail_url
                                 ? `${apiConfig.getBaseUrl()}${job.thumbnail_url}`
                                 : undefined
@@ -528,7 +529,7 @@ export default function VideoJobPage() {
                     {(movieData.poster_url || movieData.id) && (
                       <div className="flex justify-center">
                         <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=poster`}
+                          src={getQiniuPosterUrl(movieData.id)}
                           alt={movieData.title || movieData.title_zh || movieData.title_en || "Movie"}
                           className="w-32 h-48 object-cover rounded-lg shadow-lg"
                           onError={(e) => {

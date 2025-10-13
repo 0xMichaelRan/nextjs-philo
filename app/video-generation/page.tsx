@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
 import { getMovieTitle } from "@/lib/movie-utils"
 import { VideoJob } from "@/types/video-job"
+import { getQiniuBackdropUrl } from "@/lib/qiniu-config"
 
 export default function VideoGenerationPage() {
   const [jobs, setJobs] = useState<VideoJob[]>([])
@@ -384,7 +385,7 @@ export default function VideoGenerationPage() {
                       <CardContent className="p-0">
                         <div className="relative">
                           <img
-                            src={job.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=backdrop` : "/placeholder.svg"}
+                            src={job.movie_id ? getQiniuBackdropUrl(job.movie_id) : "/placeholder.svg"}
                             alt={getMovieTitle(job, language)}
                             className="w-full h-32 object-cover"
                           />

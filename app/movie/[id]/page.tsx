@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
+import { getQiniuPosterUrl, getQiniuBackdropUrl, getQiniuImageUrl } from "@/lib/qiniu-config"
 
 interface MovieData {
   id: string
@@ -286,7 +287,7 @@ export default function MovieHomePage() {
                       <Card className={`${getCardClasses()} overflow-hidden shadow-xl`}>
                         <CardContent className="p-0 relative">
                           <Image
-                            src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieData.id}/image?file=${isMediumOrWideScreen ? 'poster' : 'backdrop'}` || "/placeholder.svg"}
+                            src={getQiniuImageUrl(movieData.id, isMediumOrWideScreen ? 'poster' : 'backdrop')}
                             alt={language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
                             width={isMediumOrWideScreen ? 400 : 800}
                             height={isMediumOrWideScreen ? 600 : 450}
@@ -459,7 +460,7 @@ export default function MovieHomePage() {
                                     <VideoPlayer
                                       ref={(ref) => { videoRefs.current[video.id] = ref }}
                                       src={streamingUrl}
-                                      poster={video.movie_id ? `${process.env.NEXT_PUBLIC_API_URL}/static/${video.movie_id}/image?file=backdrop` : undefined}
+                                      poster={video.movie_id ? getQiniuBackdropUrl(video.movie_id) : undefined}
                                       className="w-full aspect-video"
                                       onPlay={() => handleVideoPlay(video.id.toString())}
                                     />

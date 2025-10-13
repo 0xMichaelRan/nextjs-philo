@@ -18,6 +18,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
+import { getQiniuPosterUrl } from "@/lib/qiniu-config"
 
 interface MovieData {
   id: string
@@ -619,7 +620,7 @@ IMPORTANT OUTPUT REQUIREMENTS:
                   <CardContent className="p-6">
                     <div className="flex flex-col items-center space-y-4">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movieInfo.id}/image?file=poster`}
+                        src={getQiniuPosterUrl(movieInfo.id)}
                         alt={movieInfo.title}
                         width={192}
                         height={288}

@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useTheme } from "@/contexts/theme-context"
+import { getQiniuPosterUrl } from "@/lib/qiniu-config"
 
 interface MovieHeaderProps {
   movieId?: string
@@ -52,7 +53,7 @@ export function MovieHeader({
       <Image
         src={
           movieId
-            ? `${process.env.NEXT_PUBLIC_API_URL}/static/${movieId}/image?file=poster`
+            ? getQiniuPosterUrl(movieId)
             : `/placeholder.svg?height=${imageDimensions.height}&width=${imageDimensions.width}&query=${encodeURIComponent(movieTitleEn || movieTitle)}+movie+poster`
         }
         alt={movieTitle}

@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
+import { getQiniuPosterUrl } from "@/lib/qiniu-config"
 
 interface Movie {
   id: string
@@ -356,7 +357,7 @@ export default function MovieSelectionPage() {
                   <CardContent className="p-0">
                     <div className="relative overflow-hidden">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_API_URL}/static/${movie.id}/image?file=poster`}
+                        src={getQiniuPosterUrl(movie.id)}
                         alt={language === "zh" ? (movie.title_zh || movie.title) : movie.title_en}
                         width={200}
                         height={300}

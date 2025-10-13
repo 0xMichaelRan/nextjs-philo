@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { apiConfig } from "@/lib/api-config"
 import { formatSpeedDisplay } from "@/lib/speed-utils"
+import { getQiniuPosterUrl, getQiniuBackdropUrl } from "@/lib/qiniu-config"
 
 // Utility function for relative time formatting
 const formatRelativeTime = (dateString: string, t: (key: string, params?: Record<string, string | number>) => string): string => {
@@ -200,8 +201,8 @@ export default function JobPendingPage() {
 
           // Add movie images if movie_id exists
           if (job.movie_id) {
-            baseJob.poster_url = `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=poster`
-            baseJob.backdrop_url = `${process.env.NEXT_PUBLIC_API_URL}/static/${job.movie_id}/image?file=backdrop`
+            baseJob.poster_url = getQiniuPosterUrl(job.movie_id)
+            baseJob.backdrop_url = getQiniuBackdropUrl(job.movie_id)
           }
 
           return baseJob
