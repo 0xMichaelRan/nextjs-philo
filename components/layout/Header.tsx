@@ -73,16 +73,16 @@ const Header: React.FC<HeaderProps> = () => {
   return (
     <>
       <header
-        className={
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scroll
-            ? "header sticky-bar stick"
-            : "header sticky-bar"
-        }
+            ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md"
+            : "bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm"
+        }`}
       >
-        <div className="container">
-          <div className="main-header">
-            <div className="header-logo">
-              <Link className="d-flex" href="/">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex-shrink-0">
+              <Link className="flex items-center" href="/">
                 <Image
                   width={116}
                   height={36}
@@ -93,15 +93,15 @@ const Header: React.FC<HeaderProps> = () => {
               </Link>
             </div>
 
-            <div className="header-nav">
-              <nav className="nav-main-menu d-none d-xl-block">
-                <ul className="main-menu">
+            <div className="flex-1 flex justify-center">
+              <nav className="hidden xl:flex items-center space-x-8">
+                <ul className="flex items-center space-x-8">
                   {user ? (
                     // Logged in user navigation
                     <>
                       <li>
                         <Link
-                          className="color-gray-500"
+                          className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                           href="/"
                         >
                           {language === 'zh' ? '主页' : 'Home'}
@@ -109,7 +109,7 @@ const Header: React.FC<HeaderProps> = () => {
                       </li>
                       <li>
                         <Link
-                          className="color-gray-500"
+                          className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                           href="/movie-selection"
                         >
                           {language === 'zh' ? '电影选择' : 'Movies'}
@@ -117,7 +117,7 @@ const Header: React.FC<HeaderProps> = () => {
                       </li>
                       <li>
                         <Link
-                          className="color-gray-500"
+                          className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                           href="/video-generation"
                         >
                           {language === 'zh' ? '我的视频' : 'My Videos'}
@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = () => {
                       {user?.is_vip && (
                         <li>
                           <Link
-                            className="color-gray-500"
+                            className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                             href="/my-voices"
                           >
                             {language === 'zh' ? '我的声音' : 'My Voices'}
@@ -135,7 +135,7 @@ const Header: React.FC<HeaderProps> = () => {
                       )}
                       <li>
                         <Link
-                          className="color-gray-500"
+                          className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                           href={`${process.env.NEXT_PUBLIC_BLOG_URL}/pricing`}
                         >
                           {language === 'zh' ? 'VIP' : 'VIP'}
@@ -147,7 +147,7 @@ const Header: React.FC<HeaderProps> = () => {
                     <>
                       <li>
                         <Link
-                          className="color-gray-500"
+                          className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                           href={`${process.env.NEXT_PUBLIC_BLOG_URL}`}
                         >
                           {language === 'zh' ? '博客' : 'Blog'}
@@ -155,7 +155,7 @@ const Header: React.FC<HeaderProps> = () => {
                       </li>
                       <li>
                         <Link
-                          className="color-gray-500"
+                          className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                           href="/auth?redirect=movie-selection"
                         >
                           {language === 'zh' ? '登录' : 'Login'}
@@ -167,7 +167,7 @@ const Header: React.FC<HeaderProps> = () => {
               </nav>
             </div>
 
-            <div className="header-right text-end">
+            <div className="flex items-center space-x-4">
               {/* Theme Switch Button */}
               <button
                 onClick={toggleTheme}
@@ -402,6 +402,8 @@ const Header: React.FC<HeaderProps> = () => {
           </div>
         </div>
       </header>
+      {/* Spacer to prevent content from being hidden under fixed header */}
+      <div className="h-16"></div>
     </>
   );
 };
