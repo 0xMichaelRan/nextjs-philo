@@ -10,6 +10,7 @@ import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 export default function PaymentSuccessPage() {
   const router = useRouter()
@@ -31,25 +32,10 @@ export default function PaymentSuccessPage() {
     refreshProfile()
   }, [])
 
-
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-      }
-    }
-    return {
-      background: "bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
+  const successBackground = theme === "light" 
+    ? "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50"
+    : "bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900"
 
   // Format VIP expiry for display
   const formatVipExpiry = (expiryDate: string | undefined) => {
@@ -70,7 +56,7 @@ export default function PaymentSuccessPage() {
 
   return (
     <AppLayout>
-      <div className={themeClasses.background}>
+      <div className={successBackground}>
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto">
             <Card className={`${themeClasses.card} text-center`}>

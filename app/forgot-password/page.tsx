@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { AppLayout } from "@/components/app-layout"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -32,27 +33,7 @@ export default function ForgotPasswordPage() {
 
   usePageTitle(t("auth.forgotPassword"))
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        input: "bg-white/50 border-gray-300 text-gray-800 placeholder:text-gray-500",
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "theme-surface-elevated border-white/20",
-      input: "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   const validatePhoneNumber = (phone: string) => {
     return /^1[0-9]{10}$/.test(phone.replace(/[\s-]/g, ''))

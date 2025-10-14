@@ -18,6 +18,7 @@ import { NotificationBell } from "@/components/notification-bell"
 import { GlobalFooter } from "@/components/global-footer"
 import { apiConfig } from "@/lib/api-config"
 import Header from "@/components/layout/Header"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 interface UserStats {
   dailyRemaining: number
@@ -125,12 +126,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     }
   }
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
-    }
-    return "bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900"
-  }
+  const themeClasses = getStandardThemeClasses(theme)
 
 
 
@@ -139,7 +135,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className={`min-h-screen ${getThemeClasses()}`}>
+    <div className={`min-h-screen ${themeClasses.background}`}>
       {/* Header */}
       <Header />
 

@@ -21,6 +21,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 import { useToast } from "@/hooks/use-toast"
 import { useFlow } from "@/hooks/use-flow"
 import { getQiniuBackdropUrl } from "@/lib/qiniu-config"
@@ -611,33 +612,7 @@ export default function ScriptReviewPage() {
     )
   }
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        mutedText: "theme-text-muted",
-        card: "theme-bg-elevated border-gray-200/50",
-        button: "theme-button-primary",
-        overlayText: "text-white", // Always white on video overlay
-        overlayBg: "bg-gradient-to-br from-gray-100 to-gray-200",
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      mutedText: "theme-text-muted",
-      card: "theme-surface-elevated border-white/20",
-      button: "theme-button-primary",
-      overlayText: "text-white", // Always white on video overlay
-      overlayBg: "bg-gradient-to-br from-gray-900 to-black",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   return (
     <div>

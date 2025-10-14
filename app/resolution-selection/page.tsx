@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useFlow } from "@/hooks/use-flow"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 const resolutionOptions = [
   {
@@ -75,39 +76,7 @@ export default function ResolutionSelectionPage() {
   // Set page title
   usePageTitle("resolutionSelection")
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        card: "theme-bg-elevated border-gray-200/50",
-        cardHover: "hover:shadow-lg transition-all duration-300",
-        selectedCard: "ring-2 ring-indigo-500 shadow-xl bg-indigo-50/80",
-        hoverCard: "hover:bg-gray-50/80",
-        button: "theme-button-primary",
-        outlineButton: "theme-button-secondary",
-        accent: "theme-brand-primary",
-        error: "theme-status-error"
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      card: "theme-surface-elevated border-white/20",
-      cardHover: "hover:shadow-xl transition-all duration-300",
-      selectedCard: "ring-2 ring-indigo-400 shadow-2xl",
-      hoverCard: "hover:bg-white/10",
-      button: "theme-button-primary",
-      outlineButton: "theme-button-secondary",
-      accent: "theme-brand-primary",
-      error: "theme-status-error"
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   const handleBack = () => {
     router.back()

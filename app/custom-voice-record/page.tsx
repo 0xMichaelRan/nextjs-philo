@@ -14,6 +14,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 export default function CustomVoiceRecordPage() {
   const searchParams = useSearchParams()
@@ -79,27 +80,7 @@ export default function CustomVoiceRecordPage() {
     setRecordLanguage(language as "zh" | "en")
   }, [user, router, searchParams, language])
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-        cardHover: "hover:bg-white/90",
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "theme-surface-elevated border-white/20",
-      cardHover: "hover:bg-white/20",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   const startRecording = async () => {
     try {

@@ -22,6 +22,7 @@ import { apiConfig } from "@/lib/api-config"
 import { useAuthGuard, checkAuthForAction } from "@/hooks/use-auth-guard"
 import { useAuth } from "@/contexts/auth-context"
 import { getQiniuPosterUrl } from "@/lib/qiniu-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 interface PromptTemplate {
   id: number
@@ -66,39 +67,7 @@ export default function AnalysisConfigPage() {
   const [loading, setLoading] = useState(true)
   const [movieLoading, setMovieLoading] = useState(true)
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        card: "theme-bg-elevated border-gray-200/50",
-        cardHover: "hover:shadow-lg transition-all duration-300",
-        button: "theme-button-primary",
-        outlineButton: "theme-button-secondary",
-        accent: "theme-brand-primary",
-        error: "theme-status-error",
-        input: "bg-white border-gray-200 text-gray-900 placeholder:text-gray-500",
-        select: "bg-white border-gray-200 text-gray-900"
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      card: "theme-surface-elevated border-white/20",
-      cardHover: "hover:shadow-xl transition-all duration-300",
-      button: "theme-button-primary",
-      outlineButton: "theme-button-secondary",
-      accent: "theme-brand-primary",
-      error: "theme-status-error",
-      input: "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400",
-      select: "theme-surface-elevated border-white/20 text-white"
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   useEffect(() => {
     // Redirect to movie selection if no movie is selected

@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 import { formatSpeedDisplay } from "@/lib/speed-utils"
 import { VideoJob, MovieData } from "@/types/video-job"
 import { getQiniuBackdropUrl, getQiniuPosterUrl } from "@/lib/qiniu-config"
@@ -215,31 +216,7 @@ export default function VideoJobPage() {
     }
   }
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 gradient-float",
-        card: "theme-bg-elevated backdrop-blur-sm theme-border",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        accent: "theme-brand-primary",
-        button: "theme-button-primary",
-        filterButton: "theme-button-secondary"
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      card: "theme-surface-elevated theme-border",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      accent: "theme-brand-primary",
-      button: "theme-button-primary",
-      filterButton: "theme-button-secondary"
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   if (loading) {
     return (

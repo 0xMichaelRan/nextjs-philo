@@ -22,6 +22,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { VipUpgradeModal } from "@/components/vip-upgrade-modal"
 
@@ -301,41 +302,7 @@ export default function VoiceSelectionWithJobPage() {
 
   // Back navigation removed - users cannot go back to modify TTS text after voice selection
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        card: "theme-bg-elevated border-gray-200/50",
-        cardHover: "hover:shadow-lg transition-all duration-300",
-        selectedCard: "theme-gradient-brand text-white border-indigo-500 shadow-xl",
-        hoverCard: "hover:shadow-lg hover:border-gray-300",
-        button: "theme-button-primary",
-        filterButton: "theme-button-secondary",
-        activeFilterButton: "theme-button-primary",
-        accent: "theme-brand-primary",
-        unselectedIndicator: "border-2 border-dashed border-gray-300"
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      card: "theme-surface-elevated border-white/20",
-      cardHover: "hover:shadow-xl transition-all duration-300",
-      selectedCard: "theme-gradient-brand text-white border-indigo-400 shadow-xl",
-      hoverCard: "hover:shadow-xl hover:border-white/40",
-      button: "theme-button-primary",
-      filterButton: "theme-button-secondary",
-      activeFilterButton: "theme-button-primary",
-      accent: "theme-brand-primary",
-      unselectedIndicator: "border-2 border-dashed border-white/30"
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   if (loading) {
     return (

@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useToast } from "@/hooks/use-toast"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
@@ -238,24 +239,7 @@ export default function MyVoicesPage() {
 
   // Removed selectVoice function - selection only happens in voice-selection page
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50",
-        card: "bg-white/80 border-purple-200",
-        text: "text-gray-900",
-        textSecondary: "text-gray-600",
-      }
-    }
-    return {
-      background: "bg-gradient-to-br from-purple-900 via-pink-900 to-orange-900",
-      card: "bg-white/10 border-purple-500/30",
-      text: "text-white",
-      textSecondary: "text-gray-300",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   if (!user || !user.is_vip) {
     return null

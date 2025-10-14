@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/contexts/language-context"
 import { useTheme } from "@/contexts/theme-context"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 interface VipUpgradeModalProps {
   isOpen: boolean
@@ -24,26 +25,11 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade, currentUs
 
   if (!isOpen) return null
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        overlay: "bg-black/50",
-        modal: "bg-white border-gray-200",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        accent: "text-purple-600",
-      }
-    }
-    return {
-      overlay: "bg-black/70",
-      modal: "bg-gray-900 border-gray-700",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      accent: "text-purple-400",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
+  
+  const modalClasses = theme === "light" 
+    ? { overlay: "bg-black/50", modal: "bg-white border-gray-200" }
+    : { overlay: "bg-black/70", modal: "bg-gray-900 border-gray-700" }
 
   // Determine upgrade messaging based on current user tier
   const getUpgradeInfo = () => {
@@ -127,8 +113,8 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade, currentUs
   const featureContent = getFeatureContent()
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${themeClasses.overlay}`}>
-      <Card className={`w-full max-w-md ${themeClasses.modal} shadow-2xl`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${modalClasses.overlay}`}>
+      <Card className={`w-full max-w-md ${modalClasses.modal} shadow-2xl`}>
         <CardHeader className="relative">
           <Button
             onClick={onClose}
@@ -181,7 +167,7 @@ export function VipUpgradeModal({ isOpen, onClose, feature, onUpgrade, currentUs
                 {upgradeInfo.description}
               </p>
               <div className="flex items-center justify-center space-x-2">
-                <span className={`text-lg font-bold ${themeClasses.accent}`}>
+                <span className={`text-lg font-bold ${theme === 'light' ? 'text-purple-600' : 'text-purple-400'}`}>
                   {upgradeInfo.price}
                 </span>
                 <span className={`text-sm ${themeClasses.secondaryText}`}>

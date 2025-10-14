@@ -7,34 +7,21 @@ import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 export default function PaymentFailedPage() {
   const router = useRouter()
   const { theme } = useTheme()
   const { language, t } = useLanguage()
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-red-50 via-pink-50 to-rose-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-      }
-    }
-    return {
-      background: "bg-gradient-to-br from-red-900 via-pink-900 to-rose-900",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "bg-white/10 border-white/20",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
+  const errorBackground = theme === "light" 
+    ? "bg-gradient-to-br from-red-50 via-pink-50 to-rose-50"
+    : "bg-gradient-to-br from-red-900 via-pink-900 to-rose-900"
 
   return (
     <AppLayout>
-      <div className={themeClasses.background}>
+      <div className={errorBackground}>
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto">
             <Card className={`${themeClasses.card} text-center`}>

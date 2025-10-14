@@ -11,6 +11,7 @@ import { useTheme } from "@/contexts/theme-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
@@ -232,26 +233,7 @@ export default function NotificationsPage() {
     }
   }, [currentPage])
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        card: "theme-bg-elevated border-gray-200/50",
-        accent: "theme-brand-primary",
-      }
-    }
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      card: "theme-surface-elevated border-white/20",
-      accent: "theme-brand-primary",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   const getIcon = (type: string) => {
     const iconColors = theme === "light"

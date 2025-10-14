@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useFlow } from "@/hooks/use-flow"
 import { apiConfig } from "@/lib/api-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 interface AnalysisJob {
@@ -62,39 +63,7 @@ export default function AnalysisJobPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        card: "theme-bg-elevated border-gray-200/50",
-        cardHover: "hover:shadow-lg transition-all duration-300",
-        button: "theme-button-primary",
-        outlineButton: "theme-button-secondary",
-        accent: "theme-brand-primary",
-        success: "theme-status-success",
-        error: "theme-status-error",
-        warning: "theme-status-warning"
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      card: "theme-surface-elevated border-white/20",
-      cardHover: "hover:shadow-xl transition-all duration-300",
-      button: "theme-button-primary",
-      outlineButton: "theme-button-secondary",
-      accent: "theme-brand-primary",
-      success: "theme-status-success",
-      error: "theme-status-error",
-      warning: "theme-status-warning"
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   useEffect(() => {
     // Check if we have necessary job ID
