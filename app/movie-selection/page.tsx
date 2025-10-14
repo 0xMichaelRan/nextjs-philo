@@ -15,6 +15,7 @@ import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
 import { getQiniuPosterUrl } from "@/lib/qiniu-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 interface Movie {
   id: string
@@ -185,50 +186,11 @@ export default function MovieSelectionPage() {
     setShowSearchSuggestions(false)
   }
 
-  const themeClasses = {
-    text: "theme-text-primary",
-    secondaryText: "theme-text-secondary",
-    mutedText: "theme-text-muted",
-    brand: "theme-brand-primary",
-    status: "theme-status-warning"
-  }
-
-  /* dark-theme refactor */
-  const getTextClasses = () => {
-    return "theme-text-primary"
-  }
-
-  /* dark-theme refactor */
-  const getCardClasses = () => {
-    if (theme === "light") {
-      return "bg-white/80 border-gray-200/50 hover:bg-white/90"
-    }
-    return "theme-surface-elevated border-white/20 hover:bg-white/20"
-  }
-
-  /* dark-theme refactor */
-  const getInputClasses = () => {
-    if (theme === "light") {
-      return "bg-white/80 border-gray-200/50 text-gray-800 placeholder:text-gray-500"
-    }
-    return "theme-surface-elevated border-white/20 text-white placeholder:text-gray-400"
-  }
-
-  /* dark-theme refactor */
-  const getSuggestionClasses = () => {
-    if (theme === "light") {
-      return "bg-white/95 border-gray-200/50 shadow-lg"
-    }
-    return "theme-surface-primary border-white/20 shadow-lg"
-  }
+  const themeClasses = getStandardThemeClasses(theme)
 
   return (
     <AppLayout title={t("movieSelection.title")}>
-      <div className="container px-3 px-md-4 px-lg-3">
-        <div className="flex flex-wrap -mx-4">
-          <div className="hidden xl:block xl:w-1/12 px-4" />
-          <div className="w-full xl:w-10/12 lg:w-full px-4">
-            <div className="px-3 md:px-0 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h2 className={`text-3xl md:text-4xl font-bold ${themeClasses.text} mb-4`}>{t("movieSelection.title")}</h2>
@@ -250,7 +212,7 @@ export default function MovieSelectionPage() {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={handleSearchFocus}
-              className={`pl-10 pr-10 ${theme === "light" ? "theme-bg-elevated border-gray-200/50 theme-text-primary placeholder:text-gray-500" : "theme-surface-elevated border-white/20 theme-text-primary placeholder:text-gray-400"}`}
+              className={`pl-10 pr-10 ${themeClasses.input}`}
             />
             {searchQuery && (
               <Button
@@ -270,13 +232,13 @@ export default function MovieSelectionPage() {
 
           {/* Search Suggestions */}
           {showSearchSuggestions && (
-            <div className={`absolute top-full left-0 right-0 mt-2 ${getSuggestionClasses()} rounded-lg border z-50`}>
+            <div className={`absolute top-full left-0 right-0 mt-2 ${themeClasses.card} rounded-lg border shadow-lg z-50`}>
               {/* Recent Searches */}
               {recentSearches.length > 0 && (
                 <div className="p-4 border-b border-gray-200/20">
                   <div className="flex items-center space-x-2 mb-3">
                     <Clock className="w-4 h-4 text-gray-400" />
-                    <span className={`text-sm font-medium ${getTextClasses()}`}>
+                    <span className={`text-sm font-medium ${themeClasses.text}`}>
                       {t("movieSelection.recentSearches")}
                     </span>
                   </div>
@@ -342,7 +304,7 @@ export default function MovieSelectionPage() {
         {/* Search Loading State */}
         {searchLoading && (
           <div className="text-center py-4">
-            <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-sm`}>
+            <p className={`${themeClasses.mutedText} text-sm`}>
               搜索中...
             </p>
           </div>
@@ -353,7 +315,7 @@ export default function MovieSelectionPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredMovies.map((movie) => (
               <Link key={movie.id} href={`/movie/${movie.id}`}>
-                <Card className={`${getCardClasses()} transition-all duration-300 cursor-pointer group overflow-hidden`}>
+                <Card className={`${themeClasses.card} ${themeClasses.cardHover} cursor-pointer group overflow-hidden`}>
                   <CardContent className="p-0">
                     <div className="relative overflow-hidden">
                       <Image
@@ -374,14 +336,14 @@ export default function MovieSelectionPage() {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className={`font-semibold ${getTextClasses()} text-sm mb-1 line-clamp-1`}>
+                      <h3 className={`font-semibold ${themeClasses.text} text-sm mb-1 line-clamp-1`}>
                         {language === "zh" ? (movie.title_zh || movie.title) : movie.title_en}
                       </h3>
-                      <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} text-xs mb-2 line-clamp-1`}>
+                      <p className={`${themeClasses.secondaryText} text-xs mb-2 line-clamp-1`}>
                         {language === "zh" ? movie.title_en : (movie.title_zh || movie.title)}
                       </p>
                       {movie.year && (
-                        <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-xs`}>
+                        <p className={`${themeClasses.mutedText} text-xs`}>
                           {movie.year}
                         </p>
                       )}
@@ -395,7 +357,7 @@ export default function MovieSelectionPage() {
 
         {!loading && !searchLoading && filteredMovies.length === 0 && (
           <div className="text-center py-12">
-            <p className={`${theme === "light" ? "text-gray-500" : "text-gray-400"} text-lg mb-4`}>
+            <p className={`${themeClasses.mutedText} text-lg mb-4`}>
               {t("movieSelection.noResults")}
             </p>
             <div className="flex flex-wrap justify-center gap-2 mt-4">
@@ -415,9 +377,6 @@ export default function MovieSelectionPage() {
             </div>
           </div>
         )}
-            </div>
-          </div>
-        </div>
       </div>
     </AppLayout>
   )

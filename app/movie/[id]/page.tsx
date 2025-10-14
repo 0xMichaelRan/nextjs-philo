@@ -18,6 +18,7 @@ import { apiConfig } from "@/lib/api-config"
 import { useFlow } from "@/hooks/use-flow"
 import { useAuthGuard } from "@/hooks/use-auth-guard"
 import { getQiniuPosterUrl, getQiniuBackdropUrl, getQiniuImageUrl } from "@/lib/qiniu-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 interface MovieData {
   id: string
@@ -221,19 +222,7 @@ export default function MovieHomePage() {
     }
   }
 
-  const getTextClasses = () => {
-    if (theme === "light") {
-      return "text-gray-800"
-    }
-    return "text-white"
-  }
-
-  const getCardClasses = () => {
-    if (theme === "light") {
-      return "bg-white/80 border-gray-200/50"
-    }
-    return "bg-white/10 border-white/20"
-  }
+  const themeClasses = getStandardThemeClasses(theme)
 
 
 
@@ -241,7 +230,7 @@ export default function MovieHomePage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-96">
-          <p className={`${getTextClasses()} text-xl`}>
+          <p className={`${themeClasses.text} text-xl`}>
             {language === "zh" ? "加载中..." : "Loading..."}
           </p>
         </div>
@@ -253,7 +242,7 @@ export default function MovieHomePage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-96">
-          <p className={`${getTextClasses()} text-xl`}>{error}</p>
+          <p className={`${themeClasses.text} text-xl`}>{error}</p>
         </div>
       </AppLayout>
     )
@@ -263,7 +252,7 @@ export default function MovieHomePage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-96">
-          <p className={`${getTextClasses()} text-xl`}>
+          <p className={`${themeClasses.text} text-xl`}>
             {language === "zh" ? "电影不存在" : "Movie not found"}
           </p>
         </div>
@@ -274,17 +263,13 @@ export default function MovieHomePage() {
   return (
     <AppLayout>
       <React.Fragment>
-        <div className="container px-3 px-md-4 px-lg-3">
-          <div className="row">
-            <div className="col-xl-1" />
-            <div className="col-xl-10 col-lg-12">
-              <div className="px-3 px-md-0 py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
                 {/* Hero Section with Movie Info */}
                 <div className="grid lg:grid-cols-4 gap-8 mb-12">
                   {/* Movie Poster */}
                   <div className="lg:col-span-1">
                     <div>
-                      <Card className={`${getCardClasses()} overflow-hidden shadow-xl`}>
+                      <Card className={`${themeClasses.card} overflow-hidden shadow-xl`}>
                         <CardContent className="p-0 relative">
                           <Image
                             src={getQiniuImageUrl(movieData.id, isMediumOrWideScreen ? 'poster' : 'backdrop')}
@@ -308,7 +293,7 @@ export default function MovieHomePage() {
                   <div className="lg:col-span-3 space-y-8">
                     {/* Title Section */}
                     <div>
-                      <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold ${getTextClasses()} mb-3`}>
+                      <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold ${themeClasses.text} mb-3`}>
                         {language === "zh" ? (movieData.title_zh || movieData.title) : movieData.title_en}
                       </h1>
                       <h2 className={`text-xl md:text-2xl ${theme === "light" ? "text-purple-600" : "text-cyan-300"} mb-4`}>
@@ -353,7 +338,7 @@ export default function MovieHomePage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                         {movieData.genre.length > 0 && (
                           <div className="space-y-3">
-                            <h3 className={`${getTextClasses()} font-semibold text-lg`}>
+                            <h3 className={`${themeClasses.text} font-semibold text-lg`}>
                               {language === "zh" ? "类型" : "Genres"}
                             </h3>
                             <div className="flex flex-wrap gap-2">
@@ -368,7 +353,7 @@ export default function MovieHomePage() {
 
                         {movieData.popularity && (
                           <div className="space-y-3">
-                            <h3 className={`${getTextClasses()} font-semibold text-lg`}>
+                            <h3 className={`${themeClasses.text} font-semibold text-lg`}>
                               {language === "zh" ? "热度指数" : "Popularity"}
                             </h3>
                             <div className="flex items-center space-x-3">
@@ -378,7 +363,7 @@ export default function MovieHomePage() {
                                   style={{ width: `${Math.min(movieData.popularity / 100 * 100, 100)}%` }}
                                 />
                               </div>
-                              <span className={`${getTextClasses()} font-medium`}>
+                              <span className={`${themeClasses.text} font-medium`}>
                                 {movieData.popularity.toFixed(1)}
                               </span>
                             </div>
@@ -387,7 +372,7 @@ export default function MovieHomePage() {
 
                         {movieData.tmdb_id && (
                           <div className="space-y-3">
-                            <h3 className={`${getTextClasses()} font-semibold text-lg`}>
+                            <h3 className={`${themeClasses.text} font-semibold text-lg`}>
                               {language === "zh" ? "数据库ID" : "Database ID"}
                             </h3>
                             <div className="space-y-1">
@@ -405,7 +390,7 @@ export default function MovieHomePage() {
                       {/* Description */}
                       {movieData.description && (
                         <div className="space-y-4">
-                          <h3 className={`${getTextClasses()} font-semibold text-xl`}>
+                          <h3 className={`${themeClasses.text} font-semibold text-xl`}>
                             {language === "zh" ? "剧情简介" : "Plot Summary"}
                           </h3>
                           <p className={`${theme === "light" ? "text-gray-600" : "text-gray-300"} leading-relaxed text-lg`}>
@@ -427,9 +412,9 @@ export default function MovieHomePage() {
                 </div>
 
                 {/* Sample Videos Section */}
-                <Card className={getCardClasses()}>
+                <Card className={themeClasses.card}>
                   <CardHeader>
-                    <CardTitle className={`${getTextClasses()} text-2xl flex items-center`}>
+                    <CardTitle className={`${themeClasses.text} text-2xl flex items-center`}>
                       <Users className="w-6 h-6 mr-2" />
                       {language === "zh" ? "其他用户的精彩分析" : "Featured User Analysis"}
                     </CardTitle>
@@ -438,7 +423,7 @@ export default function MovieHomePage() {
                     {videosLoading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                        <p className={getTextClasses()}>
+                        <p className={themeClasses.text}>
                           {language === "zh" ? "加载中..." : "Loading..."}
                         </p>
                       </div>
@@ -488,17 +473,13 @@ export default function MovieHomePage() {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <p className={getTextClasses()}>
+                        <p className={themeClasses.text}>
                           {language === "zh" ? "暂无用户分析视频" : "No user analysis videos yet"}
                         </p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
-
-              </div>
-            </div>
-          </div>
         </div>
 
         <MobileBottomBar>

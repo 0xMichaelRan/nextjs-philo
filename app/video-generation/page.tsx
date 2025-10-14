@@ -17,6 +17,7 @@ import { apiConfig } from "@/lib/api-config"
 import { getMovieTitle } from "@/lib/movie-utils"
 import { VideoJob } from "@/types/video-job"
 import { getQiniuBackdropUrl } from "@/lib/qiniu-config"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 export default function VideoGenerationPage() {
   const [jobs, setJobs] = useState<VideoJob[]>([])
@@ -251,44 +252,12 @@ export default function VideoGenerationPage() {
     return sortedGroups
   }
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50",
-        text: "theme-text-primary",
-        secondaryText: "theme-text-secondary",
-        card: "theme-bg-elevated border-gray-200/50",
-        cardHover: "hover:shadow-lg transition-all duration-300",
-        button: "theme-button-primary",
-        outlineButton: "theme-button-secondary",
-        accent: "theme-brand-primary",
-        error: "theme-status-error",
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "theme-text-primary",
-      secondaryText: "theme-text-secondary",
-      card: "theme-surface-elevated border-white/20",
-      cardHover: "hover:shadow-xl transition-all duration-300",
-      button: "theme-button-primary",
-      outlineButton: "theme-button-secondary",
-      accent: "theme-brand-primary",
-      error: "theme-status-error",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   return (
     <div className={themeClasses.background}>
       <AppLayout title={t("videoGeneration.title")}>
-        <div className="container px-3 px-md-4 px-lg-3">
-          <div className="flex flex-wrap -mx-4">
-            <div className="hidden xl:block xl:w-1/12 px-4" />
-            <div className="w-full xl:w-10/12 lg:w-full px-4">
-              <div className="px-3 md:px-0 py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -474,11 +443,6 @@ export default function VideoGenerationPage() {
               )}
             </div>
           )}
-
-
-              </div>
-            </div>
-          </div>
         </div>
       </AppLayout>
     </div>

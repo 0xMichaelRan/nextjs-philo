@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { apiConfig } from "@/lib/api-config"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useToast } from "@/hooks/use-toast"
+import { getStandardThemeClasses } from "@/lib/theme-utils"
 
 // Dynamic pricing will be fetched from backend
 
@@ -182,25 +183,7 @@ export default function PaymentPage() {
     }
   }
 
-  const getThemeClasses = () => {
-    if (theme === "light") {
-      return {
-        background: "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50",
-        text: "text-gray-800",
-        secondaryText: "text-gray-600",
-        card: "bg-white/80 border-gray-200/50",
-      }
-    }
-    /* dark-theme refactor */
-    return {
-      background: "theme-gradient-hero",
-      text: "text-white",
-      secondaryText: "text-gray-300",
-      card: "theme-surface-elevated border-white/20",
-    }
-  }
-
-  const themeClasses = getThemeClasses()
+  const themeClasses = getStandardThemeClasses(theme)
 
   const currentPlanPricing = getPrice(selectedPlan, billingCycle)
   const currentPlanDetails = planDetails[selectedPlan as keyof typeof planDetails]

@@ -88,43 +88,61 @@ The dark theme uses a **professional, high-contrast approach**:
 
 ## Standard Theme Implementation
 
-### getThemeClasses Function Pattern
+### Standard Theme Utility
 
-Based on the working video-generation pages, use this pattern:
+**IMPORTANT**: Always use the standard theme utility instead of custom getThemeClasses functions.
 
 ```typescript
-const getThemeClasses = () => {
-  if (theme === 'light') {
-    return {
-      background: 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50',
-      text: 'theme-text-primary',
-      secondaryText: 'theme-text-secondary',
-      card: 'theme-bg-elevated border-gray-200/50',
-      cardHover: 'hover:shadow-lg transition-all duration-300',
-      button: 'theme-button-primary',
-      outlineButton: 'theme-button-secondary',
-      accent: 'theme-brand-primary',
-      error: 'theme-status-error',
-      input: 'bg-white border-gray-200 text-gray-900 placeholder:text-gray-500',
-      select: 'bg-white border-gray-200 text-gray-900',
-    };
-  }
-  /* dark-theme refactor */
-  return {
-    background: 'theme-gradient-hero',
-    text: 'theme-text-primary',
-    secondaryText: 'theme-text-secondary',
-    card: 'theme-surface-elevated border-white/20',
-    cardHover: 'hover:shadow-xl transition-all duration-300',
-    button: 'theme-button-primary',
-    outlineButton: 'theme-button-secondary',
-    accent: 'theme-brand-primary',
-    error: 'theme-status-error',
-    input:
-      'theme-surface-elevated border-white/20 text-white placeholder:text-gray-400',
-    select: 'theme-surface-elevated border-white/20 text-white',
-  };
-};
+import { getStandardThemeClasses } from '@/lib/theme-utils';
+
+// In your component:
+const themeClasses = getStandardThemeClasses(theme);
+```
+
+This utility returns a standardized object with all theme classes:
+- `background`: Standard gradient background
+- `text`: Primary text color
+- `secondaryText`: Secondary text color
+- `mutedText`: Muted text color
+- `card`: Card styling with proper borders
+- `cardHover`: Card hover effects
+- `button`: Primary button styling
+- `outlineButton`: Secondary button styling
+- `accent`: Brand accent color
+- `error`, `success`, `warning`, `info`: Status colors
+- `input`, `select`: Form element styling
+
+### Legacy getThemeClasses Pattern (Deprecated)
+
+⚠️ **DO NOT USE** - This pattern is deprecated. Use `getStandardThemeClasses` instead.
+
+The old pattern created inconsistent gradients and styling across pages.
+
+### Standard Container Layout
+
+**IMPORTANT**: Use this standard container pattern for all pages:
+
+```typescript
+<AppLayout title={t("page.title")}>
+  <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
+    {/* Page content here */}
+  </div>
+</AppLayout>
+```
+
+**DO NOT USE** the old Bootstrap-style pattern:
+```typescript
+// ❌ Deprecated - Do not use
+<div className="container px-3 px-md-4 px-lg-3">
+  <div className="flex flex-wrap -mx-4">
+    <div className="hidden xl:block xl:w-1/12 px-4" />
+    <div className="w-full xl:w-10/12 lg:w-full px-4">
+      <div className="px-3 md:px-0 py-8">
+        {/* Content */}
+      </div>
+    </div>
+  </div>
+</div>
 ```
 
 ### Form Elements Styling
