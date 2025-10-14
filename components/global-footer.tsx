@@ -18,22 +18,29 @@ export function GlobalFooter() {
     link: theme === 'light' ? 'text-blue-600 hover:text-blue-800' : 'text-violet-400 hover:text-cyan-400'
   }
 
-  // AI Characters/Features for the middle column
-  const aiFeatures = [
-    { name: language === "zh" ? "哲学家分析" : "Philosopher Analysis", href: "/analysis/philosopher" },
-    { name: language === "zh" ? "影评专家" : "Film Critic", href: "/analysis/critic" },
-    { name: language === "zh" ? "心理学家" : "Psychologist", href: "/analysis/psychologist" },
-    { name: language === "zh" ? "社会学家" : "Sociologist", href: "/analysis/sociologist" },
-    { name: language === "zh" ? "文学评论家" : "Literary Critic", href: "/analysis/literary" },
-    { name: language === "zh" ? "历史学家" : "Historian", href: "/analysis/historian" },
-    { name: language === "zh" ? "艺术评论家" : "Art Critic", href: "/analysis/art" },
-    { name: language === "zh" ? "音乐评论家" : "Music Critic", href: "/analysis/music" }
+  // Main features for the middle column
+  const mainFeatures = [
+    { name: language === "zh" ? "电影选择" : "Movie Selection", href: "/movie-selection" },
+    { name: language === "zh" ? "我的视频" : "My Videos", href: "/video-generation" },
+    { name: language === "zh" ? "任务队列" : "Job Queue", href: "/job-pending" },
+    { name: language === "zh" ? "VIP会员" : "VIP Membership", href: `${process.env.NEXT_PUBLIC_BLOG_URL}/pricing` },
+  ]
+  
+  const communityLinks = [
+    { name: language === "zh" ? "博客" : "Blog", href: `${process.env.NEXT_PUBLIC_BLOG_URL}` },
+    { name: language === "zh" ? "隐私政策" : "Privacy Policy", href: `${process.env.NEXT_PUBLIC_BLOG_URL}/privacy-policy` },
+    { name: language === "zh" ? "服务条款" : "Terms of Service", href: `${process.env.NEXT_PUBLIC_BLOG_URL}/terms-conditions` },
+    { name: language === "zh" ? "联系我们" : "Contact Us", href: `${process.env.NEXT_PUBLIC_BLOG_URL}/contact` },
   ]
 
-  // Split AI features into two columns
-  const midPoint = Math.ceil(aiFeatures.length / 2)
-  const firstColumn = aiFeatures.slice(0, midPoint)
-  const secondColumn = aiFeatures.slice(midPoint)
+  // Split features into two columns
+  const midPoint = Math.ceil(mainFeatures.length / 2)
+  const firstColumn = mainFeatures.slice(0, midPoint)
+  const secondColumn = mainFeatures.slice(midPoint)
+  
+  const communityMidPoint = Math.ceil(communityLinks.length / 2)
+  const firstCommunityColumn = communityLinks.slice(0, communityMidPoint)
+  const secondCommunityColumn = communityLinks.slice(communityMidPoint)
 
   return (
     <footer className={`footer ${themeClasses.bg} border-t ${themeClasses.border} mt-16`}>
@@ -68,13 +75,13 @@ export function GlobalFooter() {
               </p>
             </div>
 
-            {/* AI Characters Column */}
+            {/* Main Features Column */}
             <div className="lg:col-span-1 mb-8 lg:mb-0">
-              <h6 className={`text-lg mb-6 ${themeClasses.text} font-semibold`}>
-                {language === "zh" ? "AI角色" : "AI Characters"}
-              </h6>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-8">
                 <div>
+                  <h6 className={`text-lg mb-6 ${themeClasses.text} font-semibold`}>
+                    {language === "zh" ? "主要功能" : "Main Features"}
+                  </h6>
                   <ul className="space-y-3">
                     {firstColumn.map((feature, index) => (
                       <li key={index}>
@@ -87,9 +94,7 @@ export function GlobalFooter() {
                       </li>
                     ))}
                   </ul>
-                </div>
-                <div>
-                  <ul className="space-y-3">
+                  <ul className="space-y-3 mt-3">
                     {secondColumn.map((feature, index) => (
                       <li key={index}>
                         <Link
@@ -97,6 +102,37 @@ export function GlobalFooter() {
                           className={`${themeClasses.link} hover:underline transition-colors text-sm`}
                         >
                           {feature.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h6 className={`text-lg mb-6 ${themeClasses.text} font-semibold`}>
+                    {language === "zh" ? "社区" : "Community"}
+                  </h6>
+                  <ul className="space-y-3">
+                    {firstCommunityColumn.map((link, index) => (
+                      <li key={index}>
+                        <Link
+                          href={link.href}
+                          target="_blank"
+                          className={`${themeClasses.link} hover:underline transition-colors text-sm`}
+                        >
+                          {link.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="space-y-3 mt-3">
+                    {secondCommunityColumn.map((link, index) => (
+                      <li key={index}>
+                        <Link
+                          href={link.href}
+                          target="_blank"
+                          className={`${themeClasses.link} hover:underline transition-colors text-sm`}
+                        >
+                          {link.name}
                         </Link>
                       </li>
                     ))}
