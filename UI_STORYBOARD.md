@@ -360,53 +360,98 @@
 
 ---
 
-### 5. Analysis Configuration Page
+### 5. Persona Picker Page
 
-**Layout Type:** Centered form with cards  
-**Max Width:** 2xl
+**Layout Type:** Character showcase grid  
+**Max Width:** 1400px (max-w-7xl)  
+**Background:** Gradient themed, animated particles
 
 #### Visual Components
 
-**Header**
+**Movie Context Header**
 ```
 ┌─────────────────────────────────────────────────┐
-│  [Movie Poster] The Dark Knight                  │
-│                 Analysis Configuration            │
+│  [← Back]                                        │
+│                                                   │
+│  [Poster]  The Dark Knight (2008)               │
+│  80x120    Who should review this film?          │
+│            Pick your AI persona                  │
 └─────────────────────────────────────────────────┘
 ```
 
-**Template Cards Grid**
-```
-┌────────────────┐ ┌────────────────┐
-│ 🎭             │ │ 📜             │
-│ Philosophical  │ │ Historical     │
-│ Analysis       │ │ Context        │
-│                │ │                │
-│ Deep dive into │ │ Examine the    │
-│ themes and...  │ │ historical...  │
-│                │ │                │
-│ • 5-8 min      │ │ • 6-9 min      │
-│ • Medium depth │ │ • High depth   │
-│                │ │ [VIP]          │
-│ [Select]       │ │ [Select]       │
-└────────────────┘ └────────────────┘
-```
+- **Movie Poster:** Small thumbnail (80x120px), rounded-lg, shadow
+- **Title:** xl, semibold, themed text
+- **Subtitle:** Base text, muted, motivating copy
 
-- **Grid:** 2 columns (desktop), 1 (mobile), gap-6
-- **Cards:** Themed background, rounded-xl, p-6, border, hover shadow-lg
-- **Icon:** 3xl, themed color, mb-4
-- **Title:** xl, semibold, mb-2
-- **Description:** sm, secondary text, mb-4, line-clamp-3
-- **Details:** Bullet list, xs text, muted
-- **VIP Badge:** Yellow crown icon, small badge
-- **Button:** Outline or primary, full width
-
-**Bottom Navigation**
+**Persona Grid**
 ```
 ┌─────────────────────────────────────────────────┐
-│  [← Back]                       [Next →]         │
+│                                                   │
+│  ┌───────────────┐  ┌───────────────┐           │
+│  │               │  │               │           │
+│  │   [👨‍🏫]       │  │   [👔]        │           │
+│  │  150x150px    │  │  150x150px    │           │
+│  │               │  │               │           │
+│  │ THE           │  │ THE           │           │
+│  │ PHILOSOPHER   │  │ FILM CRITIC   │           │
+│  │               │  │               │           │
+│  │ "Explores     │  │ "Professional │           │
+│  │  existential  │  │  analysis of  │           │
+│  │  themes and   │  │  cinematograp │           │
+│  │  morality"    │  │  hy & story"  │           │
+│  │               │  │               │           │
+│  │ ━━━━━━━━━━━━  │  │ ━━━━━━━━━━━━  │           │
+│  │ [Choose ✨]   │  │ [Choose ✨]   │           │
+│  └───────────────┘  └───────────────┘           │
+│                                                   │
+│  ┌───────────────┐  ┌───────────────┐           │
+│  │   [⚽]        │  │   [🤖]        │           │
+│  │  THE          │  │  THE          │           │
+│  │  SPORTS FAN   │  │  ENGINEER     │           │
+│  │               │  │               │           │
+│  │ "Passionate   │  │ "Analyzes     │           │
+│  │  enthusiasm   │  │  plot logic & │           │
+│  │  for action & │  │  technical    │           │
+│  │  drama"       │  │  accuracy"    │           │
+│  │               │  │               │           │
+│  │ [Choose ✨]   │  │ [Choose ✨]   │           │
+│  └───────────────┘  └───────────────┘           │
+│                                                   │
+│  ┌───────────────┐  ┌───────────────┐           │
+│  │   [😂]        │  │   [📚]        │           │
+│  │  THE          │  │  THE          │           │
+│  │  COMEDIAN     │  │  HISTORIAN    │           │
+│  │               │  │               │           │
+│  │ "Finds humor  │  │ "Contextualiz │           │
+│  │  & satire in  │  │  es within    │           │
+│  │  every scene" │  │  history"     │           │
+│  │               │  │               │           │
+│  │ [Choose ✨]   │  │ [Choose ✨]   │           │
+│  └───────────────┘  └───────────────┘           │
 └─────────────────────────────────────────────────┘
 ```
+
+**Card Design Specifications:**
+- **Grid:** 2 columns (mobile), 3 (tablet), 3 (desktop), gap-8
+- **Card Size:** 320x420px, rounded-2xl, overflow-hidden
+- **Background:** White (light) / Slate-800 (dark), gradient border (2px)
+- **Border Gradient:** Animated, matches persona color theme
+- **Avatar:** 150x150px circle, centered, gradient background matching persona
+- **Avatar Animation:** Gentle pulse (scale 1→1.05→1, 3s infinite)
+- **Hover Effect:** Lift (translateY -8px), glow (box-shadow with persona color), scale-102
+- **Persona Name:** xl, bold, uppercase, letter-spacing-wide, persona color
+- **Description:** sm, gray-600 (light) / gray-300 (dark), 3 lines, center-aligned
+- **Divider:** Gradient line, persona color, opacity-50
+- **Button:** Full width, gradient (persona colors), white text, sparkle icon, rounded-xl
+- **Button Hover:** Brighten, scale-105, glow effect
+
+**Persona Color Mappings:**
+- **Philosopher:** Purple-500 → Pink-500, mystical aura
+- **Film Critic:** Blue-500 → Cyan-500, professional gleam
+- **Sports Fan:** Orange-500 → Red-500, energetic burst
+- **Engineer:** Green-500 → Teal-500, tech glow
+- **Comedian:** Yellow-500 → Amber-500, cheerful radiance
+- **Historian:** Brown-600 → Orange-600, vintage warmth
 
 ---
 
