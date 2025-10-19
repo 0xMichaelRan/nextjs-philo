@@ -20,100 +20,156 @@
 
 ---
 
-## 🎨 Design System
+## 🎨 Design System - Cyberpunk/Tech Aesthetic
 
 ### Core Color Palette
 
-#### Light Theme
-- **Background:** White (#FFFFFF) with soft gradients (violet-50 to fuchsia-50)
-- **Surface:** White with subtle shadows
-- **Text Primary:** Gray-900 (#111827)
-- **Text Secondary:** Gray-600 (#4B5563)
-- **Text Muted:** Gray-500 (#6B7280)
-- **Borders:** Gray-200 (#E5E7EB)
+#### Dark Theme (Primary) - Cyberpunk Tech
+- **Background Base:** Rich Black (#0A0E1A) with subtle noise texture
+- **Background Gradient:** From #0A0E1A via #1a1f3a to #0f1628
+- **Surface Primary:** Deep Navy (#141B2D) with 95% opacity
+- **Surface Elevated:** Dark Blue (#1E293B) with neon accents
+- **Surface Glass:** Rgba(30, 41, 59, 0.7) with backdrop-blur-xl
+- **Text Primary:** Pure White (#FFFFFF) with text-shadow glow
+- **Text Secondary:** Cyan-200 (#A5F3FC) - tech accent
+- **Text Muted:** Slate-400 (#94A3B8)
+- **Borders:** Neon Cyan/30 with glow (#22D3EE/30)
+- **Grid Lines:** Cyan-500/10 forming tech grid pattern
+- **Accent Glow:** Cyan-500 (#06B6D4) with box-shadow blur
 
-#### Dark Theme
-- **Background:** Deep gradient (slate-950 → gray-950 → zinc-950)
-- **Surface:** Slate-900/90 with glow effects
-- **Text Primary:** White (#FFFFFF)
-- **Text Secondary:** Gray-300 (#D1D5DB)
-- **Text Muted:** Gray-400 (#9CA3AF)
-- **Borders:** White/15
+#### Light Theme (Optional) - Clean Tech
+- **Background Base:** Cool White (#F8FAFC) with subtle grid
+- **Background Gradient:** From #F8FAFC via #E2E8F0 to #F1F5F9
+- **Surface Primary:** White (#FFFFFF) with crisp shadows
+- **Surface Elevated:** Slate-50 (#F8FAFC) with subtle borders
+- **Surface Glass:** Rgba(248, 250, 252, 0.85) with backdrop-blur
+- **Text Primary:** Deep Navy (#0F172A)
+- **Text Secondary:** Slate-700 (#334155)
+- **Text Muted:** Slate-500 (#64748B)
+- **Borders:** Cyan-400/20 (#22D3EE/20)
+- **Accent Highlights:** Cyan-600 (#0891B2) crisp lines
 
-### Persona Color Systems
+### Persona Color Systems - Neon/Cyberpunk Palette
 
-Each persona has a unique color identity used throughout the application:
+Each persona has a vibrant neon color identity with cyberpunk aesthetics:
 
 **1. The Philosopher** 🧑‍🏫
-- Primary Gradient: Purple-500 → Pink-500
-- Accent: Purple-600
-- Character: Wise, contemplative, deep
-- Use Case: Philosophical themes, existential analysis
+- **Primary Gradient:** Electric Purple (#A855F7) → Hot Pink (#EC4899)
+- **Neon Glow:** #A855F7 with 0 0 20px blur, 0 0 40px spread
+- **Accent:** Deep Purple (#7C3AED)
+- **Secondary:** Fuchsia-400 (#E879F9)
+- **Character:** Wise, contemplative, deep consciousness
+- **Tech Element:** Holographic effect, particle trails
+- **Use Case:** Philosophical themes, existential analysis
 
 **2. The Film Critic** 🎬
-- Primary Gradient: Blue-500 → Cyan-500
-- Accent: Blue-600
-- Character: Professional, analytical, precise
-- Use Case: Technical analysis, cinematography
+- **Primary Gradient:** Electric Blue (#3B82F6) → Cyber Cyan (#06B6D4)
+- **Neon Glow:** #06B6D4 with 0 0 20px blur, neon shimmer
+- **Accent:** Sky-600 (#0284C7)
+- **Secondary:** Blue-300 (#93C5FD)
+- **Character:** Professional, analytical, precise
+- **Tech Element:** Scan lines, digital matrix effect
+- **Use Case:** Technical analysis, cinematography
 
 **3. The Sports Fan** ⚽
-- Primary Gradient: Orange-500 → Red-500
-- Accent: Orange-600
-- Character: Energetic, passionate, enthusiastic
-- Use Case: Action sequences, drama, intensity
+- **Primary Gradient:** Neon Orange (#FB923C) → Hot Red (#EF4444)
+- **Neon Glow:** #FB923C with 0 0 25px blur, fire effect
+- **Accent:** Orange-600 (#EA580C)
+- **Secondary:** Red-400 (#F87171)
+- **Character:** Energetic, passionate, high-intensity
+- **Tech Element:** Energy pulses, motion blur trails
+- **Use Case:** Action sequences, drama, intensity
 
 **4. The Engineer** 🤖
-- Primary Gradient: Green-500 → Teal-500
-- Accent: Green-600
-- Character: Logical, technical, detail-oriented
-- Use Case: Plot logic, technical accuracy, sci-fi
+- **Primary Gradient:** Matrix Green (#10B981) → Electric Teal (#14B8A6)
+- **Neon Glow:** #10B981 with 0 0 20px blur, code shimmer
+- **Accent:** Emerald-600 (#059669)
+- **Secondary:** Teal-300 (#5EEAD4)
+- **Character:** Logical, technical, systematic
+- **Tech Element:** Circuit board patterns, binary code overlay
+- **Use Case:** Plot logic, technical accuracy, sci-fi
 
 **5. The Comedian** 😂
-- Primary Gradient: Yellow-500 → Amber-500
-- Accent: Yellow-600
-- Character: Humorous, satirical, lighthearted
-- Use Case: Comedy analysis, satire, humor discovery
+- **Primary Gradient:** Neon Yellow (#FACC15) → Electric Amber (#F59E0B)
+- **Neon Glow:** #FACC15 with 0 0 25px blur, sparkle effect
+- **Accent:** Yellow-600 (#CA8A04)
+- **Secondary:** Amber-300 (#FCD34D)
+- **Character:** Humorous, witty, vibrant energy
+- **Tech Element:** Glitch effects, comic burst animations
+- **Use Case:** Comedy analysis, satire, humor discovery
 
 **6. The Historian** 📚
-- Primary Gradient: Brown-600 → Orange-600
-- Accent: Brown-700
-- Character: Contextual, educational, classical
-- Use Case: Historical context, period pieces
+- **Primary Gradient:** Warm Copper (#D97706) → Vintage Gold (#F59E0B)
+- **Neon Glow:** #D97706 with 0 0 15px blur, vintage tech glow
+- **Accent:** Amber-700 (#B45309)
+- **Secondary:** Orange-400 (#FB923C)
+- **Character:** Contextual, educational, timeless
+- **Tech Element:** Sepia tone overlays, retro-futuristic elements
+- **Use Case:** Historical context, period pieces
 
-### Typography
+### Typography - Tech/Cyber Font System
 
-```
-Hero Title:     7xl (72px) - Bold - Gradient text
-Page Title:     4xl (36px) - Bold
-Persona Name:   2xl (24px) - Semibold - Persona color
-Section Title:  xl (20px) - Semibold
-Body Text:      base (16px) - Regular
-Small Text:     sm (14px) - Regular  
-Micro Text:     xs (12px) - Regular
-```
+**Font Family:**
+- **Primary:** 'Space Grotesk' - Modern geometric tech font
+- **Secondary:** 'Inter' - Clean readability
+- **Monospace:** 'JetBrains Mono' - Code elements
+- **Display:** 'Orbitron' - Futuristic headers (optional accent)
 
-### Spacing Scale
+**Font Hierarchy:**
 ```
-xs: 4px      md: 16px     2xl: 48px
-sm: 8px      lg: 24px     3xl: 64px
-base: 12px   xl: 32px     4xl: 80px
-```
-
-### Border Radius
-```
-sm: 8px   (inputs, tags)
-md: 12px  (buttons, small cards)
-lg: 16px  (cards, modals)
-xl: 24px  (hero sections)
-full: 9999px (avatars, pills)
+Hero Title:     7xl (72px) - Bold - Animated gradient + glow + scan lines
+Page Title:     4xl (36px) - Bold - Neon glow effect
+Persona Name:   2xl (24px) - Bold - UPPERCASE - Neon persona color + glow
+Section Title:  xl (20px) - Semibold - Cyan accent glow
+Body Text:      base (16px) - Regular - High contrast
+Small Text:     sm (14px) - Regular - Slightly glowing  
+Micro Text:     xs (12px) - Mono - Tech metadata
+Code/Labels:    xs (12px) - Mono - Cyan-400 color
 ```
 
-### Shadows & Effects
+**Text Effects:**
+- **Neon Glow:** text-shadow: 0 0 10px currentColor, 0 0 20px currentColor
+- **Cyber Scan:** Animated scan line overlay (keyframe animation)
+- **Glitch Effect:** Random horizontal offset on hover (persona names)
+- **Typewriter:** Animated text reveal for hero sections
+
+### Spacing Scale - Tech Grid System
 ```
-Small:  0 2px 4px rgba(0,0,0,0.06)
-Medium: 0 4px 6px rgba(0,0,0,0.1)
-Large:  0 10px 15px rgba(0,0,0,0.1)
-Glow:   0 0 20px [persona-color]/30
+xs: 4px      md: 16px     2xl: 48px    (8px grid)
+sm: 8px      lg: 24px     3xl: 64px    (multiples of 8)
+base: 12px   xl: 32px     4xl: 80px    (aligned to grid)
+```
+
+### Border Radius - Cyber Aesthetic
+```
+sharp: 0px       (hard tech edges, occasional use)
+sm: 4px          (subtle, tech UI elements)
+md: 8px          (buttons, inputs - less rounded)
+lg: 12px         (cards - angular feel)
+xl: 16px         (hero sections, modals)
+tech-cut: clip-path with angular cuts (signature style)
+full: 9999px     (avatars only)
+```
+
+### Shadows & Neon Effects - Cyberpunk Glow
+```
+Small Glow:    0 0 10px rgba(6,182,212,0.3), 0 2px 4px rgba(0,0,0,0.2)
+Medium Glow:   0 0 20px rgba(6,182,212,0.4), 0 4px 8px rgba(0,0,0,0.3)
+Large Glow:    0 0 30px rgba(6,182,212,0.5), 0 8px 16px rgba(0,0,0,0.4)
+Neon Border:   inset 0 0 0 1px [persona-color], 0 0 20px [persona-color]/50
+Persona Glow:  0 0 25px [persona-color]/60, 0 0 50px [persona-color]/30
+Inner Glow:    inset 0 0 20px rgba(6,182,212,0.2)
+Tech Shadow:   0 4px 20px rgba(0,0,0,0.5), 0 0 1px rgba(6,182,212,0.5)
+```
+
+### Special Tech Effects
+```
+Grid Overlay:      Repeating linear gradient - 1px cyan lines every 20px
+Scan Lines:        Horizontal lines, 2px height, animated top to bottom
+Hologram Flicker:  Opacity pulse 0.95-1, 3s infinite
+Glitch:            Random transform: translateX(±2px), 50ms duration
+Noise Texture:     SVG noise filter, opacity 0.03
+Particle Field:    Floating dots, persona color, slow motion
 ```
 
 ---
@@ -193,14 +249,17 @@ Glow:   0 0 20px [persona-color]/30
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specifications:**
-- **Video Background:** Cinematic clips from iconic movies (The Godfather, The Dark Knight, Pulp Fiction, etc.)
-- **Header:** Glassmorphism (backdrop-blur-md), fixed position, white/10 background
-- **Hero Title:** 7xl, bold, gradient (violet-400 → fuchsia-400 → pink-400), animated
-- **Subtitle:** xl, white/90, max-w-3xl, line-height relaxed
-- **CTA Button:** 2xl text, gradient bg (violet-600 → fuchsia-600), px-16 py-6, rounded-full, glow on hover
-- **Persona Circles:** 120px diameter, gradient borders (animated), persona colors, hover grows to 135px
-- **Step Cards:** 300x320px, gradient borders, icon-first layout, hover lifts 8px
+**Design Specifications - Cyberpunk:**
+- **Video Background:** Cinematic clips with cyan/blue color grading overlay, scan line effect
+- **Background Tech Grid:** Subtle cyan grid lines (1px, opacity 10%), 20px spacing
+- **Header:** Ultra-glassmorphism (backdrop-blur-xl), neon cyan bottom border (1px), floating appearance
+- **Hero Title:** 7xl, bold, animated gradient (cyan-400 → purple-500 → pink-500), neon glow, typewriter animation on load
+- **Subtitle:** xl, cyan-200, max-w-3xl, subtle glow, tech font (Space Grotesk)
+- **CTA Button:** 2xl text, neon gradient border, black/80 bg, cyan glow on hover, angular clip-path corners
+- **Persona Circles:** 120px diameter, neon borders (2px, persona color), rotating gradient animation, intense glow on hover to 135px
+- **Step Cards:** 300x320px, glass morphism bg, neon gradient top border, scan line animation, tech corner cuts, hover: lift 8px + intense glow
+- **Particle Field:** Floating cyan dots in background, slow parallax motion
+- **Noise Texture:** Subtle film grain overlay (opacity 3%)
 
 ---
 
@@ -249,17 +308,19 @@ Glow:   0 0 20px [persona-color]/30
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specifications:**
-- **Card:** 480px width, white (light) / slate-900 (dark), rounded-2xl, shadow-2xl
-- **Logo:** 3xl, gradient text, centered
-- **Title:** 2xl, bold, mb-2
-- **Subtitle:** Base, muted text, mb-8
-- **Google Button:** White bg, gray-700 text, Google logo (24px), shadow-md, hover shadow-lg
-- **Facebook Button:** Facebook blue (#1877F2), white text, Facebook logo
-- **Guest Button:** Outline variant, gray border, hover bg-gray-50
-- **All Buttons:** Full width, py-3.5, rounded-xl, flex items-center justify-center, gap-3
-- **Divider:** Gray-300 (light) / gray-700 (dark), with "OR" centered
-- **Terms Text:** xs, text-center, gray-500, links underline on hover
+**Design Specifications - Cyberpunk Auth:**
+- **Card:** 480px width, glass morphism (#141B2D/95), angular clip-path corners, neon cyan border (1px), intense glow
+- **Background:** Animated grid pattern, floating particles, dark gradient (#0A0E1A → #1a1f3a)
+- **Logo:** 3xl, animated neon gradient text (cyan → purple), pulsing glow effect, centered
+- **Title:** 2xl, bold, cyan-200, subtle scan line animation, mb-2
+- **Subtitle:** Base, cyan-300/80, tech font, mb-8
+- **Google Button:** Black/90 bg, white text, Google logo (24px), neon white border, cyan glow on hover, angular corners
+- **Facebook Button:** Black/90 bg, cyan-400 text, Facebook logo, neon cyan border, glow on hover
+- **Guest Button:** Transparent bg, neon cyan border (1px), cyan text, glow on hover, angular clip-path
+- **All Buttons:** Full width, py-3.5, rounded-lg, flex items-center justify-center, gap-3, tech font, transition with glow
+- **Divider:** Neon cyan line (1px, opacity 30%), with "OR" in tech monospace font, cyan-400
+- **Terms Text:** xs, text-center, slate-400, mono font, links: cyan-400 with underline glow on hover
+- **Scan Line Effect:** Animated horizontal line moving from top to bottom, cyan-400/20, 3s duration
 
 **OAuth Flow:**
 1. Click "Sign in with Google" → Redirect to Google OAuth
@@ -315,19 +376,19 @@ Glow:   0 0 20px [persona-color]/30
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specifications:**
-- **Page Title:** 4xl, bold, centered, mb-8
-- **Search Bar:** max-w-2xl, centered, pl-12 pr-12, py-4, rounded-2xl, shadow-lg
-- **Search Icon:** 24px, left-3, gray-400
-- **Clear Button:** Appears when typing, absolute right-3, hover scale-110
-- **Dropdown:** Absolute, full width of search bar, mt-2, rounded-xl, shadow-2xl, z-50
-- **Recent Searches:** Pills, rounded-full, hover scale-105, gray-100 (light) / gray-800 (dark)
-- **Movie Grid:** 2 cols (mobile), 3 (tablet), 4 (desktop), gap-6
-- **Movie Card:** Rounded-xl, overflow-hidden, hover scale-105, shadow-md hover:shadow-xl
-- **Poster:** Aspect 2/3, object-cover, group-hover brightness-110
-- **Rating Badge:** Absolute top-3 right-3, yellow-400 bg, white text, rounded-full, px-2 py-1
-- **Movie Title:** Semibold, text-base, line-clamp-1, px-4 pt-3
-- **Year:** xs, muted, px-4 pb-3
+**Design Specifications - Cyber Movie Selection:**
+- **Page Title:** 4xl, bold, centered, neon cyan glow, mb-8, uppercase tech font
+- **Search Bar:** max-w-2xl, centered, glass morphism bg, neon cyan border (1px), pl-12 pr-12, py-4, rounded-lg, intense glow on focus, tech corner cuts
+- **Search Icon:** 24px, left-3, cyan-400, pulsing animation
+- **Clear Button:** Appears when typing, absolute right-3, cyan-400, hover: scale-110 + glow
+- **Dropdown:** Absolute, glass morphism (#141B2D/98), neon cyan border, full width, mt-2, rounded-lg, shadow with cyan glow, z-50, scan line animation
+- **Recent Searches:** Pills, angular shape (clip-path), neon cyan border, cyan-300 text, hover: scale-105 + intense glow
+- **Movie Grid:** 2 cols (mobile), 3 (tablet), 4 (desktop), gap-6, tech grid overlay
+- **Movie Card:** Rounded-lg, glass morphism, neon cyan border (1px, opacity 30%), overflow-hidden, hover: scale-105 + border glow + lift shadow
+- **Poster:** Aspect 2/3, object-cover, cyan tint overlay on hover, scan line effect
+- **Rating Badge:** Absolute top-3 right-3, black/90 bg, neon yellow text + glow, angular corners, px-2 py-1
+- **Movie Title:** Semibold, text-base, cyan-100, line-clamp-1, px-4 pt-3, tech font
+- **Year:** xs, cyan-400, mono font, px-4 pb-3
 
 ---
 
@@ -362,16 +423,17 @@ Glow:   0 0 20px [persona-color]/30
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specifications:**
-- **Backdrop:** Full width, height 500px, object-cover, gradient overlay (black/80 → transparent)
-- **Back Button:** Absolute top-4 left-4, ghost variant, white text
-- **Poster:** 200x300px, rounded-xl, shadow-2xl, absolute bottom--100px left-8
-- **Title:** 4xl, bold, white, mb-2
-- **Meta Info:** Base, white/90, flex, gap-4, mb-4
-- **Stars:** Yellow-400, 24px each
-- **Genres:** Badges, rounded-full, bg-white/20, white text, px-3 py-1
-- **Description:** lg, white/80, line-height-relaxed, max-w-3xl, mb-8
-- **CTA Button:** xl, gradient (violet-600 → fuchsia-600), px-12 py-4, rounded-xl, glow
+**Design Specifications - Cyber Movie Detail:**
+- **Backdrop:** Full width, height 500px, object-cover, cyan color grade overlay, gradient (black/90 → transparent), scan lines, noise texture
+- **Tech Grid:** Overlay grid pattern (cyan-500/5), creates depth
+- **Back Button:** Absolute top-4 left-4, glass morphism, neon cyan border, cyan text, hover glow
+- **Poster:** 200x300px, rounded-lg, neon cyan border (2px), intense glow shadow, absolute bottom--100px left-8, hologram flicker effect
+- **Title:** 4xl, bold, cyan-100 with neon glow, mb-2, text-shadow cyan
+- **Meta Info:** Base, cyan-200, flex, gap-4, mb-4, mono font for metadata
+- **Stars:** Neon yellow-400 with glow, 24px each, pulsing animation
+- **Genres:** Badges, angular (clip-path), glass morphism bg, neon cyan border, cyan-200 text, px-3 py-1, individual glow
+- **Description:** lg, cyan-100/90, line-height-relaxed, max-w-3xl, mb-8, subtle glow
+- **CTA Button:** xl, neon gradient border (cyan → purple), black/80 bg, white text, px-12 py-4, rounded-lg, angular corners, intense glow on hover, scan line animation
 
 ---
 
