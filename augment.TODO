@@ -1,0 +1,9 @@
+[important] There is some pages under @app that does not need user to be logged in, please add navigation menu for those pages if user is not logged in. 
+
+aiFeatures in @d:\git\philo\nextjs-philo/components\global-footer.tsx should have zh-tw too, and all the links should prefix with NEXT_PUBLIC_BLOG_URL when used as href for the links. 
+
+Check and set the correct value for const getIcon in @d:\git\philo\nextjs-philo/app\notifications\page.tsx for different types of notifications. Also for this page fix the Bell className="w-4 h-4" code, this bell icon above the page title is not theme-aware. 
+
+Migrated all code from Bootstrap grid to Tailwind CSS in `D:\git\philo\nextjs-philo` project
+
+Then check entire codebase to move all UI text values into @d:\git\philo\nextjs-philo/contexts\language-context.tsx 
